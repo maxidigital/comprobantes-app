@@ -1,0 +1,18 @@
+target/
+*.class
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# IDE / OS
+.idea/
+*.iml
+.vscode/
+.DS_Store
+
+# Local env / secrets
+.env
+*.env.local
+service-account*.json

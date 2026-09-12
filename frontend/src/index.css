@@ -1,0 +1,544 @@
+:root {
+  --bg: #09090B;
+  --card-bg: #141318;
+  --elevated: #1D1A22;
+  --text: #F5F3F7;
+  --text-muted: #A6A1AD;
+  --border: #2B2733;
+  --brand-primary: #8B5CF6;
+  --brand-accent: #EC4899;
+  --status-pending: #F5D90A;
+  --danger: #EF4444;
+
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 16px;
+  --radius-pill: 999px;
+
+  --shadow-neutral: 0 1px 3px rgba(0, 0, 0, 0.04);
+  --ease-hover: 0.18s ease;
+  --ease-enter: 0.16s cubic-bezier(0.2, 0.8, 0.3, 1.1);
+
+  color-scheme: dark;
+}
+
+:root[data-theme='light'] {
+  --bg: #F2F0F5;
+  --card-bg: #FBFAFD;
+  --elevated: #FFFFFF;
+  --text: #17151D;
+  --text-muted: #6B6572;
+  --border: #E4E1EA;
+  --brand-primary: #6D28D9;
+  --brand-accent: #A21CAF;
+  --status-pending: #A16207;
+  --danger: #DC2626;
+
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme='dark']):not([data-theme='light']) {
+    --bg: #F2F0F5;
+    --card-bg: #FBFAFD;
+    --elevated: #FFFFFF;
+    --text: #17151D;
+    --text-muted: #6B6572;
+    --border: #E4E1EA;
+    --brand-primary: #6D28D9;
+    --brand-accent: #A21CAF;
+    --status-pending: #A16207;
+    --danger: #DC2626;
+
+    color-scheme: light;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  min-height: 100dvh;
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: contain;
+}
+
+h1,
+h2,
+h3 {
+  letter-spacing: -0.012em;
+  margin: 0;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+input,
+select,
+textarea {
+  font-family: inherit;
+  font-size: 1rem;
+}
+
+/* ---------- Layout ---------- */
+
+.app-shell {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+.top-bar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: calc(0.75rem + env(safe-area-inset-top)) 1rem 0.75rem;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+
+.top-bar h1 {
+  font-size: 1.125rem;
+}
+
+.top-bar .subtitle {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.content {
+  flex: 1;
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 1rem 1rem calc(6rem + env(safe-area-inset-bottom));
+}
+
+/* ---------- Buttons (6 roles, per ESTETICA-REACT.md) ---------- */
+
+/* 1. Plano, sin glow */
+.btn-plain {
+  background: none;
+  border: none;
+  color: var(--text);
+  padding: 0.6rem 0.8rem;
+  border-radius: var(--radius-sm);
+  transition: background var(--ease-hover);
+}
+.btn-plain:hover {
+  background: var(--card-bg);
+}
+
+/* 2. Sólido, sin glow */
+.btn-solid {
+  background: var(--brand-primary);
+  color: white;
+  border: none;
+  padding: 0.7rem 1.1rem;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  transition: filter var(--ease-hover);
+}
+.btn-solid:hover {
+  filter: brightness(1.08);
+}
+.btn-solid:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 6. Bordeado, sin glow — contenedores con identidad propia */
+.card {
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  box-shadow: var(--shadow-neutral);
+  border-radius: var(--radius-md);
+}
+
+/* 3. Glow externo estático — chip liviano */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.65rem;
+  border-radius: var(--radius-pill);
+  font-size: 0.78rem;
+  font-weight: 600;
+  background: color-mix(in srgb, var(--brand-primary) 14%, transparent);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--brand-primary) 45%, transparent),
+    0 0 20px 2px color-mix(in srgb, var(--brand-primary) 20%, transparent);
+  color: var(--brand-primary);
+}
+
+.chip--pending {
+  background: color-mix(in srgb, var(--status-pending) 16%, transparent);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--status-pending) 50%, transparent),
+    0 0 16px 2px color-mix(in srgb, var(--status-pending) 22%, transparent);
+  color: var(--status-pending);
+}
+
+.chip-toggle {
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  color: var(--text-muted);
+  transition: all var(--ease-hover);
+}
+.chip-toggle.active {
+  background: color-mix(in srgb, var(--status-pending) 16%, transparent);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--status-pending) 50%, transparent),
+    0 0 16px 2px color-mix(in srgb, var(--status-pending) 22%, transparent);
+  color: var(--status-pending);
+}
+
+/* 5. Glow externo animado — única acción principal de la pantalla */
+.fab {
+  position: fixed;
+  right: calc(1.25rem + env(safe-area-inset-right));
+  bottom: calc(1.5rem + env(safe-area-inset-bottom));
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  border: none;
+  background: var(--brand-primary);
+  color: white;
+  font-size: 1.6rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 20;
+  animation: fab-glow-a 2.6s ease-in-out infinite, fab-glow-b 3.7s ease-in-out infinite;
+}
+
+@keyframes fab-glow-a {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--brand-primary) 55%, transparent);
+  }
+  38% {
+    box-shadow: 0 0 18px 6px color-mix(in srgb, var(--brand-primary) 45%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--brand-primary) 55%, transparent);
+  }
+}
+
+@keyframes fab-glow-b {
+  0% {
+    filter: brightness(1);
+  }
+  61% {
+    filter: brightness(1.12);
+  }
+  100% {
+    filter: brightness(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fab {
+    animation: none;
+    box-shadow:
+      0 0 0 1px color-mix(in srgb, var(--brand-primary) 45%, transparent),
+      0 0 20px 2px color-mix(in srgb, var(--brand-primary) 35%, transparent);
+  }
+}
+
+/* ---------- Access gate ---------- */
+
+.gate {
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+
+.gate-card {
+  width: 100%;
+  max-width: 360px;
+  padding: 1.75rem;
+  text-align: center;
+}
+
+.gate-card h1 {
+  font-size: 1.25rem;
+  margin-bottom: 0.35rem;
+}
+
+.gate-card p {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  margin: 0 0 1.25rem;
+}
+
+.field {
+  margin-bottom: 1rem;
+  text-align: left;
+}
+
+.field label {
+  display: block;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin-bottom: 0.35rem;
+}
+
+.input {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: var(--radius-sm);
+  padding: 0.65rem 0.75rem;
+  min-height: 44px;
+}
+
+.input:focus {
+  outline: 2px solid color-mix(in srgb, var(--brand-primary) 55%, transparent);
+  outline-offset: 1px;
+}
+
+.error-text {
+  color: var(--danger);
+  font-size: 0.82rem;
+  margin: 0.5rem 0 0;
+}
+
+/* ---------- Totals ---------- */
+
+.totals {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.6rem;
+  margin-bottom: 1.25rem;
+}
+
+.totals .stat {
+  padding: 0.85rem 0.7rem;
+  text-align: center;
+}
+
+.totals .stat .label {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.totals .stat .value {
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin-top: 0.25rem;
+}
+
+.totals .stat.ingreso .value {
+  color: var(--brand-primary);
+}
+
+.totals .stat.balance .value.negative {
+  color: var(--danger);
+}
+
+/* ---------- Filters ---------- */
+
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.segmented {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+}
+
+.segmented button {
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  padding: 0.4rem 0.85rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  transition: all var(--ease-hover);
+}
+
+.segmented button.active {
+  background: var(--brand-primary);
+  color: white;
+}
+
+/* ---------- Movement list ---------- */
+
+.movement-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.movement-card {
+  padding: 0.85rem 0.95rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.movement-card .row-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.movement-card .concepto {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.movement-card .monto {
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.movement-card .monto.ingreso {
+  color: var(--brand-primary);
+}
+
+.movement-card .meta {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.movement-card .actions {
+  display: flex;
+  gap: 0.4rem;
+  justify-content: flex-end;
+  margin-top: 0.15rem;
+}
+
+.empty-state {
+  text-align: center;
+  color: var(--text-muted);
+  padding: 3rem 1rem;
+  font-size: 0.9rem;
+}
+
+/* ---------- Dialogs ---------- */
+
+.dialog-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  z-index: 30;
+  padding: 0;
+}
+
+.dialog {
+  width: 100%;
+  max-width: 480px;
+  max-height: 92dvh;
+  overflow-y: auto;
+  background: var(--elevated);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  padding: 1.25rem 1.25rem calc(1.25rem + env(safe-area-inset-bottom));
+  animation: dialog-enter var(--ease-enter);
+}
+
+@media (min-width: 640px) {
+  .dialog-overlay {
+    align-items: center;
+  }
+  .dialog {
+    border-radius: var(--radius-lg);
+  }
+}
+
+@keyframes dialog-enter {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dialog {
+    animation: none;
+  }
+}
+
+.dialog h2 {
+  font-size: 1.05rem;
+  margin-bottom: 1rem;
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.6rem;
+  margin-top: 1.25rem;
+}
+
+.type-toggle {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.type-toggle button {
+  flex: 1;
+  padding: 0.7rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  color: var(--text-muted);
+  font-weight: 600;
+  transition: all var(--ease-hover);
+}
+
+.type-toggle button.active-ingreso {
+  background: color-mix(in srgb, var(--brand-primary) 18%, var(--card-bg));
+  border-color: var(--brand-primary);
+  color: var(--brand-primary);
+}
+
+.type-toggle button.active-gasto {
+  background: color-mix(in srgb, var(--danger) 14%, var(--card-bg));
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+textarea.input {
+  min-height: 72px;
+  resize: vertical;
+}
