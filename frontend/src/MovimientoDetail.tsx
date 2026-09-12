@@ -13,6 +13,7 @@ export default function MovimientoDetail({ movimiento: m, onClose }: Props) {
   return (
     <div className="dialog-overlay dialog-overlay--fullscreen" onClick={onClose}>
       <div className="dialog dialog--fullscreen" onClick={(e) => e.stopPropagation()}>
+        <div className="dialog-scroll">
         <div className="dialog-header">
           <h2>Detalle del movimiento</h2>
           <button type="button" className="btn-plain menu-icon-btn" onClick={onClose} aria-label="Cerrar">
@@ -69,6 +70,7 @@ export default function MovimientoDetail({ movimiento: m, onClose }: Props) {
         <div className="field">
           <label>Cargado por</label>
           <p className="detail-value">{m.cargadoPor || '—'}</p>
+        </div>
         </div>
 
         <div className="dialog-actions">

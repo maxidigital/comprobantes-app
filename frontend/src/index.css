@@ -10,6 +10,7 @@
   --status-pending: #F5D90A;
   --danger: #EF4444;
   --income: #22C55E;
+  --expense: #38BDF8;
 
   --radius-sm: 8px;
   --radius-md: 14px;
@@ -35,6 +36,7 @@
   --status-pending: #A16207;
   --danger: #DC2626;
   --income: #15803D;
+  --expense: #0369A1;
 
   color-scheme: light;
 }
@@ -51,6 +53,8 @@
     --brand-accent: #A21CAF;
     --status-pending: #A16207;
     --danger: #DC2626;
+    --income: #15803D;
+    --expense: #0369A1;
 
     color-scheme: light;
   }
@@ -164,13 +168,15 @@ input[type='file'] {
 
 /* Anchored under a button that isn't necessarily near a screen edge (the
    header hamburger always is, so it keeps the default right-aligned
-   behavior instead). Centered with a fixed negative margin instead of
-   transform:translateX(-50%) so it doesn't fight the entrance animation,
-   which also animates `transform` (translateY + scale). */
+   behavior instead). Uses its own keyframes that bake translateX(-50%)
+   into every frame, since the entrance animation already animates
+   `transform` (translateY + scale) and would otherwise overwrite a static
+   translateX centering — and a fixed negative margin breaks the moment the
+   content is wider than assumed. */
 .dropdown-panel--center {
   right: auto;
   left: 50%;
-  margin-left: -95px;
+  animation: dropdown-enter-center var(--ease-enter);
 }
 
 .dropdown-panel button {
@@ -222,9 +228,24 @@ input[type='file'] {
   }
 }
 
+@keyframes dropdown-enter-center {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-6px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .dropdown-panel {
     animation: none;
+  }
+  .dropdown-panel--center {
+    animation: none;
+    transform: translateX(-50%);
   }
 }
 
@@ -653,6 +674,13 @@ input[type='file'] {
   overflow-wrap: anywhere;
 }
 
+.monto-col {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  flex-shrink: 0;
+}
+
 .movement-card .monto {
   font-weight: 700;
   white-space: nowrap;
@@ -665,6 +693,9 @@ input[type='file'] {
 .bien-label {
   color: var(--brand-primary);
   font-weight: 600;
+  font-size: 0.78rem;
+  white-space: nowrap;
+  margin-top: 0.1rem;
 }
 
 .movement-card .meta {
@@ -726,7 +757,24 @@ input[type='file'] {
   max-height: none;
   height: 100dvh;
   border-radius: 0;
-  padding: calc(1.25rem + env(safe-area-inset-top)) 1.25rem calc(1.25rem + env(safe-area-inset-bottom));
+  padding: 0;
+  overflow-y: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.dialog--fullscreen .dialog-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: calc(1.25rem + env(safe-area-inset-top)) 1.25rem 1.25rem;
+}
+
+.dialog--fullscreen .dialog-actions {
+  flex-shrink: 0;
+  margin-top: 0;
+  padding: 1rem 1.25rem calc(1rem + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--border);
 }
 
 @media (min-width: 640px) {
@@ -805,9 +853,9 @@ input[type='file'] {
 }
 
 .type-toggle button.active-gasto {
-  background: color-mix(in srgb, var(--danger) 14%, var(--card-bg));
-  border-color: var(--danger);
-  color: var(--danger);
+  background: color-mix(in srgb, var(--expense) 14%, var(--card-bg));
+  border-color: var(--expense);
+  color: var(--expense);
 }
 
 textarea.input {

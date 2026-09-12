@@ -96,17 +96,20 @@ export default function MovimientosList({ movimientos, onOpenDetail, onEdit, onD
     dragRef.current = null;
     if (!drag || drag.id !== id) return;
 
-    if (drag.locked !== 'horizontal') {
-      forceRender((n) => n + 1);
-      return;
-    }
-
-    if (Math.abs(drag.deltaX) < TAP_THRESHOLD) {
+    // Nunca llegó a moverse lo suficiente como para "trabar" una dirección
+    // (locked sigue null) — eso es un tap real, no un intento de swipe.
+    if (drag.locked === null || (drag.locked === 'horizontal' && Math.abs(drag.deltaX) < TAP_THRESHOLD)) {
       if (openSwipeId) {
         setOpenSwipeId(null);
       } else {
         onOpenDetail(m);
       }
+      forceRender((n) => n + 1);
+      return;
+    }
+
+    if (drag.locked !== 'horizontal') {
+      forceRender((n) => n + 1);
       return;
     }
 
@@ -221,14 +224,16 @@ export default function MovimientosList({ movimientos, onOpenDetail, onEdit, onD
                       </span>
                     )}
                   </span>
-                  <span className={`monto ${m.tipo === 'INGRESO' ? 'ingreso' : ''}`}>
-                    {m.tipo === 'INGRESO' ? '+' : '-'}
-                    {currency.format(m.monto)}
+                  <span className="monto-col">
+                    <span className={`monto ${m.tipo === 'INGRESO' ? 'ingreso' : ''}`}>
+                      {m.tipo === 'INGRESO' ? '+' : '-'}
+                      {currency.format(m.monto)}
+                    </span>
+                    {m.bien && <span className="bien-label">{m.bien}</span>}
                   </span>
                 </div>
                 <div className="meta">
                   <span>{formatFecha(m.fecha)}</span>
-                  {m.bien && <span className="bien-label">· {m.bien}</span>}
                   {m.categoria && <span>· {m.categoria}</span>}
                 </div>
                 {m.notas && <div className="meta">{m.notas}</div>}

@@ -130,6 +130,7 @@ export default function MovimientoForm({ onClose, onSaved, onUnauthorized, editi
   return (
     <div className="dialog-overlay dialog-overlay--fullscreen" onClick={onClose}>
       <form className="dialog dialog--fullscreen" onClick={(e) => e.stopPropagation()} onSubmit={handleSubmit}>
+        <div className="dialog-scroll">
         <div className="dialog-header">
           <h2>{editing ? 'Editar movimiento' : 'Nuevo movimiento'}</h2>
           <button type="button" className="btn-plain menu-icon-btn" onClick={onClose} aria-label="Cerrar">
@@ -235,6 +236,7 @@ export default function MovimientoForm({ onClose, onSaved, onUnauthorized, editi
         )}
 
         {error && <p className="error-text">{error}</p>}
+        </div>
 
         <div className="dialog-actions">
           <button type="button" className="btn-plain" onClick={onClose}>
