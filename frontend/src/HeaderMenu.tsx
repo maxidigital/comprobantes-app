@@ -31,7 +31,7 @@ export default function HeaderMenu({ isDark, onToggleTheme, onInformes, onLogout
     <div className="dropdown-wrapper" ref={wrapperRef}>
       <button
         type="button"
-        className="btn-plain"
+        className="btn-plain menu-icon-btn"
         onClick={() => setOpen((v) => !v)}
         aria-label="Menú"
         aria-expanded={open}

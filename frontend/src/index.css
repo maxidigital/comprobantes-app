@@ -100,6 +100,15 @@ input[type='file'] {
   box-sizing: border-box;
 }
 
+/* Algunos navegadores de Android ignoran width:100% en <input type=date> y
+   lo dibujan con su ancho intrínseco (más ancho que el contenedor). */
+input[type='date'] {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
 /* ---------- Layout ---------- */
 
 .app-shell {
@@ -149,6 +158,7 @@ input[type='file'] {
   top: calc(100% + 0.4rem);
   right: 0;
   min-width: 190px;
+  max-width: calc(100vw - 2rem);
   background: var(--elevated);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
@@ -158,9 +168,15 @@ input[type='file'] {
   animation: dropdown-enter var(--ease-enter);
 }
 
-.dropdown-panel--left {
+/* Anchored under a button that isn't necessarily near a screen edge (the
+   header hamburger always is, so it keeps the default right-aligned
+   behavior instead). Centered with a fixed negative margin instead of
+   transform:translateX(-50%) so it doesn't fight the entrance animation,
+   which also animates `transform` (translateY + scale). */
+.dropdown-panel--center {
   right: auto;
-  left: 0;
+  left: 50%;
+  margin-left: -95px;
 }
 
 .dropdown-panel button {
@@ -233,6 +249,12 @@ input[type='file'] {
   background: var(--card-bg);
 }
 
+.menu-icon-btn {
+  font-size: 1.4rem;
+  line-height: 1;
+  padding: 0.5rem 0.65rem;
+}
+
 /* 2. Sólido, sin glow */
 .btn-solid {
   background: var(--brand-primary);
@@ -275,12 +297,13 @@ input[type='file'] {
   color: var(--brand-primary);
 }
 
-.chip--pending {
-  background: color-mix(in srgb, var(--status-pending) 16%, transparent);
-  box-shadow:
-    0 0 0 1px color-mix(in srgb, var(--status-pending) 50%, transparent),
-    0 0 16px 2px color-mix(in srgb, var(--status-pending) 22%, transparent);
-  color: var(--status-pending);
+.badge-pending {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 0.4rem;
+  font-size: 0.85rem;
+  filter: drop-shadow(0 0 3px color-mix(in srgb, var(--status-pending) 70%, transparent));
 }
 
 .chip-toggle {

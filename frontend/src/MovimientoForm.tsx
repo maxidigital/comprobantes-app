@@ -36,7 +36,10 @@ export default function MovimientoForm({ onClose, onCreated, onUnauthorized }: P
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    const montoNumero = Number(monto);
+    // Android en configuración regional Argentina usa coma como separador
+    // decimal — un <input type="number"> puro rechaza la coma. Se acepta
+    // como texto y se normaliza acá antes de convertir a número.
+    const montoNumero = Number(monto.trim().replace(',', '.'));
     if (!concepto.trim() || !montoNumero || montoNumero <= 0) {
       setError('Completá el concepto y un monto válido');
       return;
@@ -95,10 +98,9 @@ export default function MovimientoForm({ onClose, onCreated, onUnauthorized }: P
           <input
             id="monto"
             className="input"
-            type="number"
+            type="text"
             inputMode="decimal"
-            min="0"
-            step="0.01"
+            placeholder="0,00"
             value={monto}
             onChange={(e) => setMonto(e.target.value)}
           />

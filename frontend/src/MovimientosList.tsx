@@ -3,8 +3,6 @@ import type { FiltroTipo, Movimiento } from './types';
 
 interface Props {
   movimientos: Movimiento[];
-  onRequestDelete: (movimiento: Movimiento) => void;
-  onRequestAttach: (movimiento: Movimiento) => void;
 }
 
 const currency = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 });
@@ -15,7 +13,7 @@ function formatFecha(fecha: string): string {
   return Number.isNaN(date.getTime()) ? fecha : dateFormatter.format(date);
 }
 
-export default function MovimientosList({ movimientos, onRequestDelete, onRequestAttach }: Props) {
+export default function MovimientosList({ movimientos }: Props) {
   const [filtroTipo, setFiltroTipo] = useState<FiltroTipo>('TODOS');
   const [soloPendientes, setSoloPendientes] = useState(false);
   const [showFiltros, setShowFiltros] = useState(false);
@@ -76,7 +74,7 @@ export default function MovimientosList({ movimientos, onRequestDelete, onReques
             Filtros
           </button>
           {showFiltros && (
-            <div className="dropdown-panel dropdown-panel--left">
+            <div className="dropdown-panel dropdown-panel--center">
               <label className="checkbox-row">
                 <input
                   type="checkbox"
@@ -97,7 +95,14 @@ export default function MovimientosList({ movimientos, onRequestDelete, onReques
           {visibles.map((m) => (
             <div key={m.id} className="card movement-card">
               <div className="row-top">
-                <span className="concepto">{m.concepto}</span>
+                <span className="concepto">
+                  {m.concepto}
+                  {m.comprobantePendiente && (
+                    <span className="badge-pending" title="Comprobante pendiente">
+                      🧾
+                    </span>
+                  )}
+                </span>
                 <span className={`monto ${m.tipo === 'INGRESO' ? 'ingreso' : ''}`}>
                   {m.tipo === 'INGRESO' ? '+' : '-'}
                   {currency.format(m.monto)}
@@ -107,30 +112,16 @@ export default function MovimientosList({ movimientos, onRequestDelete, onReques
                 <span>{formatFecha(m.fecha)}</span>
                 {m.categoria && <span>· {m.categoria}</span>}
                 {m.bien && <span>· {m.bien}</span>}
-                {m.cargadoPor && <span>· cargado por {m.cargadoPor}</span>}
               </div>
               {m.notas && <div className="meta">{m.notas}</div>}
 
-              <div className="meta">
-                {m.comprobantePendiente ? (
-                  <span className="chip chip--pending">Comprobante pendiente</span>
-                ) : (
+              {!m.comprobantePendiente && (
+                <div className="meta">
                   <a className="chip" href={m.comprobanteUrl} target="_blank" rel="noreferrer">
                     Ver comprobante
                   </a>
-                )}
-              </div>
-
-              <div className="actions">
-                {m.comprobantePendiente && (
-                  <button type="button" className="btn-plain" onClick={() => onRequestAttach(m)}>
-                    Adjuntar comprobante
-                  </button>
-                )}
-                <button type="button" className="btn-plain" onClick={() => onRequestDelete(m)}>
-                  Eliminar
-                </button>
-              </div>
+                </div>
+              )}
             </div>
           ))}
         </div>

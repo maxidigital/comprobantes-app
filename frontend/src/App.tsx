@@ -101,13 +101,7 @@ export default function App() {
         {movimientos === null && !loadError && <p className="empty-state">Cargando…</p>}
         {loadError && <p className="error-text">{loadError}</p>}
 
-        {movimientos !== null && (
-          <MovimientosList
-            movimientos={movimientos}
-            onRequestDelete={(m) => setConfirmDeleteTarget(m)}
-            onRequestAttach={(m) => setAttachTarget(m)}
-          />
-        )}
+        {movimientos !== null && <MovimientosList movimientos={movimientos} />}
       </main>
 
       <button className="fab" onClick={() => setShowForm(true)} aria-label="Nuevo movimiento">
