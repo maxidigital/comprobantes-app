@@ -1,14 +1,18 @@
 import { useEffect, useRef, useState } from 'react';
+import { useEscapeKey } from './useEscapeKey';
 
 interface Props {
   isDark: boolean;
   onToggleTheme: () => void;
+  onInformes: () => void;
   onLogout: () => void;
 }
 
-export default function HeaderMenu({ isDark, onToggleTheme, onLogout }: Props) {
+export default function HeaderMenu({ isDark, onToggleTheme, onInformes, onLogout }: Props) {
   const [open, setOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
+
+  useEscapeKey(() => setOpen(false));
 
   useEffect(() => {
     if (!open) return;
@@ -18,20 +22,13 @@ export default function HeaderMenu({ isDark, onToggleTheme, onLogout }: Props) {
         setOpen(false);
       }
     }
-    function handleEscape(e: KeyboardEvent) {
-      if (e.key === 'Escape') setOpen(false);
-    }
 
     document.addEventListener('mousedown', handleOutside);
-    document.addEventListener('keydown', handleEscape);
-    return () => {
-      document.removeEventListener('mousedown', handleOutside);
-      document.removeEventListener('keydown', handleEscape);
-    };
+    return () => document.removeEventListener('mousedown', handleOutside);
   }, [open]);
 
   return (
-    <div className="header-menu-wrapper" ref={wrapperRef}>
+    <div className="dropdown-wrapper" ref={wrapperRef}>
       <button
         type="button"
         className="btn-plain"
@@ -43,7 +40,16 @@ export default function HeaderMenu({ isDark, onToggleTheme, onLogout }: Props) {
       </button>
 
       {open && (
-        <div className="header-menu">
+        <div className="dropdown-panel">
+          <button
+            type="button"
+            onClick={() => {
+              onInformes();
+              setOpen(false);
+            }}
+          >
+            📊 Informes
+          </button>
           <button
             type="button"
             onClick={() => {

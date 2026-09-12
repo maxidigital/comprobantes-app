@@ -1,6 +1,7 @@
 import { FormEvent, useState } from 'react';
 import { ApiError, crearMovimiento } from './api';
 import type { Movimiento, TipoMovimiento } from './types';
+import { useEscapeKey } from './useEscapeKey';
 
 interface Props {
   onClose: () => void;
@@ -20,6 +21,8 @@ function today(): string {
 }
 
 export default function MovimientoForm({ onClose, onCreated, onUnauthorized }: Props) {
+  useEscapeKey(onClose);
+
   const [tipo, setTipo] = useState<TipoMovimiento>('GASTO');
   const [fecha, setFecha] = useState(today());
   const [monto, setMonto] = useState('');

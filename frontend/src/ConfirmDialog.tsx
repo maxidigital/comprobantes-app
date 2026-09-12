@@ -1,3 +1,5 @@
+import { useEscapeKey } from './useEscapeKey';
+
 interface Props {
   title: string;
   message: string;
@@ -7,6 +9,8 @@ interface Props {
 }
 
 export default function ConfirmDialog({ title, message, confirmLabel = 'Confirmar', onConfirm, onClose }: Props) {
+  useEscapeKey(onClose);
+
   return (
     <div className="dialog-overlay" onClick={onClose}>
       <div className="dialog" onClick={(e) => e.stopPropagation()}>

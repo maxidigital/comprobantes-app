@@ -1,6 +1,7 @@
 import { FormEvent, useState } from 'react';
 import { adjuntarComprobante, ApiError } from './api';
 import type { Movimiento } from './types';
+import { useEscapeKey } from './useEscapeKey';
 
 interface Props {
   movimiento: Movimiento;
@@ -10,6 +11,8 @@ interface Props {
 }
 
 export default function AttachReceiptDialog({ movimiento, onClose, onAttached, onUnauthorized }: Props) {
+  useEscapeKey(onClose);
+
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);

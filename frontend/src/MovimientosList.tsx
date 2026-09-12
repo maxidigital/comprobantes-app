@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { FiltroTipo, Movimiento } from './types';
 
 interface Props {
@@ -18,6 +18,28 @@ function formatFecha(fecha: string): string {
 export default function MovimientosList({ movimientos, onRequestDelete, onRequestAttach }: Props) {
   const [filtroTipo, setFiltroTipo] = useState<FiltroTipo>('TODOS');
   const [soloPendientes, setSoloPendientes] = useState(false);
+  const [showFiltros, setShowFiltros] = useState(false);
+  const filtrosRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!showFiltros) return;
+
+    function handleOutside(e: MouseEvent) {
+      if (filtrosRef.current && !filtrosRef.current.contains(e.target as Node)) {
+        setShowFiltros(false);
+      }
+    }
+    function handleEscape(e: KeyboardEvent) {
+      if (e.key === 'Escape') setShowFiltros(false);
+    }
+
+    document.addEventListener('mousedown', handleOutside);
+    document.addEventListener('keydown', handleEscape);
+    return () => {
+      document.removeEventListener('mousedown', handleOutside);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [showFiltros]);
 
   const visibles = useMemo(() => {
     return movimientos.filter((m) => {
@@ -44,13 +66,28 @@ export default function MovimientosList({ movimientos, onRequestDelete, onReques
             </button>
           ))}
         </div>
-        <button
-          type="button"
-          className={`chip chip-toggle ${soloPendientes ? 'active' : ''}`}
-          onClick={() => setSoloPendientes((v) => !v)}
-        >
-          Comprobante pendiente{pendientesCount > 0 ? ` (${pendientesCount})` : ''}
-        </button>
+        <div className="dropdown-wrapper" ref={filtrosRef}>
+          <button
+            type="button"
+            className={`chip chip-toggle ${soloPendientes ? 'active' : ''}`}
+            onClick={() => setShowFiltros((v) => !v)}
+            aria-expanded={showFiltros}
+          >
+            Filtros
+          </button>
+          {showFiltros && (
+            <div className="dropdown-panel dropdown-panel--left">
+              <label className="checkbox-row">
+                <input
+                  type="checkbox"
+                  checked={soloPendientes}
+                  onChange={(e) => setSoloPendientes(e.target.checked)}
+                />
+                Con comprobante pendiente{pendientesCount > 0 ? ` (${pendientesCount})` : ''}
+              </label>
+            </div>
+          )}
+        </div>
       </div>
 
       {visibles.length === 0 ? (

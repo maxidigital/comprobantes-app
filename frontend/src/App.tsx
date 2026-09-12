@@ -8,6 +8,7 @@ import MovimientosList from './MovimientosList';
 import Totals from './Totals';
 import { ApiError, clearAccessKey, eliminarMovimiento, getAccessKey, listMovimientos } from './api';
 import type { Movimiento } from './types';
+import { useEscapeKey } from './useEscapeKey';
 
 type Theme = 'light' | 'dark';
 
@@ -23,8 +24,11 @@ export default function App() {
   const [theme, setTheme] = useState<Theme>(getInitialTheme());
 
   const [showForm, setShowForm] = useState(false);
+  const [showInformes, setShowInformes] = useState(false);
   const [confirmDeleteTarget, setConfirmDeleteTarget] = useState<Movimiento | null>(null);
   const [attachTarget, setAttachTarget] = useState<Movimiento | null>(null);
+
+  useEscapeKey(() => setShowInformes(false));
 
   useEffect(() => {
     if (unlocked) {
@@ -88,6 +92,7 @@ export default function App() {
         <HeaderMenu
           isDark={theme === 'dark'}
           onToggleTheme={() => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))}
+          onInformes={() => setShowInformes(true)}
           onLogout={handleUnauthorized}
         />
       </header>
@@ -97,14 +102,11 @@ export default function App() {
         {loadError && <p className="error-text">{loadError}</p>}
 
         {movimientos !== null && (
-          <>
-            <Totals movimientos={movimientos} />
-            <MovimientosList
-              movimientos={movimientos}
-              onRequestDelete={(m) => setConfirmDeleteTarget(m)}
-              onRequestAttach={(m) => setAttachTarget(m)}
-            />
-          </>
+          <MovimientosList
+            movimientos={movimientos}
+            onRequestDelete={(m) => setConfirmDeleteTarget(m)}
+            onRequestAttach={(m) => setAttachTarget(m)}
+          />
         )}
       </main>
 
@@ -143,6 +145,20 @@ export default function App() {
           }}
           onUnauthorized={handleUnauthorized}
         />
+      )}
+
+      {showInformes && movimientos !== null && (
+        <div className="dialog-overlay" onClick={() => setShowInformes(false)}>
+          <div className="dialog" onClick={(e) => e.stopPropagation()}>
+            <h2>Informes</h2>
+            <Totals movimientos={movimientos} />
+            <div className="dialog-actions">
+              <button type="button" className="btn-plain" onClick={() => setShowInformes(false)}>
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
