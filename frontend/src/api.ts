@@ -32,6 +32,22 @@ export function setUserName(name: string) {
   localStorage.setItem(USER_NAME_STORAGE, name);
 }
 
+/** Intenta leer un error como JSON ({error: "..."}); si la respuesta no es
+ * JSON (una página de error de la infraestructura, por ejemplo), devuelve
+ * el texto crudo recortado — mejor eso que un genérico "Error inesperado"
+ * que no da ninguna pista de qué pasó realmente. */
+async function describeErrorResponse(response: Response): Promise<string> {
+  const raw = await response.text();
+  try {
+    const body = JSON.parse(raw);
+    if (body?.error) return body.error;
+  } catch {
+    // no era JSON, seguimos con el texto crudo
+  }
+  const snippet = raw.trim().replace(/\s+/g, ' ').slice(0, 200);
+  return snippet ? `HTTP ${response.status}: ${snippet}` : `HTTP ${response.status} sin cuerpo de respuesta`;
+}
+
 async function request(path: string, init: RequestInit = {}): Promise<Response> {
   const key = getAccessKey();
   const headers = new Headers(init.headers);
@@ -39,17 +55,21 @@ async function request(path: string, init: RequestInit = {}): Promise<Response> 
     headers.set('X-Access-Key', key);
   }
 
-  const response = await fetch(`/api${path}`, { ...init, headers });
+  let response: Response;
+  try {
+    response = await fetch(`/api${path}`, { ...init, headers });
+  } catch (err) {
+    const detalle = err instanceof Error ? err.message : String(err);
+    throw new ApiError(`No se pudo conectar con el servidor (${detalle})`, 0);
+  }
 
   if (response.status === 401) {
     clearAccessKey();
-    const body = await response.json().catch(() => ({ error: 'Clave inválida' }));
-    throw new ApiError(body.error ?? 'Clave inválida', 401);
+    throw new ApiError(await describeErrorResponse(response), 401);
   }
 
   if (!response.ok) {
-    const body = await response.json().catch(() => ({ error: 'Error inesperado' }));
-    throw new ApiError(body.error ?? 'Error inesperado', response.status);
+    throw new ApiError(await describeErrorResponse(response), response.status);
   }
 
   return response;
