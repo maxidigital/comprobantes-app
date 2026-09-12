@@ -224,17 +224,17 @@ export default function MovimientosList({ movimientos, onOpenDetail, onEdit, onD
                       </span>
                     )}
                   </span>
-                  <span className="monto-col">
-                    <span className={`monto ${m.tipo === 'INGRESO' ? 'ingreso' : ''}`}>
-                      {m.tipo === 'INGRESO' ? '+' : '-'}
-                      {currency.format(m.monto)}
-                    </span>
-                    {m.bien && <span className="bien-label">{m.bien}</span>}
+                  <span className={`monto ${m.tipo === 'INGRESO' ? 'ingreso' : ''}`}>
+                    {m.tipo === 'INGRESO' ? '+' : '-'}
+                    {currency.format(m.monto)}
                   </span>
                 </div>
-                <div className="meta">
-                  <span>{formatFecha(m.fecha)}</span>
-                  {m.categoria && <span>· {m.categoria}</span>}
+                <div className="row-bottom">
+                  <span className="meta">
+                    {formatFecha(m.fecha)}
+                    {m.categoria && ` · ${m.categoria}`}
+                  </span>
+                  {m.bien && <span className="bien-label">{m.bien}</span>}
                 </div>
                 {m.notas && <div className="meta">{m.notas}</div>}
 
