@@ -78,6 +78,7 @@ export default function MovimientoForm({ onClose, onSaved, onUnauthorized, editi
   const [bien, setBien] = useState(editing?.bien || BIENES[0]);
   const [notas, setNotas] = useState(editing?.notas ?? '');
   const [comprobante, setComprobante] = useState<File | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<{ fecha?: string; concepto?: string; monto?: string }>({});
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -92,14 +93,17 @@ export default function MovimientoForm({ onClose, onSaved, onUnauthorized, editi
     e.preventDefault();
     const montoNumero = parseMonto(monto);
     const fechaIso = fechaToIso(fechaTexto);
-    if (!fechaIso) {
-      setError('Fecha inválida (dd/mm/aaaa)');
+
+    const nuevosErrores: typeof fieldErrors = {};
+    if (!fechaIso) nuevosErrores.fecha = 'Fecha inválida (dd/mm/aaaa)';
+    if (!concepto.trim()) nuevosErrores.concepto = 'Completá el concepto';
+    if (!montoNumero || montoNumero <= 0) nuevosErrores.monto = 'Ingresá un monto válido';
+
+    if (Object.keys(nuevosErrores).length > 0 || !fechaIso) {
+      setFieldErrors(nuevosErrores);
       return;
     }
-    if (!concepto.trim() || !montoNumero || montoNumero <= 0) {
-      setError('Completá el concepto y un monto válido');
-      return;
-    }
+    setFieldErrors({});
 
     setSubmitting(true);
     setError(null);
@@ -176,6 +180,7 @@ export default function MovimientoForm({ onClose, onSaved, onUnauthorized, editi
               ›
             </button>
           </div>
+          {fieldErrors.fecha && <p className="error-text">{fieldErrors.fecha}</p>}
         </div>
 
         <div className="field">
@@ -188,6 +193,7 @@ export default function MovimientoForm({ onClose, onSaved, onUnauthorized, editi
             onChange={(e) => setConcepto(e.target.value)}
             placeholder="Ej: TGI 3er trimestre"
           />
+          {fieldErrors.concepto && <p className="error-text">{fieldErrors.concepto}</p>}
         </div>
 
         <div className="field">
@@ -215,6 +221,7 @@ export default function MovimientoForm({ onClose, onSaved, onUnauthorized, editi
               onChange={(e) => setMonto(e.target.value)}
             />
           </div>
+          {fieldErrors.monto && <p className="error-text">{fieldErrors.monto}</p>}
         </div>
 
         <div className="field">
