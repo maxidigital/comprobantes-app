@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import AccessGate from './AccessGate';
 import AttachReceiptDialog from './AttachReceiptDialog';
 import ConfirmDialog from './ConfirmDialog';
+import HeaderMenu from './HeaderMenu';
 import MovimientoForm from './MovimientoForm';
 import MovimientosList from './MovimientosList';
 import Totals from './Totals';
@@ -81,22 +82,14 @@ export default function App() {
     <div className="app-shell">
       <header className="top-bar">
         <div>
-          <h1>Comprobantes</h1>
-          <div className="subtitle">Sucesión</div>
+          <h1>Administración</h1>
+          <div className="subtitle">Sucesión Bottazzi</div>
         </div>
-        <div style={{ display: 'flex', gap: '0.4rem' }}>
-          <button
-            type="button"
-            className="btn-plain"
-            onClick={() => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))}
-            aria-label="Cambiar tema"
-          >
-            {theme === 'dark' ? '☀️' : '🌙'}
-          </button>
-          <button type="button" className="btn-plain" onClick={handleUnauthorized}>
-            Salir
-          </button>
-        </div>
+        <HeaderMenu
+          isDark={theme === 'dark'}
+          onToggleTheme={() => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))}
+          onLogout={handleUnauthorized}
+        />
       </header>
 
       <main className="content">

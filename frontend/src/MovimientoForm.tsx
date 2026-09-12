@@ -13,6 +13,8 @@ const CATEGORIAS: Record<TipoMovimiento, string[]> = {
   INGRESO: ['Alquiler cobrado', 'Venta de bien', 'Dividendos/Rentas', 'Otro'],
 };
 
+const BIENES = ['General', 'Iriondo', 'San Martín', 'Oficina', '3 de febrero'];
+
 function today(): string {
   return new Date().toISOString().slice(0, 10);
 }
@@ -23,7 +25,7 @@ export default function MovimientoForm({ onClose, onCreated, onUnauthorized }: P
   const [monto, setMonto] = useState('');
   const [concepto, setConcepto] = useState('');
   const [categoria, setCategoria] = useState('');
-  const [bien, setBien] = useState('');
+  const [bien, setBien] = useState(BIENES[0]);
   const [notas, setNotas] = useState('');
   const [comprobante, setComprobante] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -107,7 +109,7 @@ export default function MovimientoForm({ onClose, onCreated, onUnauthorized }: P
             type="text"
             value={concepto}
             onChange={(e) => setConcepto(e.target.value)}
-            placeholder="Ej: ABL 3er trimestre"
+            placeholder="Ej: TGI 3er trimestre"
           />
         </div>
 
@@ -128,15 +130,14 @@ export default function MovimientoForm({ onClose, onCreated, onUnauthorized }: P
         </div>
 
         <div className="field">
-          <label htmlFor="bien">Bien relacionado (opcional)</label>
-          <input
-            id="bien"
-            className="input"
-            type="text"
-            value={bien}
-            onChange={(e) => setBien(e.target.value)}
-            placeholder="Ej: Departamento Belgrano"
-          />
+          <label htmlFor="bien">Bien relacionado</label>
+          <select id="bien" className="input" value={bien} onChange={(e) => setBien(e.target.value)}>
+            {BIENES.map((b) => (
+              <option key={b} value={b}>
+                {b}
+              </option>
+            ))}
+          </select>
         </div>
 
         <div className="field">

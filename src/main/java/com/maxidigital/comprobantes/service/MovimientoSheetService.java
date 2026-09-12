@@ -9,6 +9,9 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -31,6 +34,12 @@ public class MovimientoSheetService {
     private static final String ESTADO_ACTIVO = "activo";
     private static final String ESTADO_ELIMINADO = "eliminado";
 
+    // The API and the frontend's <input type="date"> always speak ISO
+    // (yyyy-MM-dd) — only the spreadsheet itself shows dd/MM/yyyy, since
+    // that's what a human opening the sheet directly expects to see.
+    private static final DateTimeFormatter ISO_DATE = DateTimeFormatter.ISO_LOCAL_DATE;
+    private static final DateTimeFormatter SHEET_DATE = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+
     private final Sheets sheets;
     private final String spreadsheetId;
 
@@ -49,7 +58,7 @@ public class MovimientoSheetService {
         String creadoEn = Instant.now().toString();
 
         List<Object> row = List.of(
-                id, fecha, tipo, monto, concepto,
+                id, toSheetDate(fecha), tipo, monto, concepto,
                 nullToEmpty(categoria), nullToEmpty(bien),
                 nullToEmpty(comprobanteUrl), nullToEmpty(comprobanteNombre),
                 nullToEmpty(notas), creadoEn, ESTADO_ACTIVO, nullToEmpty(cargadoPor));
@@ -75,7 +84,7 @@ public class MovimientoSheetService {
                 continue;
             }
             result.add(MovimientoResponse.of(
-                    cell(row, 0), cell(row, 1), cell(row, 2),
+                    cell(row, 0), fromSheetDate(cell(row, 1)), cell(row, 2),
                     parseDouble(cell(row, 3)), cell(row, 4), cell(row, 5), cell(row, 6),
                     cell(row, 7), cell(row, 8), cell(row, 9), cell(row, 10), cell(row, 12)));
         }
@@ -100,7 +109,7 @@ public class MovimientoSheetService {
         updateCell("H" + sheetRow, comprobanteUrl);
         updateCell("I" + sheetRow, comprobanteNombre);
 
-        return MovimientoResponse.of(cell(row, 0), cell(row, 1), cell(row, 2), parseDouble(cell(row, 3)),
+        return MovimientoResponse.of(cell(row, 0), fromSheetDate(cell(row, 1)), cell(row, 2), parseDouble(cell(row, 3)),
                 cell(row, 4), cell(row, 5), cell(row, 6), comprobanteUrl, comprobanteNombre,
                 cell(row, 9), cell(row, 10), cell(row, 12));
     }
@@ -154,5 +163,23 @@ public class MovimientoSheetService {
 
     private static String nullToEmpty(String value) {
         return value != null ? value : "";
+    }
+
+    private static String toSheetDate(String isoDate) {
+        try {
+            return LocalDate.parse(isoDate, ISO_DATE).format(SHEET_DATE);
+        } catch (DateTimeParseException e) {
+            return isoDate;
+        }
+    }
+
+    private static String fromSheetDate(String sheetDate) {
+        try {
+            return LocalDate.parse(sheetDate, SHEET_DATE).format(ISO_DATE);
+        } catch (DateTimeParseException e) {
+            // Rows written before this change (or edited by hand) may still
+            // be plain ISO — leave them as-is instead of failing to load.
+            return sheetDate;
+        }
     }
 }
