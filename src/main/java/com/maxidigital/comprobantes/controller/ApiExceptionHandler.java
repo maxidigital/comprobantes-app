@@ -28,4 +28,17 @@ public class ApiExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
                 .body(Map.of("error", "Error al comunicarse con Google Sheets/Drive: " + ex.getMessage()));
     }
+
+    /**
+     * Catch-all: sin esto, una excepción no prevista (multipart mal formado,
+     * un parámetro que no bindea, un NPE) cae en el manejo de error por
+     * defecto de Spring, que puede devolver HTML en vez de JSON — el
+     * frontend no puede leer un mensaje ahí y termina mostrando un genérico
+     * "Error inesperado" sin ninguna pista real de qué pasó.
+     */
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<Map<String, String>> handleUnexpected(Exception ex) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("error", ex.getClass().getSimpleName() + ": " + ex.getMessage()));
+    }
 }
