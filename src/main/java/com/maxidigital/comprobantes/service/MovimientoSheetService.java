@@ -99,6 +99,25 @@ public class MovimientoSheetService {
         updateCell("L" + (rowIndex + 1), ESTADO_ELIMINADO);
     }
 
+    public MovimientoResponse update(String id, String fecha, String tipo, double monto, String concepto,
+                                      String categoria, String bien, String notas) throws IOException {
+        List<List<Object>> rows = readRawRows();
+        int rowIndex = locateRowIndex(rows, id);
+        List<Object> row = rows.get(rowIndex);
+        int sheetRow = rowIndex + 1; // 1-indexed sheet row; header occupies row 1
+
+        updateCell("B" + sheetRow, toSheetDate(fecha));
+        updateCell("C" + sheetRow, tipo);
+        updateCell("D" + sheetRow, String.valueOf(monto));
+        updateCell("E" + sheetRow, concepto);
+        updateCell("F" + sheetRow, nullToEmpty(categoria));
+        updateCell("G" + sheetRow, nullToEmpty(bien));
+        updateCell("J" + sheetRow, nullToEmpty(notas));
+
+        return MovimientoResponse.of(id, fecha, tipo, monto, concepto, nullToEmpty(categoria), nullToEmpty(bien),
+                cell(row, 7), cell(row, 8), nullToEmpty(notas), cell(row, 10), cell(row, 12));
+    }
+
     public MovimientoResponse attachComprobante(String id, String comprobanteUrl, String comprobanteNombre)
             throws IOException {
         List<List<Object>> rows = readRawRows();

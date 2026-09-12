@@ -1,23 +1,36 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { currency, formatFecha } from './format';
 import type { FiltroTipo, Movimiento } from './types';
 
 interface Props {
   movimientos: Movimiento[];
+  onOpenDetail: (movimiento: Movimiento) => void;
+  onEdit: (movimiento: Movimiento) => void;
+  onDelete: (movimiento: Movimiento) => void;
 }
 
-const currency = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 });
-const dateFormatter = new Intl.DateTimeFormat('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+const SWIPE_ACTIONS_WIDTH = 160;
+const SWIPE_OPEN_THRESHOLD = 50;
+const TAP_THRESHOLD = 8;
 
-function formatFecha(fecha: string): string {
-  const date = new Date(fecha);
-  return Number.isNaN(date.getTime()) ? fecha : dateFormatter.format(date);
+interface DragState {
+  id: string;
+  startX: number;
+  startY: number;
+  deltaX: number;
+  wasOpen: boolean;
+  locked: 'horizontal' | 'vertical' | null;
 }
 
-export default function MovimientosList({ movimientos }: Props) {
+export default function MovimientosList({ movimientos, onOpenDetail, onEdit, onDelete }: Props) {
   const [filtroTipo, setFiltroTipo] = useState<FiltroTipo>('TODOS');
   const [soloPendientes, setSoloPendientes] = useState(false);
   const [showFiltros, setShowFiltros] = useState(false);
   const filtrosRef = useRef<HTMLDivElement>(null);
+
+  const [openSwipeId, setOpenSwipeId] = useState<string | null>(null);
+  const dragRef = useRef<DragState | null>(null);
+  const [, forceRender] = useState(0);
 
   useEffect(() => {
     if (!showFiltros) return;
@@ -48,6 +61,74 @@ export default function MovimientosList({ movimientos }: Props) {
   }, [movimientos, filtroTipo, soloPendientes]);
 
   const pendientesCount = useMemo(() => movimientos.filter((m) => m.comprobantePendiente).length, [movimientos]);
+
+  function handlePointerDown(e: React.PointerEvent, id: string) {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    dragRef.current = {
+      id,
+      startX: e.clientX,
+      startY: e.clientY,
+      deltaX: 0,
+      wasOpen: openSwipeId === id,
+      locked: null,
+    };
+  }
+
+  function handlePointerMove(e: React.PointerEvent, id: string) {
+    const drag = dragRef.current;
+    if (!drag || drag.id !== id) return;
+
+    const dx = e.clientX - drag.startX;
+    const dy = e.clientY - drag.startY;
+
+    if (!drag.locked) {
+      if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return;
+      drag.locked = Math.abs(dx) > Math.abs(dy) ? 'horizontal' : 'vertical';
+    }
+    if (drag.locked !== 'horizontal') return;
+
+    drag.deltaX = dx;
+    forceRender((n) => n + 1);
+  }
+
+  function handlePointerUp(id: string, m: Movimiento) {
+    const drag = dragRef.current;
+    dragRef.current = null;
+    if (!drag || drag.id !== id) return;
+
+    if (drag.locked !== 'horizontal') {
+      forceRender((n) => n + 1);
+      return;
+    }
+
+    if (Math.abs(drag.deltaX) < TAP_THRESHOLD) {
+      if (openSwipeId) {
+        setOpenSwipeId(null);
+      } else {
+        onOpenDetail(m);
+      }
+      return;
+    }
+
+    if (drag.deltaX < -SWIPE_OPEN_THRESHOLD) {
+      setOpenSwipeId(id);
+    } else if (drag.deltaX > SWIPE_OPEN_THRESHOLD) {
+      setOpenSwipeId(null);
+    } else {
+      setOpenSwipeId(drag.wasOpen ? id : null);
+    }
+    forceRender((n) => n + 1);
+  }
+
+  function rowTransform(id: string): number {
+    const drag = dragRef.current;
+    const base = openSwipeId === id ? -SWIPE_ACTIONS_WIDTH : 0;
+    if (drag && drag.id === id && drag.locked === 'horizontal') {
+      const start = drag.wasOpen ? -SWIPE_ACTIONS_WIDTH : 0;
+      return Math.min(0, Math.max(-SWIPE_ACTIONS_WIDTH, start + drag.deltaX));
+    }
+    return base;
+  }
 
   return (
     <div>
@@ -93,37 +174,79 @@ export default function MovimientosList({ movimientos }: Props) {
       ) : (
         <div className="movement-list">
           {visibles.map((m) => (
-            <div key={m.id} className="card movement-card">
-              <div className="row-top">
-                <span className="concepto">
-                  {m.concepto}
-                  {m.comprobantePendiente && (
-                    <span className="badge-pending" title="Comprobante pendiente">
-                      !
-                    </span>
-                  )}
-                </span>
-                <span className="monto-col">
+            <div key={m.id} className="swipe-row">
+              <div className="swipe-actions">
+                <button
+                  type="button"
+                  className="swipe-action swipe-action--edit"
+                  onClick={() => {
+                    setOpenSwipeId(null);
+                    onEdit(m);
+                  }}
+                >
+                  Editar
+                </button>
+                <button
+                  type="button"
+                  className="swipe-action swipe-action--delete"
+                  onClick={() => {
+                    setOpenSwipeId(null);
+                    onDelete(m);
+                  }}
+                >
+                  Eliminar
+                </button>
+              </div>
+
+              <div
+                className={`card movement-card ${m.tipo === 'INGRESO' ? 'movement-card--ingreso' : 'movement-card--gasto'}`}
+                style={{
+                  transform: `translateX(${rowTransform(m.id)}px)`,
+                  transition: dragRef.current?.id === m.id ? 'none' : undefined,
+                }}
+                onPointerDown={(e) => handlePointerDown(e, m.id)}
+                onPointerMove={(e) => handlePointerMove(e, m.id)}
+                onPointerUp={() => handlePointerUp(m.id, m)}
+                onPointerCancel={() => {
+                  dragRef.current = null;
+                  forceRender((n) => n + 1);
+                }}
+              >
+                <div className="row-top">
+                  <span className="concepto">
+                    {m.concepto}
+                    {m.comprobantePendiente && (
+                      <span className="badge-pending" title="Comprobante pendiente">
+                        !
+                      </span>
+                    )}
+                  </span>
                   <span className={`monto ${m.tipo === 'INGRESO' ? 'ingreso' : ''}`}>
                     {m.tipo === 'INGRESO' ? '+' : '-'}
                     {currency.format(m.monto)}
                   </span>
-                  {m.bien && <span className="bien-label">{m.bien}</span>}
-                </span>
-              </div>
-              <div className="meta">
-                <span>{formatFecha(m.fecha)}</span>
-                {m.categoria && <span>· {m.categoria}</span>}
-              </div>
-              {m.notas && <div className="meta">{m.notas}</div>}
-
-              {!m.comprobantePendiente && (
-                <div className="meta">
-                  <a className="chip" href={m.comprobanteUrl} target="_blank" rel="noreferrer">
-                    Ver comprobante
-                  </a>
                 </div>
-              )}
+                <div className="meta">
+                  <span>{formatFecha(m.fecha)}</span>
+                  {m.bien && <span className="bien-label">· {m.bien}</span>}
+                  {m.categoria && <span>· {m.categoria}</span>}
+                </div>
+                {m.notas && <div className="meta">{m.notas}</div>}
+
+                {!m.comprobantePendiente && (
+                  <div className="meta">
+                    <a
+                      className="chip"
+                      href={m.comprobanteUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      Ver comprobante
+                    </a>
+                  </div>
+                )}
+              </div>
             </div>
           ))}
         </div>

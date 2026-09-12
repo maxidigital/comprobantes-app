@@ -3,6 +3,7 @@ import AccessGate from './AccessGate';
 import AttachReceiptDialog from './AttachReceiptDialog';
 import ConfirmDialog from './ConfirmDialog';
 import HeaderMenu from './HeaderMenu';
+import MovimientoDetail from './MovimientoDetail';
 import MovimientoForm from './MovimientoForm';
 import MovimientosList from './MovimientosList';
 import Totals from './Totals';
@@ -24,6 +25,8 @@ export default function App() {
   const [theme, setTheme] = useState<Theme>(getInitialTheme());
 
   const [showForm, setShowForm] = useState(false);
+  const [editTarget, setEditTarget] = useState<Movimiento | null>(null);
+  const [detailTarget, setDetailTarget] = useState<Movimiento | null>(null);
   const [showInformes, setShowInformes] = useState(false);
   const [confirmDeleteTarget, setConfirmDeleteTarget] = useState<Movimiento | null>(null);
   const [attachTarget, setAttachTarget] = useState<Movimiento | null>(null);
@@ -58,6 +61,8 @@ export default function App() {
   function handleUnauthorized() {
     clearAccessKey();
     setShowForm(false);
+    setEditTarget(null);
+    setDetailTarget(null);
     setConfirmDeleteTarget(null);
     setAttachTarget(null);
     setUnlocked(false);
@@ -101,23 +106,40 @@ export default function App() {
         {movimientos === null && !loadError && <p className="empty-state">Cargando…</p>}
         {loadError && <p className="error-text">{loadError}</p>}
 
-        {movimientos !== null && <MovimientosList movimientos={movimientos} />}
+        {movimientos !== null && (
+          <MovimientosList
+            movimientos={movimientos}
+            onOpenDetail={(m) => setDetailTarget(m)}
+            onEdit={(m) => setEditTarget(m)}
+            onDelete={(m) => setConfirmDeleteTarget(m)}
+          />
+        )}
       </main>
 
       <button className="fab" onClick={() => setShowForm(true)} aria-label="Nuevo movimiento">
         +
       </button>
 
-      {showForm && (
+      {(showForm || editTarget) && (
         <MovimientoForm
-          onClose={() => setShowForm(false)}
-          onCreated={(m) => {
-            setMovimientos((prev) => (prev ? [m, ...prev] : [m]));
+          editing={editTarget ?? undefined}
+          onClose={() => {
             setShowForm(false);
+            setEditTarget(null);
+          }}
+          onSaved={(m) => {
+            setMovimientos((prev) => {
+              if (!prev) return prev;
+              return editTarget ? prev.map((x) => (x.id === m.id ? m : x)) : [m, ...prev];
+            });
+            setShowForm(false);
+            setEditTarget(null);
           }}
           onUnauthorized={handleUnauthorized}
         />
       )}
+
+      {detailTarget && <MovimientoDetail movimiento={detailTarget} onClose={() => setDetailTarget(null)} />}
 
       {confirmDeleteTarget && (
         <ConfirmDialog

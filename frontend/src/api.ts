@@ -84,6 +84,20 @@ export async function crearMovimiento(data: NuevoMovimiento): Promise<Movimiento
   return response.json();
 }
 
+export async function editarMovimiento(id: string, data: NuevoMovimiento): Promise<Movimiento> {
+  const form = new FormData();
+  form.set('fecha', data.fecha);
+  form.set('tipo', data.tipo);
+  form.set('monto', String(data.monto));
+  form.set('concepto', data.concepto);
+  if (data.categoria) form.set('categoria', data.categoria);
+  if (data.bien) form.set('bien', data.bien);
+  if (data.notas) form.set('notas', data.notas);
+
+  const response = await request(`/movimientos/${id}`, { method: 'PUT', body: form });
+  return response.json();
+}
+
 export async function adjuntarComprobante(id: string, file: File): Promise<Movimiento> {
   const form = new FormData();
   form.set('comprobante', file);

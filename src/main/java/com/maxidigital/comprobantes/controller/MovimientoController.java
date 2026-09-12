@@ -51,6 +51,18 @@ public class MovimientoController {
                 comprobanteUrl, comprobanteNombre, notas, cargadoPor);
     }
 
+    @PutMapping(value = "/{id}", consumes = "multipart/form-data")
+    public MovimientoResponse actualizar(@PathVariable String id,
+                                          @RequestParam String fecha,
+                                          @RequestParam String tipo,
+                                          @RequestParam double monto,
+                                          @RequestParam String concepto,
+                                          @RequestParam(required = false) String categoria,
+                                          @RequestParam(required = false) String bien,
+                                          @RequestParam(required = false) String notas) throws IOException {
+        return movimientoSheetService.update(id, fecha, tipo, monto, concepto, categoria, bien, notas);
+    }
+
     @PutMapping(value = "/{id}/comprobante", consumes = "multipart/form-data")
     public MovimientoResponse adjuntarComprobante(@PathVariable String id,
                                                    @RequestParam MultipartFile comprobante) throws IOException {

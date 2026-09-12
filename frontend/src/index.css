@@ -130,6 +130,7 @@ input[type='file'] {
 .top-bar .subtitle {
   font-size: 0.8rem;
   color: var(--brand-primary);
+  text-shadow: 0 0 10px color-mix(in srgb, var(--brand-primary) 65%, transparent);
 }
 
 .content {
@@ -309,6 +310,13 @@ input[type='file'] {
   color: var(--status-pending);
 }
 
+.badge-pending--text {
+  margin-left: 0;
+  padding: 0.35rem 0.75rem;
+  height: auto;
+  font-size: 0.85rem;
+}
+
 .chip-toggle {
   border: 1px solid var(--border);
   background: var(--card-bg);
@@ -425,6 +433,29 @@ input[type='file'] {
   min-height: 44px;
 }
 
+.detail-value {
+  width: 100%;
+  margin: 0;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: var(--radius-sm);
+  padding: 0.65rem 0.75rem;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  overflow-wrap: anywhere;
+}
+
+.detail-value.monto {
+  font-weight: 700;
+}
+
+.detail-value.monto.ingreso {
+  color: var(--income);
+}
+
 .input:focus {
   outline: 2px solid color-mix(in srgb, var(--brand-primary) 55%, transparent);
   outline-offset: 1px;
@@ -445,6 +476,34 @@ input[type='file'] {
 
 .input-with-prefix {
   padding-left: 1.7rem;
+}
+
+.fecha-stepper {
+  display: flex;
+  align-items: stretch;
+  gap: 0.4rem;
+}
+
+.fecha-stepper .input {
+  flex: 1;
+  min-width: 0;
+  text-align: center;
+}
+
+.fecha-step-btn {
+  flex-shrink: 0;
+  width: 2.6rem;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  border-radius: var(--radius-sm);
+  font-size: 1.3rem;
+  line-height: 1;
+  transition: background var(--ease-hover);
+}
+
+.fecha-step-btn:hover {
+  background: var(--card-bg);
 }
 
 .error-text {
@@ -527,11 +586,59 @@ input[type='file'] {
   gap: 0.6rem;
 }
 
+.swipe-row {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-md);
+}
+
+.swipe-actions {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  width: 160px;
+}
+
+.swipe-action {
+  flex: 1;
+  border: none;
+  color: white;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.swipe-action--edit {
+  background: var(--brand-primary);
+}
+
+.swipe-action--delete {
+  background: var(--danger);
+}
+
 .movement-card {
   padding: 0.85rem 0.95rem;
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
+  position: relative;
+  background: var(--card-bg);
+  touch-action: pan-y;
+  user-select: none;
+  transition: transform 0.2s ease;
+}
+
+.movement-card--ingreso {
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--income) 45%, transparent),
+    0 0 20px 2px color-mix(in srgb, var(--income) 18%, transparent);
+}
+
+.movement-card--gasto {
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.55),
+    0 0 20px 2px rgba(0, 0, 0, 0.35);
 }
 
 .movement-card .row-top {
@@ -546,13 +653,6 @@ input[type='file'] {
   overflow-wrap: anywhere;
 }
 
-.monto-col {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  flex-shrink: 0;
-}
-
 .movement-card .monto {
   font-weight: 700;
   white-space: nowrap;
@@ -564,10 +664,7 @@ input[type='file'] {
 
 .bien-label {
   color: var(--brand-primary);
-  font-size: 0.78rem;
   font-weight: 600;
-  white-space: nowrap;
-  margin-top: 0.1rem;
 }
 
 .movement-card .meta {
@@ -577,13 +674,6 @@ input[type='file'] {
   flex-wrap: wrap;
   gap: 0.4rem;
   align-items: center;
-}
-
-.movement-card .actions {
-  display: flex;
-  gap: 0.4rem;
-  justify-content: flex-end;
-  margin-top: 0.15rem;
 }
 
 .empty-state {
@@ -685,6 +775,11 @@ input[type='file'] {
   margin-top: 1.25rem;
 }
 
+.dialog-actions button {
+  font-size: 1.05rem;
+  padding: 0.75rem 1.4rem;
+}
+
 .type-toggle {
   display: flex;
   gap: 0.5rem;
@@ -693,11 +788,12 @@ input[type='file'] {
 
 .type-toggle button {
   flex: 1;
-  padding: 0.7rem;
+  padding: 0.85rem;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   background: var(--card-bg);
   color: var(--text-muted);
+  font-size: 1.05rem;
   font-weight: 600;
   transition: all var(--ease-hover);
 }

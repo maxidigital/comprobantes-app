@@ -1,26 +1,31 @@
 import { FormEvent, useState } from 'react';
-import { ApiError, crearMovimiento } from './api';
+import { ApiError, crearMovimiento, editarMovimiento } from './api';
 import type { Movimiento, TipoMovimiento } from './types';
 import { useEscapeKey } from './useEscapeKey';
 
 interface Props {
   onClose: () => void;
-  onCreated: (movimiento: Movimiento) => void;
+  onSaved: (movimiento: Movimiento) => void;
   onUnauthorized: () => void;
+  editing?: Movimiento;
 }
-
-const CATEGORIAS: Record<TipoMovimiento, string[]> = {
-  GASTO: ['Impuestos', 'Servicios', 'Mantenimiento', 'Honorarios profesionales', 'Seguros', 'Gastos judiciales', 'Otro'],
-  INGRESO: ['Alquiler cobrado', 'Venta de bien', 'Dividendos/Rentas', 'Otro'],
-};
 
 const BIENES = ['General', 'Iriondo', 'San Martín', 'Oficina', '3 de febrero'];
 
 function todayDisplay(): string {
-  const d = new Date();
+  return dateToDisplay(new Date());
+}
+
+function dateToDisplay(d: Date): string {
   const dd = String(d.getDate()).padStart(2, '0');
   const mm = String(d.getMonth() + 1).padStart(2, '0');
   return `${dd}/${mm}/${d.getFullYear()}`;
+}
+
+/** yyyy-MM-dd (como llega de la API) -> dd/mm/yyyy, para precargar el form al editar. */
+function isoToDisplay(iso: string): string {
+  const [yyyy, mm, dd] = iso.split('-');
+  return yyyy && mm && dd ? `${dd}/${mm}/${yyyy}` : todayDisplay();
 }
 
 /** Inserta las "/" a medida que se tipean dígitos: 12092026 -> 12/09/2026 */
@@ -63,19 +68,25 @@ function fechaToIso(texto: string): string | null {
   return `${yyyy}-${mm}-${dd}`;
 }
 
-export default function MovimientoForm({ onClose, onCreated, onUnauthorized }: Props) {
+export default function MovimientoForm({ onClose, onSaved, onUnauthorized, editing }: Props) {
   useEscapeKey(onClose);
 
-  const [tipo, setTipo] = useState<TipoMovimiento>('GASTO');
-  const [fechaTexto, setFechaTexto] = useState(todayDisplay());
-  const [monto, setMonto] = useState('');
-  const [concepto, setConcepto] = useState('');
-  const [categoria, setCategoria] = useState('');
-  const [bien, setBien] = useState(BIENES[0]);
-  const [notas, setNotas] = useState('');
+  const [tipo, setTipo] = useState<TipoMovimiento>(editing?.tipo ?? 'GASTO');
+  const [fechaTexto, setFechaTexto] = useState(editing ? isoToDisplay(editing.fecha) : todayDisplay());
+  const [monto, setMonto] = useState(editing ? String(editing.monto) : '');
+  const [concepto, setConcepto] = useState(editing?.concepto ?? '');
+  const [bien, setBien] = useState(editing?.bien || BIENES[0]);
+  const [notas, setNotas] = useState(editing?.notas ?? '');
   const [comprobante, setComprobante] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  function shiftFecha(dias: number) {
+    const iso = fechaToIso(fechaTexto);
+    const base = iso ? new Date(`${iso}T00:00:00`) : new Date();
+    base.setDate(base.getDate() + dias);
+    setFechaTexto(dateToDisplay(base));
+  }
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -93,17 +104,18 @@ export default function MovimientoForm({ onClose, onCreated, onUnauthorized }: P
     setSubmitting(true);
     setError(null);
     try {
-      const creado = await crearMovimiento({
+      const datos = {
         fecha: fechaIso,
         tipo,
         monto: montoNumero,
         concepto: concepto.trim(),
-        categoria,
+        categoria: '',
         bien: bien.trim(),
         notas: notas.trim(),
         comprobante,
-      });
-      onCreated(creado);
+      };
+      const guardado = editing ? await editarMovimiento(editing.id, datos) : await crearMovimiento(datos);
+      onSaved(guardado);
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {
         onUnauthorized();
@@ -119,8 +131,8 @@ export default function MovimientoForm({ onClose, onCreated, onUnauthorized }: P
     <div className="dialog-overlay dialog-overlay--fullscreen" onClick={onClose}>
       <form className="dialog dialog--fullscreen" onClick={(e) => e.stopPropagation()} onSubmit={handleSubmit}>
         <div className="dialog-header">
-          <h2>Nuevo movimiento</h2>
-          <button type="button" className="btn-plain" onClick={onClose} aria-label="Cerrar">
+          <h2>{editing ? 'Editar movimiento' : 'Nuevo movimiento'}</h2>
+          <button type="button" className="btn-plain menu-icon-btn" onClick={onClose} aria-label="Cerrar">
             ✕
           </button>
         </div>
@@ -136,6 +148,33 @@ export default function MovimientoForm({ onClose, onCreated, onUnauthorized }: P
           <button type="button" className={tipo === 'GASTO' ? 'active-gasto' : ''} onClick={() => setTipo('GASTO')}>
             Gasto
           </button>
+        </div>
+
+        <div className="field">
+          <label htmlFor="fecha">Fecha</label>
+          <div className="fecha-stepper">
+            <button
+              type="button"
+              className="fecha-step-btn"
+              onClick={() => shiftFecha(-1)}
+              aria-label="Día anterior"
+            >
+              ‹
+            </button>
+            <input
+              id="fecha"
+              className="input"
+              type="text"
+              inputMode="numeric"
+              placeholder="dd/mm/aaaa"
+              maxLength={10}
+              value={fechaTexto}
+              onChange={(e) => setFechaTexto(formatFechaInput(e.target.value))}
+            />
+            <button type="button" className="fecha-step-btn" onClick={() => shiftFecha(1)} aria-label="Día siguiente">
+              ›
+            </button>
+          </div>
         </div>
 
         <div className="field">
@@ -178,50 +217,22 @@ export default function MovimientoForm({ onClose, onCreated, onUnauthorized }: P
         </div>
 
         <div className="field">
-          <label htmlFor="fecha">Fecha</label>
-          <input
-            id="fecha"
-            className="input"
-            type="text"
-            inputMode="numeric"
-            placeholder="dd/mm/aaaa"
-            maxLength={10}
-            value={fechaTexto}
-            onChange={(e) => setFechaTexto(formatFechaInput(e.target.value))}
-          />
-        </div>
-
-        <div className="field">
-          <label htmlFor="categoria">Categoría (opcional)</label>
-          <input
-            id="categoria"
-            className="input"
-            list="categorias-sugeridas"
-            value={categoria}
-            onChange={(e) => setCategoria(e.target.value)}
-          />
-          <datalist id="categorias-sugeridas">
-            {CATEGORIAS[tipo].map((c) => (
-              <option key={c} value={c} />
-            ))}
-          </datalist>
-        </div>
-
-        <div className="field">
           <label htmlFor="notas">Notas (opcional)</label>
           <textarea id="notas" className="input" value={notas} onChange={(e) => setNotas(e.target.value)} />
         </div>
 
-        <div className="field">
-          <label htmlFor="comprobante">Comprobante (foto o PDF, opcional)</label>
-          <input
-            id="comprobante"
-            className="input"
-            type="file"
-            accept="image/*,.pdf"
-            onChange={(e) => setComprobante(e.target.files?.[0] ?? null)}
-          />
-        </div>
+        {!editing && (
+          <div className="field">
+            <label htmlFor="comprobante">Comprobante (foto o PDF, opcional)</label>
+            <input
+              id="comprobante"
+              className="input"
+              type="file"
+              accept="image/*,.pdf"
+              onChange={(e) => setComprobante(e.target.files?.[0] ?? null)}
+            />
+          </div>
+        )}
 
         {error && <p className="error-text">{error}</p>}
 
