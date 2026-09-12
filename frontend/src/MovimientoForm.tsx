@@ -16,15 +16,58 @@ const CATEGORIAS: Record<TipoMovimiento, string[]> = {
 
 const BIENES = ['General', 'Iriondo', 'San Martín', 'Oficina', '3 de febrero'];
 
-function today(): string {
-  return new Date().toISOString().slice(0, 10);
+function todayDisplay(): string {
+  const d = new Date();
+  const dd = String(d.getDate()).padStart(2, '0');
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  return `${dd}/${mm}/${d.getFullYear()}`;
+}
+
+/** Inserta las "/" a medida que se tipean dígitos: 12092026 -> 12/09/2026 */
+function formatFechaInput(raw: string): string {
+  const digits = raw.replace(/\D/g, '').slice(0, 8);
+  if (digits.length > 4) return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
+  if (digits.length > 2) return `${digits.slice(0, 2)}/${digits.slice(2)}`;
+  return digits;
+}
+
+/**
+ * Acepta "1500,50", "1500.50", "1.500,50", "1,500.50" o "1500" — el último
+ * "," o "." que aparece se toma como separador decimal, el resto se
+ * descarta (separador de miles). Así no importa qué tecla de punto/coma
+ * muestre el teclado del celular.
+ */
+function parseMonto(raw: string): number {
+  const limpio = raw.trim().replace(/[^\d.,]/g, '');
+  if (!limpio) return NaN;
+
+  const ultimaComa = limpio.lastIndexOf(',');
+  const ultimoPunto = limpio.lastIndexOf('.');
+  const posSeparador = Math.max(ultimaComa, ultimoPunto);
+
+  if (posSeparador === -1) return Number(limpio);
+
+  const parteEntera = limpio.slice(0, posSeparador).replace(/[.,]/g, '');
+  const parteDecimal = limpio.slice(posSeparador + 1).replace(/[.,]/g, '');
+  return Number(`${parteEntera}.${parteDecimal}`);
+}
+
+/** dd/mm/yyyy -> yyyy-MM-dd (lo que espera la API), o null si está incompleta/inválida. */
+function fechaToIso(texto: string): string | null {
+  const match = texto.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (!match) return null;
+  const [, dd, mm, yyyy] = match;
+  const dia = Number(dd);
+  const mes = Number(mm);
+  if (mes < 1 || mes > 12 || dia < 1 || dia > 31) return null;
+  return `${yyyy}-${mm}-${dd}`;
 }
 
 export default function MovimientoForm({ onClose, onCreated, onUnauthorized }: Props) {
   useEscapeKey(onClose);
 
   const [tipo, setTipo] = useState<TipoMovimiento>('GASTO');
-  const [fecha, setFecha] = useState(today());
+  const [fechaTexto, setFechaTexto] = useState(todayDisplay());
   const [monto, setMonto] = useState('');
   const [concepto, setConcepto] = useState('');
   const [categoria, setCategoria] = useState('');
@@ -36,10 +79,12 @@ export default function MovimientoForm({ onClose, onCreated, onUnauthorized }: P
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    // Android en configuración regional Argentina usa coma como separador
-    // decimal — un <input type="number"> puro rechaza la coma. Se acepta
-    // como texto y se normaliza acá antes de convertir a número.
-    const montoNumero = Number(monto.trim().replace(',', '.'));
+    const montoNumero = parseMonto(monto);
+    const fechaIso = fechaToIso(fechaTexto);
+    if (!fechaIso) {
+      setError('Fecha inválida (dd/mm/aaaa)');
+      return;
+    }
     if (!concepto.trim() || !montoNumero || montoNumero <= 0) {
       setError('Completá el concepto y un monto válido');
       return;
@@ -49,7 +94,7 @@ export default function MovimientoForm({ onClose, onCreated, onUnauthorized }: P
     setError(null);
     try {
       const creado = await crearMovimiento({
-        fecha,
+        fecha: fechaIso,
         tipo,
         monto: montoNumero,
         concepto: concepto.trim(),
@@ -71,9 +116,14 @@ export default function MovimientoForm({ onClose, onCreated, onUnauthorized }: P
   }
 
   return (
-    <div className="dialog-overlay" onClick={onClose}>
-      <form className="dialog" onClick={(e) => e.stopPropagation()} onSubmit={handleSubmit}>
-        <h2>Nuevo movimiento</h2>
+    <div className="dialog-overlay dialog-overlay--fullscreen" onClick={onClose}>
+      <form className="dialog dialog--fullscreen" onClick={(e) => e.stopPropagation()} onSubmit={handleSubmit}>
+        <div className="dialog-header">
+          <h2>Nuevo movimiento</h2>
+          <button type="button" className="btn-plain" onClick={onClose} aria-label="Cerrar">
+            ✕
+          </button>
+        </div>
 
         <div className="type-toggle">
           <button
@@ -89,24 +139,6 @@ export default function MovimientoForm({ onClose, onCreated, onUnauthorized }: P
         </div>
 
         <div className="field">
-          <label htmlFor="fecha">Fecha</label>
-          <input id="fecha" className="input" type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} />
-        </div>
-
-        <div className="field">
-          <label htmlFor="monto">Monto</label>
-          <input
-            id="monto"
-            className="input"
-            type="text"
-            inputMode="decimal"
-            placeholder="0,00"
-            value={monto}
-            onChange={(e) => setMonto(e.target.value)}
-          />
-        </div>
-
-        <div className="field">
           <label htmlFor="concepto">Concepto</label>
           <input
             id="concepto"
@@ -115,6 +147,47 @@ export default function MovimientoForm({ onClose, onCreated, onUnauthorized }: P
             value={concepto}
             onChange={(e) => setConcepto(e.target.value)}
             placeholder="Ej: TGI 3er trimestre"
+          />
+        </div>
+
+        <div className="field">
+          <label htmlFor="bien">Bien relacionado</label>
+          <select id="bien" className="input" value={bien} onChange={(e) => setBien(e.target.value)}>
+            {BIENES.map((b) => (
+              <option key={b} value={b}>
+                {b}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="field">
+          <label htmlFor="monto">Monto</label>
+          <div className="input-prefix-wrap">
+            <span className="input-prefix">$</span>
+            <input
+              id="monto"
+              className="input input-with-prefix"
+              type="text"
+              inputMode="decimal"
+              placeholder="0,00"
+              value={monto}
+              onChange={(e) => setMonto(e.target.value)}
+            />
+          </div>
+        </div>
+
+        <div className="field">
+          <label htmlFor="fecha">Fecha</label>
+          <input
+            id="fecha"
+            className="input"
+            type="text"
+            inputMode="numeric"
+            placeholder="dd/mm/aaaa"
+            maxLength={10}
+            value={fechaTexto}
+            onChange={(e) => setFechaTexto(formatFechaInput(e.target.value))}
           />
         </div>
 
@@ -132,17 +205,6 @@ export default function MovimientoForm({ onClose, onCreated, onUnauthorized }: P
               <option key={c} value={c} />
             ))}
           </datalist>
-        </div>
-
-        <div className="field">
-          <label htmlFor="bien">Bien relacionado</label>
-          <select id="bien" className="input" value={bien} onChange={(e) => setBien(e.target.value)}>
-            {BIENES.map((b) => (
-              <option key={b} value={b}>
-                {b}
-              </option>
-            ))}
-          </select>
         </div>
 
         <div className="field">

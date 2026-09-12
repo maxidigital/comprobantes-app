@@ -99,19 +99,21 @@ export default function MovimientosList({ movimientos }: Props) {
                   {m.concepto}
                   {m.comprobantePendiente && (
                     <span className="badge-pending" title="Comprobante pendiente">
-                      🧾
+                      !
                     </span>
                   )}
                 </span>
-                <span className={`monto ${m.tipo === 'INGRESO' ? 'ingreso' : ''}`}>
-                  {m.tipo === 'INGRESO' ? '+' : '-'}
-                  {currency.format(m.monto)}
+                <span className="monto-col">
+                  <span className={`monto ${m.tipo === 'INGRESO' ? 'ingreso' : ''}`}>
+                    {m.tipo === 'INGRESO' ? '+' : '-'}
+                    {currency.format(m.monto)}
+                  </span>
+                  {m.bien && <span className="bien-label">{m.bien}</span>}
                 </span>
               </div>
               <div className="meta">
                 <span>{formatFecha(m.fecha)}</span>
                 {m.categoria && <span>· {m.categoria}</span>}
-                {m.bien && <span>· {m.bien}</span>}
               </div>
               {m.notas && <div className="meta">{m.notas}</div>}
 

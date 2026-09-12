@@ -9,6 +9,7 @@
   --brand-accent: #EC4899;
   --status-pending: #F5D90A;
   --danger: #EF4444;
+  --income: #22C55E;
 
   --radius-sm: 8px;
   --radius-md: 14px;
@@ -33,6 +34,7 @@
   --brand-accent: #A21CAF;
   --status-pending: #A16207;
   --danger: #DC2626;
+  --income: #15803D;
 
   color-scheme: light;
 }
@@ -100,15 +102,6 @@ input[type='file'] {
   box-sizing: border-box;
 }
 
-/* Algunos navegadores de Android ignoran width:100% en <input type=date> y
-   lo dibujan con su ancho intrínseco (más ancho que el contenedor). */
-input[type='date'] {
-  width: 100%;
-  min-width: 0;
-  max-width: 100%;
-  box-sizing: border-box;
-}
-
 /* ---------- Layout ---------- */
 
 .app-shell {
@@ -136,7 +129,7 @@ input[type='date'] {
 
 .top-bar .subtitle {
   font-size: 0.8rem;
-  color: var(--text-muted);
+  color: var(--brand-primary);
 }
 
 .content {
@@ -302,8 +295,18 @@ input[type='date'] {
   align-items: center;
   justify-content: center;
   margin-left: 0.4rem;
-  font-size: 0.85rem;
-  filter: drop-shadow(0 0 3px color-mix(in srgb, var(--status-pending) 70%, transparent));
+  vertical-align: middle;
+  min-width: 1.3rem;
+  height: 1.3rem;
+  padding: 0 0.35rem;
+  border-radius: var(--radius-pill);
+  font-size: 0.75rem;
+  font-weight: 700;
+  background: color-mix(in srgb, var(--status-pending) 16%, transparent);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--status-pending) 50%, transparent),
+    0 0 16px 2px color-mix(in srgb, var(--status-pending) 22%, transparent);
+  color: var(--status-pending);
 }
 
 .chip-toggle {
@@ -427,6 +430,23 @@ input[type='date'] {
   outline-offset: 1px;
 }
 
+.input-prefix-wrap {
+  position: relative;
+}
+
+.input-prefix {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.input-with-prefix {
+  padding-left: 1.7rem;
+}
+
 .error-text {
   color: var(--danger);
   font-size: 0.82rem;
@@ -461,7 +481,7 @@ input[type='date'] {
 }
 
 .totals .stat.ingreso .value {
-  color: var(--brand-primary);
+  color: var(--income);
 }
 
 .totals .stat.balance .value.negative {
@@ -526,13 +546,28 @@ input[type='date'] {
   overflow-wrap: anywhere;
 }
 
+.monto-col {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  flex-shrink: 0;
+}
+
 .movement-card .monto {
   font-weight: 700;
   white-space: nowrap;
 }
 
 .movement-card .monto.ingreso {
+  color: var(--income);
+}
+
+.bien-label {
   color: var(--brand-primary);
+  font-size: 0.78rem;
+  font-weight: 600;
+  white-space: nowrap;
+  margin-top: 0.1rem;
 }
 
 .movement-card .meta {
@@ -591,6 +626,36 @@ input[type='date'] {
   }
 }
 
+.dialog-overlay--fullscreen {
+  align-items: stretch;
+  justify-content: stretch;
+}
+
+.dialog--fullscreen {
+  max-width: none;
+  max-height: none;
+  height: 100dvh;
+  border-radius: 0;
+  padding: calc(1.25rem + env(safe-area-inset-top)) 1.25rem calc(1.25rem + env(safe-area-inset-bottom));
+}
+
+@media (min-width: 640px) {
+  .dialog--fullscreen {
+    border-radius: 0;
+  }
+}
+
+.dialog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.dialog-header h2 {
+  margin-bottom: 0;
+}
+
 @keyframes dialog-enter {
   from {
     opacity: 0;
@@ -638,9 +703,9 @@ input[type='date'] {
 }
 
 .type-toggle button.active-ingreso {
-  background: color-mix(in srgb, var(--brand-primary) 18%, var(--card-bg));
-  border-color: var(--brand-primary);
-  color: var(--brand-primary);
+  background: color-mix(in srgb, var(--income) 18%, var(--card-bg));
+  border-color: var(--income);
+  color: var(--income);
 }
 
 .type-toggle button.active-gasto {
