@@ -191,7 +191,7 @@ export default function MovimientoForm({ onClose, onSaved, onUnauthorized, editi
             type="text"
             value={concepto}
             onChange={(e) => setConcepto(e.target.value)}
-            placeholder="Ej: TGI 3er trimestre"
+            placeholder="Ej TGI o Expensas"
           />
           {fieldErrors.concepto && <p className="error-text">{fieldErrors.concepto}</p>}
         </div>
