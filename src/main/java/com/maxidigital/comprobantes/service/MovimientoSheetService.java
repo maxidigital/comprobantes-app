@@ -24,10 +24,10 @@ import java.util.UUID;
 @Service
 public class MovimientoSheetService {
 
-    private static final String RANGE_ALL = "A:L";
+    private static final String RANGE_ALL = "A:M";
     private static final List<Object> HEADER = List.of(
             "id", "fecha", "tipo", "monto", "concepto", "categoria", "bien",
-            "comprobanteUrl", "comprobanteNombre", "notas", "creadoEn", "estado");
+            "comprobanteUrl", "comprobanteNombre", "notas", "creadoEn", "estado", "cargadoPor");
     private static final String ESTADO_ACTIVO = "activo";
     private static final String ESTADO_ELIMINADO = "eliminado";
 
@@ -40,7 +40,8 @@ public class MovimientoSheetService {
     }
 
     public MovimientoResponse append(String fecha, String tipo, double monto, String concepto, String categoria,
-                                      String bien, String comprobanteUrl, String comprobanteNombre, String notas)
+                                      String bien, String comprobanteUrl, String comprobanteNombre, String notas,
+                                      String cargadoPor)
             throws IOException {
         ensureHeader();
 
@@ -51,7 +52,7 @@ public class MovimientoSheetService {
                 id, fecha, tipo, monto, concepto,
                 nullToEmpty(categoria), nullToEmpty(bien),
                 nullToEmpty(comprobanteUrl), nullToEmpty(comprobanteNombre),
-                nullToEmpty(notas), creadoEn, ESTADO_ACTIVO);
+                nullToEmpty(notas), creadoEn, ESTADO_ACTIVO, nullToEmpty(cargadoPor));
 
         ValueRange valueRange = new ValueRange().setValues(List.of(row));
         sheets.spreadsheets().values()
@@ -60,7 +61,8 @@ public class MovimientoSheetService {
                 .execute();
 
         return MovimientoResponse.of(id, fecha, tipo, monto, concepto, nullToEmpty(categoria), nullToEmpty(bien),
-                nullToEmpty(comprobanteUrl), nullToEmpty(comprobanteNombre), nullToEmpty(notas), creadoEn);
+                nullToEmpty(comprobanteUrl), nullToEmpty(comprobanteNombre), nullToEmpty(notas), creadoEn,
+                nullToEmpty(cargadoPor));
     }
 
     public List<MovimientoResponse> readAll() throws IOException {
@@ -75,7 +77,7 @@ public class MovimientoSheetService {
             result.add(MovimientoResponse.of(
                     cell(row, 0), cell(row, 1), cell(row, 2),
                     parseDouble(cell(row, 3)), cell(row, 4), cell(row, 5), cell(row, 6),
-                    cell(row, 7), cell(row, 8), cell(row, 9), cell(row, 10)));
+                    cell(row, 7), cell(row, 8), cell(row, 9), cell(row, 10), cell(row, 12)));
         }
 
         Collections.reverse(result);
@@ -100,7 +102,7 @@ public class MovimientoSheetService {
 
         return MovimientoResponse.of(cell(row, 0), cell(row, 1), cell(row, 2), parseDouble(cell(row, 3)),
                 cell(row, 4), cell(row, 5), cell(row, 6), comprobanteUrl, comprobanteNombre,
-                cell(row, 9), cell(row, 10));
+                cell(row, 9), cell(row, 10), cell(row, 12));
     }
 
     private int locateRowIndex(List<List<Object>> rows, String id) {
@@ -124,7 +126,7 @@ public class MovimientoSheetService {
         if (readRawRows().isEmpty()) {
             ValueRange header = new ValueRange().setValues(List.of(HEADER));
             sheets.spreadsheets().values()
-                    .update(spreadsheetId, "A1:L1", header)
+                    .update(spreadsheetId, "A1:M1", header)
                     .setValueInputOption("RAW")
                     .execute();
         }

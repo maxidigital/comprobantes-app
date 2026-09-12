@@ -5,7 +5,7 @@ import type { Movimiento, TipoMovimiento } from './types';
 interface Props {
   onClose: () => void;
   onCreated: (movimiento: Movimiento) => void;
-  onAdminKeyInvalid: () => void;
+  onUnauthorized: () => void;
 }
 
 const CATEGORIAS: Record<TipoMovimiento, string[]> = {
@@ -17,7 +17,7 @@ function today(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
-export default function MovimientoForm({ onClose, onCreated, onAdminKeyInvalid }: Props) {
+export default function MovimientoForm({ onClose, onCreated, onUnauthorized }: Props) {
   const [tipo, setTipo] = useState<TipoMovimiento>('GASTO');
   const [fecha, setFecha] = useState(today());
   const [monto, setMonto] = useState('');
@@ -53,7 +53,7 @@ export default function MovimientoForm({ onClose, onCreated, onAdminKeyInvalid }
       onCreated(creado);
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {
-        onAdminKeyInvalid();
+        onUnauthorized();
         return;
       }
       setError(err instanceof Error ? err.message : 'No se pudo guardar el movimiento');

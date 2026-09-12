@@ -14,7 +14,6 @@ export DRIVE_FOLDER_ID="$(python3 -c "import json; print(json.load(open('secrets
 export GOOGLE_OAUTH_CLIENT_ID="$(python3 -c "import json; print(json.load(open('secrets/oauth-client.json'))['client_id'])")"
 export GOOGLE_OAUTH_CLIENT_SECRET="$(python3 -c "import json; print(json.load(open('secrets/oauth-client.json'))['client_secret'])")"
 export GOOGLE_OAUTH_REFRESH_TOKEN="$(python3 -c "import json; print(json.load(open('secrets/oauth-tokens.json'))['refresh_token'])")"
-export APP_PASSWORD="${APP_PASSWORD:-dev-viewer}"
-export ADMIN_PASSWORD="${ADMIN_PASSWORD:-dev-admin}"
+export APP_PASSWORD="${APP_PASSWORD:-dev-password}"
 
-echo "Env vars de Google cargadas. APP_PASSWORD=$APP_PASSWORD ADMIN_PASSWORD=$ADMIN_PASSWORD"
+echo "Env vars de Google cargadas. APP_PASSWORD=$APP_PASSWORD"

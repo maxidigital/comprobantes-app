@@ -36,6 +36,7 @@ public class MovimientoController {
                                      @RequestParam(required = false) String categoria,
                                      @RequestParam(required = false) String bien,
                                      @RequestParam(required = false) String notas,
+                                     @RequestParam(required = false) String cargadoPor,
                                      @RequestParam(required = false) MultipartFile comprobante) throws IOException {
         String comprobanteUrl = null;
         String comprobanteNombre = null;
@@ -47,7 +48,7 @@ public class MovimientoController {
         }
 
         return movimientoSheetService.append(fecha, tipo, monto, concepto, categoria, bien,
-                comprobanteUrl, comprobanteNombre, notas);
+                comprobanteUrl, comprobanteNombre, notas, cargadoPor);
     }
 
     @PutMapping(value = "/{id}/comprobante", consumes = "multipart/form-data")

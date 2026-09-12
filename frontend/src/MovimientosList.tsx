@@ -3,7 +3,6 @@ import type { FiltroTipo, Movimiento } from './types';
 
 interface Props {
   movimientos: Movimiento[];
-  isAdmin: boolean;
   onRequestDelete: (movimiento: Movimiento) => void;
   onRequestAttach: (movimiento: Movimiento) => void;
 }
@@ -16,7 +15,7 @@ function formatFecha(fecha: string): string {
   return Number.isNaN(date.getTime()) ? fecha : dateFormatter.format(date);
 }
 
-export default function MovimientosList({ movimientos, isAdmin, onRequestDelete, onRequestAttach }: Props) {
+export default function MovimientosList({ movimientos, onRequestDelete, onRequestAttach }: Props) {
   const [filtroTipo, setFiltroTipo] = useState<FiltroTipo>('TODOS');
   const [soloPendientes, setSoloPendientes] = useState(false);
 
@@ -71,6 +70,7 @@ export default function MovimientosList({ movimientos, isAdmin, onRequestDelete,
                 <span>{formatFecha(m.fecha)}</span>
                 {m.categoria && <span>· {m.categoria}</span>}
                 {m.bien && <span>· {m.bien}</span>}
+                {m.cargadoPor && <span>· cargado por {m.cargadoPor}</span>}
               </div>
               {m.notas && <div className="meta">{m.notas}</div>}
 
@@ -84,18 +84,16 @@ export default function MovimientosList({ movimientos, isAdmin, onRequestDelete,
                 )}
               </div>
 
-              {isAdmin && (
-                <div className="actions">
-                  {m.comprobantePendiente && (
-                    <button type="button" className="btn-plain" onClick={() => onRequestAttach(m)}>
-                      Adjuntar comprobante
-                    </button>
-                  )}
-                  <button type="button" className="btn-plain" onClick={() => onRequestDelete(m)}>
-                    Eliminar
+              <div className="actions">
+                {m.comprobantePendiente && (
+                  <button type="button" className="btn-plain" onClick={() => onRequestAttach(m)}>
+                    Adjuntar comprobante
                   </button>
-                </div>
-              )}
+                )}
+                <button type="button" className="btn-plain" onClick={() => onRequestDelete(m)}>
+                  Eliminar
+                </button>
+              </div>
             </div>
           ))}
         </div>

@@ -1,7 +1,7 @@
 import type { Movimiento, NuevoMovimiento } from './types';
 
 const ACCESS_KEY_STORAGE = 'comprobantes.accessKey';
-const ADMIN_KEY_STORAGE = 'comprobantes.adminKey';
+const USER_NAME_STORAGE = 'comprobantes.userName';
 
 export class ApiError extends Error {
   constructor(
@@ -24,24 +24,16 @@ export function clearAccessKey() {
   localStorage.removeItem(ACCESS_KEY_STORAGE);
 }
 
-export function getAdminKey(): string | null {
-  return localStorage.getItem(ADMIN_KEY_STORAGE);
+export function getUserName(): string | null {
+  return localStorage.getItem(USER_NAME_STORAGE);
 }
 
-export function setAdminKey(key: string) {
-  localStorage.setItem(ADMIN_KEY_STORAGE, key);
+export function setUserName(name: string) {
+  localStorage.setItem(USER_NAME_STORAGE, name);
 }
 
-export function clearAdminKey() {
-  localStorage.removeItem(ADMIN_KEY_STORAGE);
-}
-
-export function isAdminUnlocked(): boolean {
-  return !!getAdminKey();
-}
-
-async function request(path: string, init: RequestInit = {}, useAdminKey = false): Promise<Response> {
-  const key = useAdminKey ? getAdminKey() : getAccessKey();
+async function request(path: string, init: RequestInit = {}): Promise<Response> {
+  const key = getAccessKey();
   const headers = new Headers(init.headers);
   if (key) {
     headers.set('X-Access-Key', key);
@@ -50,11 +42,7 @@ async function request(path: string, init: RequestInit = {}, useAdminKey = false
   const response = await fetch(`/api${path}`, { ...init, headers });
 
   if (response.status === 401) {
-    if (useAdminKey) {
-      clearAdminKey();
-    } else {
-      clearAccessKey();
-    }
+    clearAccessKey();
     const body = await response.json().catch(() => ({ error: 'Clave inválida' }));
     throw new ApiError(body.error ?? 'Clave inválida', 401);
   }
@@ -89,8 +77,10 @@ export async function crearMovimiento(data: NuevoMovimiento): Promise<Movimiento
   if (data.bien) form.set('bien', data.bien);
   if (data.notas) form.set('notas', data.notas);
   if (data.comprobante) form.set('comprobante', data.comprobante);
+  const userName = getUserName();
+  if (userName) form.set('cargadoPor', userName);
 
-  const response = await request('/movimientos', { method: 'POST', body: form }, true);
+  const response = await request('/movimientos', { method: 'POST', body: form });
   return response.json();
 }
 
@@ -98,10 +88,10 @@ export async function adjuntarComprobante(id: string, file: File): Promise<Movim
   const form = new FormData();
   form.set('comprobante', file);
 
-  const response = await request(`/movimientos/${id}/comprobante`, { method: 'PUT', body: form }, true);
+  const response = await request(`/movimientos/${id}/comprobante`, { method: 'PUT', body: form });
   return response.json();
 }
 
 export async function eliminarMovimiento(id: string): Promise<void> {
-  await request(`/movimientos/${id}`, { method: 'DELETE' }, true);
+  await request(`/movimientos/${id}`, { method: 'DELETE' });
 }

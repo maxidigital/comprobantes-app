@@ -38,28 +38,26 @@ puerto (mismo patrón que `underwater/apps/re.mind2`).
 
 ## Acceso (sin login de Google)
 
-No hay OAuth por usuario — dos contraseñas compartidas por variable de
-entorno, validadas por un interceptor (`security/AccessKeyInterceptor`) vía
-el header `X-Access-Key`:
+No hay OAuth por usuario ni niveles de admin/viewer — una única contraseña
+compartida (`APP_PASSWORD`), validada por un interceptor
+(`security/AccessKeyInterceptor`) vía el header `X-Access-Key`, protege por
+igual ver y editar/eliminar (GET/POST/PUT/DELETE). Cualquiera que la tenga
+puede hacer cualquier cosa en la app — decisión consciente para la v1, no un
+descuido: se prefirió simplicidad sobre roles diferenciados.
 
-- `APP_PASSWORD` — la conocen todos los herederos. Alcanza para ver el
-  listado (`GET /api/movimientos`).
-- `ADMIN_PASSWORD` — la conoce solo el administrador de la sucesión.
-  Necesaria para cargar, eliminar o adjuntar comprobantes (POST/PUT/DELETE).
-
-El frontend guarda ambas claves en `localStorage` tras el primer uso exitoso
-(`AccessGate` para la de acceso, `AdminUnlockDialog` para la de admin). No
-hay una forma de verificar la clave de admin sin efectos secundarios — si es
-incorrecta, se entera recién al intentar guardar/eliminar/adjuntar, y ahí se
-le vuelve a pedir.
+El gate inicial (`AccessGate`) pide, además de la contraseña, el **nombre**
+de quien entra — se guarda en `localStorage` (`comprobantes.userName`, sin
+validar contra nada) y se manda como `cargadoPor` en cada movimiento nuevo,
+solo para que quede registro de quién cargó qué. No es un mecanismo de
+seguridad, es puramente identificación/transparencia entre herederos.
 
 ## Estructura de datos
 
-Una fila por movimiento en la planilla, columnas `A:L`:
+Una fila por movimiento en la planilla, columnas `A:M`:
 
 ```
 id | fecha | tipo (INGRESO/GASTO) | monto | concepto | categoria | bien |
-comprobanteUrl | comprobanteNombre | notas | creadoEn | estado
+comprobanteUrl | comprobanteNombre | notas | creadoEn | estado | cargadoPor
 ```
 
 - Baja lógica: eliminar pone `estado = eliminado` en vez de borrar la fila
@@ -116,8 +114,7 @@ solo permite desde ahí (creación de credenciales OAuth):
 | `DRIVE_FOLDER_ID` | Id en `secrets/drive-folder.json` |
 | `GOOGLE_OAUTH_CLIENT_ID` / `GOOGLE_OAUTH_CLIENT_SECRET` | De `secrets/oauth-client.json` |
 | `GOOGLE_OAUTH_REFRESH_TOKEN` | De `secrets/oauth-tokens.json` (`refresh_token`) — usado solo para subir comprobantes a Drive |
-| `APP_PASSWORD` | Contraseña de acceso (todos los herederos) |
-| `ADMIN_PASSWORD` | Contraseña de administrador (solo quien carga movimientos) |
+| `APP_PASSWORD` | Contraseña única compartida (ver y editar) |
 | `CORS_ALLOWED_ORIGINS` | Origins permitidos en dev (default `http://localhost:5173`) |
 
 Todo lo que está en `secrets/` es gitignored — nunca se sube al repo. Para
@@ -162,8 +159,7 @@ frontend/src/
 ├── main.tsx, App.tsx                # App.tsx: gate de acceso -> listado
 ├── api.ts                           # fetch centralizado + manejo de X-Access-Key
 ├── types.ts
-├── AccessGate.tsx                   # pide APP_PASSWORD
-├── AdminUnlockDialog.tsx            # pide ADMIN_PASSWORD
+├── AccessGate.tsx                   # pide nombre + APP_PASSWORD
 ├── Totals.tsx                       # ingresos / gastos / balance
 ├── MovimientosList.tsx              # listado + filtros (tipo, comprobante pendiente)
 ├── MovimientoForm.tsx               # alta de movimiento (comprobante opcional)

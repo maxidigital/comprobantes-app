@@ -1,18 +1,19 @@
 import { FormEvent, useState } from 'react';
-import { setAccessKey, tryAccessKey } from './api';
+import { setAccessKey, setUserName, tryAccessKey } from './api';
 
 interface Props {
   onUnlock: () => void;
 }
 
 export default function AccessGate({ onUnlock }: Props) {
+  const [name, setName] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    if (!password.trim()) return;
+    if (!name.trim() || !password.trim()) return;
 
     setLoading(true);
     setError(null);
@@ -20,6 +21,7 @@ export default function AccessGate({ onUnlock }: Props) {
       const ok = await tryAccessKey(password.trim());
       if (ok) {
         setAccessKey(password.trim());
+        setUserName(name.trim());
         onUnlock();
       } else {
         setError('Contraseña incorrecta');
@@ -37,12 +39,23 @@ export default function AccessGate({ onUnlock }: Props) {
         <h1>Comprobantes</h1>
         <p>Administración de la sucesión</p>
         <div className="field">
+          <label htmlFor="user-name">Tu nombre</label>
+          <input
+            id="user-name"
+            className="input"
+            type="text"
+            autoFocus
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            autoComplete="name"
+          />
+        </div>
+        <div className="field">
           <label htmlFor="access-password">Contraseña de acceso</label>
           <input
             id="access-password"
             className="input"
             type="password"
-            autoFocus
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             autoComplete="current-password"

@@ -12,6 +12,7 @@ export interface Movimiento {
   comprobanteNombre: string;
   notas: string;
   creadoEn: string;
+  cargadoPor: string;
   comprobantePendiente: boolean;
 }
 

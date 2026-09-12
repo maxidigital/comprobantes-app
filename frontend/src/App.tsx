@@ -1,12 +1,11 @@
 import { useEffect, useState } from 'react';
 import AccessGate from './AccessGate';
-import AdminUnlockDialog from './AdminUnlockDialog';
 import AttachReceiptDialog from './AttachReceiptDialog';
 import ConfirmDialog from './ConfirmDialog';
 import MovimientoForm from './MovimientoForm';
 import MovimientosList from './MovimientosList';
 import Totals from './Totals';
-import { ApiError, clearAccessKey, eliminarMovimiento, getAccessKey, isAdminUnlocked, listMovimientos } from './api';
+import { ApiError, clearAccessKey, eliminarMovimiento, getAccessKey, listMovimientos } from './api';
 import type { Movimiento } from './types';
 
 type Theme = 'light' | 'dark';
@@ -20,12 +19,9 @@ export default function App() {
   const [unlocked, setUnlocked] = useState(!!getAccessKey());
   const [movimientos, setMovimientos] = useState<Movimiento[] | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [isAdmin, setIsAdmin] = useState(isAdminUnlocked());
   const [theme, setTheme] = useState<Theme>(getInitialTheme());
 
   const [showForm, setShowForm] = useState(false);
-  const [showAdminUnlock, setShowAdminUnlock] = useState(false);
-  const [adminUnlockError, setAdminUnlockError] = useState<string | null>(null);
   const [confirmDeleteTarget, setConfirmDeleteTarget] = useState<Movimiento | null>(null);
   const [attachTarget, setAttachTarget] = useState<Movimiento | null>(null);
 
@@ -47,30 +43,19 @@ export default function App() {
       setMovimientos(data);
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {
-        setUnlocked(false);
-        clearAccessKey();
+        handleUnauthorized();
         return;
       }
       setLoadError(err instanceof Error ? err.message : 'No se pudo cargar el listado');
     }
   }
 
-  function handleAdminKeyInvalid() {
-    setIsAdmin(false);
+  function handleUnauthorized() {
+    clearAccessKey();
     setShowForm(false);
     setConfirmDeleteTarget(null);
     setAttachTarget(null);
-    setAdminUnlockError('Clave de administrador incorrecta');
-    setShowAdminUnlock(true);
-  }
-
-  function handleFabClick() {
-    if (isAdmin) {
-      setShowForm(true);
-    } else {
-      setAdminUnlockError(null);
-      setShowAdminUnlock(true);
-    }
+    setUnlocked(false);
   }
 
   async function handleConfirmDelete() {
@@ -81,7 +66,7 @@ export default function App() {
       setConfirmDeleteTarget(null);
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {
-        handleAdminKeyInvalid();
+        handleUnauthorized();
         return;
       }
       setLoadError(err instanceof Error ? err.message : 'No se pudo eliminar el movimiento');
@@ -108,14 +93,7 @@ export default function App() {
           >
             {theme === 'dark' ? '☀️' : '🌙'}
           </button>
-          <button
-            type="button"
-            className="btn-plain"
-            onClick={() => {
-              clearAccessKey();
-              setUnlocked(false);
-            }}
-          >
+          <button type="button" className="btn-plain" onClick={handleUnauthorized}>
             Salir
           </button>
         </div>
@@ -130,7 +108,6 @@ export default function App() {
             <Totals movimientos={movimientos} />
             <MovimientosList
               movimientos={movimientos}
-              isAdmin={isAdmin}
               onRequestDelete={(m) => setConfirmDeleteTarget(m)}
               onRequestAttach={(m) => setAttachTarget(m)}
             />
@@ -138,7 +115,7 @@ export default function App() {
         )}
       </main>
 
-      <button className="fab" onClick={handleFabClick} aria-label="Nuevo movimiento">
+      <button className="fab" onClick={() => setShowForm(true)} aria-label="Nuevo movimiento">
         +
       </button>
 
@@ -149,20 +126,7 @@ export default function App() {
             setMovimientos((prev) => (prev ? [m, ...prev] : [m]));
             setShowForm(false);
           }}
-          onAdminKeyInvalid={handleAdminKeyInvalid}
-        />
-      )}
-
-      {showAdminUnlock && (
-        <AdminUnlockDialog
-          errorMessage={adminUnlockError}
-          onClose={() => setShowAdminUnlock(false)}
-          onUnlocked={() => {
-            setIsAdmin(true);
-            setShowAdminUnlock(false);
-            setAdminUnlockError(null);
-            setShowForm(true);
-          }}
+          onUnauthorized={handleUnauthorized}
         />
       )}
 
@@ -184,7 +148,7 @@ export default function App() {
             setMovimientos((prev) => (prev ? prev.map((m) => (m.id === actualizado.id ? actualizado : m)) : prev));
             setAttachTarget(null);
           }}
-          onAdminKeyInvalid={handleAdminKeyInvalid}
+          onUnauthorized={handleUnauthorized}
         />
       )}
     </div>

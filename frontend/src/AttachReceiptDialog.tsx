@@ -6,10 +6,10 @@ interface Props {
   movimiento: Movimiento;
   onClose: () => void;
   onAttached: (movimiento: Movimiento) => void;
-  onAdminKeyInvalid: () => void;
+  onUnauthorized: () => void;
 }
 
-export default function AttachReceiptDialog({ movimiento, onClose, onAttached, onAdminKeyInvalid }: Props) {
+export default function AttachReceiptDialog({ movimiento, onClose, onAttached, onUnauthorized }: Props) {
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -28,7 +28,7 @@ export default function AttachReceiptDialog({ movimiento, onClose, onAttached, o
       onAttached(actualizado);
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {
-        onAdminKeyInvalid();
+        onUnauthorized();
         return;
       }
       setError(err instanceof Error ? err.message : 'No se pudo subir el comprobante');
