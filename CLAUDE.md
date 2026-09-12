@@ -16,9 +16,21 @@ análisis para escritorio queda para más adelante.
 frontend/ (React 18 + Vite + TS, CSS puro)
         ↓ fetch /api/**
   Spring Boot (Java 17)
-        ↓ Sheets API / Drive API (cuenta de servicio)
-  Google Sheet compartido  +  carpeta de Google Drive
+        ├── Sheets API (cuenta de servicio) → Google Sheet compartido
+        └── Drive API (OAuth, ver abajo)    → carpeta de Google Drive
 ```
+
+**Por qué Sheets y Drive usan credenciales distintas** (no es capricho, es una
+limitación real de Google descubierta al implementar esto): una cuenta de
+servicio puede editar sin problema una planilla que ya existe (por eso Sheets
+funciona con ella), pero **no puede ser dueña de archivos nuevos** en un
+Drive personal — Google responde `storageQuotaExceeded` ("Service Accounts
+do not have storage quota... use OAuth delegation instead"). Los Shared
+Drives resuelven esto pero requieren Google Workspace de pago, que esta
+cuenta (Gmail personal) no tiene. La solución: los uploads de comprobantes
+usan un token OAuth de una cuenta real (obtenido una única vez), scope
+`drive.file` — el backend nunca vuelve a pedir login, solo renueva el token
+en segundo plano con el refresh token guardado.
 
 En producción, el Dockerfile compila el frontend y copia `frontend/dist` a
 `src/main/resources/static`, así el jar sirve la SPA y la API en el mismo
@@ -58,32 +70,61 @@ comprobanteUrl | comprobanteNombre | notas | creadoEn | estado
   (`comprobantePendiente` en la respuesta) y permite adjuntarlo después con
   `PUT /api/movimientos/{id}/comprobante`.
 
-## Puesta en marcha (pasos manuales en Google Cloud)
+## Puesta en marcha en Google Cloud (ya hecho una vez, documentado por si hay que rehacerlo)
 
-Esto no se puede automatizar desde acá — son pasos en la consola de Google
-que solo el dueño de la cuenta puede hacer:
+Proyecto usado: **`comprobantes-app-508410`** (cuenta `bottazzi.100@gmail.com`).
+La mayor parte se hizo por `gcloud` CLI (instalado sin sudo en
+`~/google-cloud-sdk`), sin tocar la consola web, salvo lo que Google
+solo permite desde ahí (creación de credenciales OAuth):
 
-1. Crear (o reusar) un proyecto en [Google Cloud Console](https://console.cloud.google.com/).
-2. Habilitar la **Google Sheets API** y la **Google Drive API** para ese proyecto.
-3. Crear una **cuenta de servicio** (IAM & Admin → Service Accounts), y
-   generar una clave en formato JSON.
-4. Crear manualmente:
-   - Una planilla de Google Sheets vacía para los movimientos.
-   - Una carpeta en Google Drive para los comprobantes.
-5. Compartir **ambas** (planilla y carpeta) como Editor con el email de la
-   cuenta de servicio (`...@...iam.gserviceaccount.com`, está en el JSON).
-   Si además los herederos van a abrir los comprobantes directamente desde
-   Drive, compartir la carpeta también con sus emails.
-6. Configurar las variables de entorno del backend:
+1. **APIs habilitadas**: `gcloud services enable sheets.googleapis.com drive.googleapis.com`
+2. **Cuenta de servicio** (para Sheets): `gcloud iam service-accounts create comprobantes-app`
+   + `gcloud iam service-accounts keys create` → JSON guardado en
+   `secrets/service-account.json` (gitignored, nunca se commitea).
+3. **Planilla y carpeta**: creadas por API con el token del usuario
+   (`gcloud auth print-access-token` con `--enable-gdrive-access`), y la
+   planilla compartida como Editor con el email de la cuenta de servicio.
+4. **Cliente OAuth para Drive** (esto sí es manual, consola → APIs y
+   servicios → Credenciales → "ID de cliente de OAuth" → tipo **App de
+   escritorio**). Requiere antes configurar la pantalla de consentimiento
+   (Externo) y, en la pestaña **Acceso a datos**, agregar el scope
+   `https://www.googleapis.com/auth/drive.file` a mano si no aparece en el
+   buscador.
+5. **Login único** con `scripts/oauth_exchange.py` — levanta un servidor
+   local en `127.0.0.1:8765` (⚠️ la URI de redirección de Google para
+   clientes "App de escritorio" tiene que ser `127.0.0.1`, `localhost` da
+   error 400), abre el navegador, y al volver intercambia el código por un
+   `refresh_token` (guardado en `secrets/oauth-tokens.json`) — y de paso crea
+   la carpeta de Drive para los comprobantes (`secrets/drive-folder.json`),
+   porque con scope `drive.file` la app solo puede escribir en carpetas que
+   ella misma creó, no en una preexistente.
+   - **Importante**: la pantalla de consentimiento quedó en estado
+     **"Testing"** (no se pudo publicar a producción — la consola pedía
+     completar "Branding" y el botón de publicar seguía sin habilitarse
+     tras varios intentos). En Testing, el refresh token **vence a los 7
+     días**. Cuando deje de funcionar la subida de comprobantes, hay que
+     volver a agregar la cuenta como test user si se sacó, y correr de
+     nuevo `python3 scripts/oauth_exchange.py` para renovarlo. Pendiente:
+     resolver el publish a producción con más calma para que esto no haga
+     falta nunca más.
+6. Configurar las variables de entorno del backend (Railway):
 
 | Variable | Descripción |
 |---|---|
-| `GOOGLE_SERVICE_ACCOUNT_JSON` | Contenido completo del JSON de la cuenta de servicio (no un path — pensado para Railway) |
-| `SPREADSHEET_ID` | Id de la planilla (de su URL) |
-| `DRIVE_FOLDER_ID` | Id de la carpeta de Drive (de su URL) |
+| `GOOGLE_SERVICE_ACCOUNT_JSON` | Contenido completo del JSON de la cuenta de servicio (`secrets/service-account.json`) — usado solo para Sheets |
+| `SPREADSHEET_ID` | `17rHhCzE3bieXTPWBnwuP2n6YOZnxrkR3umj_kTLlo5A` |
+| `DRIVE_FOLDER_ID` | Id en `secrets/drive-folder.json` |
+| `GOOGLE_OAUTH_CLIENT_ID` / `GOOGLE_OAUTH_CLIENT_SECRET` | De `secrets/oauth-client.json` |
+| `GOOGLE_OAUTH_REFRESH_TOKEN` | De `secrets/oauth-tokens.json` (`refresh_token`) — usado solo para subir comprobantes a Drive |
 | `APP_PASSWORD` | Contraseña de acceso (todos los herederos) |
 | `ADMIN_PASSWORD` | Contraseña de administrador (solo quien carga movimientos) |
 | `CORS_ALLOWED_ORIGINS` | Origins permitidos en dev (default `http://localhost:5173`) |
+
+Todo lo que está en `secrets/` es gitignored — nunca se sube al repo. Para
+desarrollo local, `source scripts/dev-env.sh` carga estas env vars leyendo
+esos archivos (necesita tener `secrets/service-account.json`,
+`secrets/oauth-client.json`, `secrets/oauth-tokens.json` y
+`secrets/drive-folder.json` ya generados como se explicó arriba).
 
 ## Desarrollo local
 
@@ -106,7 +147,7 @@ src/main/java/com/maxidigital/comprobantes/
 ├── ComprobantesApplication.java
 ├── config/
 │   ├── WebConfig.java               # CORS + registro del interceptor de acceso
-│   └── GoogleClientsConfig.java     # Beans Sheets/Drive desde GOOGLE_SERVICE_ACCOUNT_JSON
+│   └── GoogleClientsConfig.java     # Bean Sheets (cuenta de servicio) + Bean Drive (OAuth refresh token)
 ├── security/AccessKeyInterceptor.java
 ├── controller/
 │   ├── MovimientoController.java    # GET/POST /api/movimientos, DELETE .../{id}, PUT .../{id}/comprobante
@@ -134,6 +175,8 @@ frontend/src/
 
 ## Pendiente / próximas versiones
 
+- **Publicar la app OAuth a producción** para que el refresh token no venza
+  a los 7 días (ver nota en "Puesta en marcha"). Mientras tanto, renovarlo a
+  mano con `scripts/oauth_exchange.py` cuando falle una subida.
 - Panel de análisis para escritorio (gráficos, totales por categoría/bien y por período).
 - Íconos PWA reales — los actuales (`frontend/public/icons/`) son placeholders generados, no arte final.
-- Eventual login de Google (OAuth) si en algún momento se necesita saber quién cargó cada movimiento.

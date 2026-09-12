@@ -16,3 +16,4 @@ frontend/.vite/
 .env
 *.env.local
 service-account*.json
+secrets/
