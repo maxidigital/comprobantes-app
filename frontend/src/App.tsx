@@ -5,6 +5,7 @@ import HeaderMenu from './HeaderMenu';
 import MovimientoDetail from './MovimientoDetail';
 import MovimientoForm from './MovimientoForm';
 import MovimientosList from './MovimientosList';
+import ReceiptViewerDialog from './ReceiptViewerDialog';
 import Totals from './Totals';
 import { ApiError, clearAccessKey, eliminarMovimiento, getAccessKey, listMovimientos } from './api';
 import type { Movimiento } from './types';
@@ -27,6 +28,7 @@ export default function App() {
   const [showForm, setShowForm] = useState(false);
   const [editTarget, setEditTarget] = useState<Movimiento | null>(null);
   const [detailTarget, setDetailTarget] = useState<Movimiento | null>(null);
+  const [viewingReceiptId, setViewingReceiptId] = useState<string | null>(null);
   const [showInformes, setShowInformes] = useState(false);
   const [confirmDeleteTarget, setConfirmDeleteTarget] = useState<Movimiento | null>(null);
 
@@ -63,6 +65,7 @@ export default function App() {
     setShowForm(false);
     setEditTarget(null);
     setDetailTarget(null);
+    setViewingReceiptId(null);
     setConfirmDeleteTarget(null);
     setUnlocked(false);
   }
@@ -139,7 +142,21 @@ export default function App() {
         />
       )}
 
-      {detailTarget && <MovimientoDetail movimiento={detailTarget} onClose={() => setDetailTarget(null)} />}
+      {detailTarget && (
+        <MovimientoDetail
+          movimiento={detailTarget}
+          onClose={() => setDetailTarget(null)}
+          onVerComprobante={() => setViewingReceiptId(detailTarget.id)}
+        />
+      )}
+
+      {viewingReceiptId && (
+        <ReceiptViewerDialog
+          movimientoId={viewingReceiptId}
+          onClose={() => setViewingReceiptId(null)}
+          onUnauthorized={handleUnauthorized}
+        />
+      )}
 
       {confirmDeleteTarget && (
         <ConfirmDialog

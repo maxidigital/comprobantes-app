@@ -133,12 +133,14 @@ export async function borrarComprobante(id: string): Promise<Movimiento> {
   return response.json();
 }
 
-/** Link directo al archivo del comprobante (lo sirve el propio backend, sin
- * pasar por el visor de Drive) — incluye la clave por query param porque es
- * un <a href> que el navegador navega directo, sin poder mandar el header. */
-export function comprobanteArchivoUrl(id: string): string {
-  const key = getAccessKey() ?? '';
-  return `/api/movimientos/${id}/comprobante/archivo?key=${encodeURIComponent(key)}`;
+/** Trae el archivo del comprobante como blob (con el header de auth, no por
+ * query param) para mostrarlo dentro de un visor propio de la app — así no
+ * hace falta navegar afuera (una PWA instalada no tiene botón "atrás"). */
+export async function fetchComprobanteArchivo(id: string): Promise<{ blob: Blob; contentType: string }> {
+  const response = await request(`/movimientos/${id}/comprobante/archivo`);
+  const contentType = response.headers.get('Content-Type') ?? 'application/octet-stream';
+  const blob = await response.blob();
+  return { blob, contentType };
 }
 
 export async function eliminarMovimiento(id: string): Promise<void> {

@@ -37,32 +37,37 @@ function formatFechaInput(raw: string): string {
 }
 
 /**
- * Acepta "1500,50", "1500.50", "1.500,50", "1,500.50", "150.000", "150,000"
- * o "1500" — el último "," o "." que aparece se toma como separador
- * decimal, EXCEPTO si después de él hay exactamente 3 dígitos: nadie usa 3
- * decimales para pesos, así que en ese caso es casi seguro un separador de
- * miles ("150.000" o "150,000" = 150 mil, no 150) y se descarta junto con
- * el resto. Así no importa qué tecla de punto/coma muestre el teclado del
- * celular, ni si alguien tipea un monto grande con separador de miles.
+ * Sanitiza el campo mientras se tipea: solo dígitos y, como mucho, UN
+ * separador decimal (el primer "," o "." que aparece — cualquier otro
+ * separador que venga después, sea coma o punto, se ignora). Así nunca
+ * pueden convivir coma y punto en el mismo valor, no hace falta adivinar si
+ * es separador de miles o decimal, y no importa qué tecla muestre el
+ * teclado numérico del celular.
  */
-function parseMonto(raw: string): number {
-  const limpio = raw.trim().replace(/[^\d.,]/g, '');
-  if (!limpio) return NaN;
+function formatMontoInput(raw: string): string {
+  let parteEntera = '';
+  let parteDecimal = '';
+  let vioSeparador = false;
 
-  const ultimaComa = limpio.lastIndexOf(',');
-  const ultimoPunto = limpio.lastIndexOf('.');
-  const posSeparador = Math.max(ultimaComa, ultimoPunto);
-
-  if (posSeparador === -1) return Number(limpio);
-
-  const parteEntera = limpio.slice(0, posSeparador).replace(/[.,]/g, '');
-  const parteDecimal = limpio.slice(posSeparador + 1).replace(/[.,]/g, '');
-
-  if (parteDecimal.length === 3) {
-    return Number(parteEntera + parteDecimal);
+  for (const ch of raw) {
+    if (ch >= '0' && ch <= '9') {
+      if (vioSeparador) {
+        if (parteDecimal.length < 2) parteDecimal += ch;
+      } else {
+        parteEntera += ch;
+      }
+    } else if ((ch === ',' || ch === '.') && !vioSeparador) {
+      vioSeparador = true;
+    }
   }
 
-  return Number(parteDecimal ? `${parteEntera}.${parteDecimal}` : parteEntera);
+  return vioSeparador ? `${parteEntera}.${parteDecimal}` : parteEntera;
+}
+
+/** El campo ya llega saneado por formatMontoInput, así que solo hace falta convertirlo. */
+function parseMonto(raw: string): number {
+  const limpio = raw.trim();
+  return limpio ? Number(limpio) : NaN;
 }
 
 /** dd/mm/yyyy -> yyyy-MM-dd (lo que espera la API), o null si está incompleta/inválida. */
@@ -251,9 +256,9 @@ export default function MovimientoForm({ onClose, onSaved, onUnauthorized, editi
               className="input input-with-prefix"
               type="text"
               inputMode="decimal"
-              placeholder="0,00"
+              placeholder="0.00"
               value={monto}
-              onChange={(e) => setMonto(e.target.value)}
+              onChange={(e) => setMonto(formatMontoInput(e.target.value))}
             />
           </div>
           {fieldErrors.monto && <p className="error-text">{fieldErrors.monto}</p>}

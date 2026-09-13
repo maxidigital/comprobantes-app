@@ -830,6 +830,34 @@ input[type='file'] {
   color: var(--expense);
 }
 
+/* ---------- Receipt viewer ---------- */
+
+.receipt-viewer-scroll {
+  display: flex;
+  flex-direction: column;
+}
+
+.receipt-viewer-body {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+}
+
+.receipt-viewer-image {
+  max-width: 100%;
+  max-height: calc(100dvh - 10rem);
+  object-fit: contain;
+  border-radius: var(--radius-md);
+}
+
+.receipt-viewer-pdf {
+  width: 100%;
+  height: calc(100dvh - 10rem);
+  border: none;
+}
+
 textarea.input {
   min-height: 72px;
   resize: vertical;
