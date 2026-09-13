@@ -37,10 +37,13 @@ function formatFechaInput(raw: string): string {
 }
 
 /**
- * Acepta "1500,50", "1500.50", "1.500,50", "1,500.50" o "1500" — el último
- * "," o "." que aparece se toma como separador decimal, el resto se
- * descarta (separador de miles). Así no importa qué tecla de punto/coma
- * muestre el teclado del celular.
+ * Acepta "1500,50", "1500.50", "1.500,50", "1,500.50", "150.000", "150,000"
+ * o "1500" — el último "," o "." que aparece se toma como separador
+ * decimal, EXCEPTO si después de él hay exactamente 3 dígitos: nadie usa 3
+ * decimales para pesos, así que en ese caso es casi seguro un separador de
+ * miles ("150.000" o "150,000" = 150 mil, no 150) y se descarta junto con
+ * el resto. Así no importa qué tecla de punto/coma muestre el teclado del
+ * celular, ni si alguien tipea un monto grande con separador de miles.
  */
 function parseMonto(raw: string): number {
   const limpio = raw.trim().replace(/[^\d.,]/g, '');
@@ -54,7 +57,12 @@ function parseMonto(raw: string): number {
 
   const parteEntera = limpio.slice(0, posSeparador).replace(/[.,]/g, '');
   const parteDecimal = limpio.slice(posSeparador + 1).replace(/[.,]/g, '');
-  return Number(`${parteEntera}.${parteDecimal}`);
+
+  if (parteDecimal.length === 3) {
+    return Number(parteEntera + parteDecimal);
+  }
+
+  return Number(parteDecimal ? `${parteEntera}.${parteDecimal}` : parteEntera);
 }
 
 /** dd/mm/yyyy -> yyyy-MM-dd (lo que espera la API), o null si está incompleta/inválida. */
