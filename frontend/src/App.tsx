@@ -34,7 +34,7 @@ export default function App() {
   const [attachTarget, setAttachTarget] = useState<Movimiento | null>(null);
 
   useEscapeKey(() => setShowInformes(false));
-  const updateAvailable = useVersionCheck();
+  useVersionCheck();
 
   useEffect(() => {
     if (unlocked) {
@@ -124,15 +124,6 @@ export default function App() {
       <button className="fab" onClick={() => setShowForm(true)} aria-label="Nuevo movimiento">
         +
       </button>
-
-      {updateAvailable && (
-        <div className="update-banner">
-          <span>Hay una actualización disponible</span>
-          <button type="button" className="btn-solid" onClick={() => window.location.reload()}>
-            Actualizar
-          </button>
-        </div>
-      )}
 
       {(showForm || editTarget) && (
         <MovimientoForm
