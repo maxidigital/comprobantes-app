@@ -1,6 +1,6 @@
 import { FormEvent, useState } from 'react';
-import { adjuntarComprobante, ApiError, borrarComprobante, crearMovimiento, editarMovimiento } from './api';
-import type { Movimiento, TipoMovimiento } from './types';
+import { agregarComprobantes, ApiError, borrarComprobante, crearMovimiento, editarMovimiento } from './api';
+import type { Comprobante, Movimiento, TipoMovimiento } from './types';
 import { useEscapeKey } from './useEscapeKey';
 
 interface Props {
@@ -90,24 +90,22 @@ export default function MovimientoForm({ onClose, onSaved, onUnauthorized, editi
   const [concepto, setConcepto] = useState(editing?.concepto ?? '');
   const [bien, setBien] = useState(editing?.bien || BIENES[0]);
   const [notas, setNotas] = useState(editing?.notas ?? '');
-  const [comprobante, setComprobante] = useState<File | null>(null);
-  const [comprobanteEliminado, setComprobanteEliminado] = useState(false);
-  const [borrandoComprobante, setBorrandoComprobante] = useState(false);
+  const [comprobantesActuales, setComprobantesActuales] = useState<Comprobante[]>(editing?.comprobantes ?? []);
+  const [comprobantesNuevos, setComprobantesNuevos] = useState<File[]>([]);
+  const [borrandoId, setBorrandoId] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<{ fecha?: string; concepto?: string; monto?: string }>({});
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const hayComprobanteActual = !!editing && !editing.comprobantePendiente && !comprobanteEliminado;
-
-  async function handleBorrarComprobante() {
+  async function handleBorrarComprobante(comprobanteId: string) {
     if (!editing) return;
-    if (!window.confirm('¿Borrar el comprobante adjunto? Vas a poder subir uno nuevo después.')) return;
+    if (!window.confirm('¿Borrar este comprobante?')) return;
 
-    setBorrandoComprobante(true);
+    setBorrandoId(comprobanteId);
     setError(null);
     try {
-      await borrarComprobante(editing.id);
-      setComprobanteEliminado(true);
+      const actualizado = await borrarComprobante(editing.id, comprobanteId);
+      setComprobantesActuales(actualizado.comprobantes);
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {
         onUnauthorized();
@@ -115,7 +113,7 @@ export default function MovimientoForm({ onClose, onSaved, onUnauthorized, editi
       }
       setError(err instanceof Error ? err.message : 'No se pudo borrar el comprobante');
     } finally {
-      setBorrandoComprobante(false);
+      setBorrandoId(null);
     }
   }
 
@@ -153,11 +151,11 @@ export default function MovimientoForm({ onClose, onSaved, onUnauthorized, editi
         categoria: '',
         bien: bien.trim(),
         notas: notas.trim(),
-        comprobante,
+        comprobantes: comprobantesNuevos,
       };
       let guardado = editing ? await editarMovimiento(editing.id, datos) : await crearMovimiento(datos);
-      if (editing && comprobante) {
-        guardado = await adjuntarComprobante(editing.id, comprobante, fechaIso, concepto.trim());
+      if (editing && comprobantesNuevos.length > 0) {
+        guardado = await agregarComprobantes(editing.id, comprobantesNuevos);
       }
       onSaved(guardado);
     } catch (err) {
@@ -271,27 +269,43 @@ export default function MovimientoForm({ onClose, onSaved, onUnauthorized, editi
 
         <div className="field">
           <label htmlFor="comprobante">
-            {hayComprobanteActual ? 'Reemplazar comprobante (opcional)' : 'Comprobante (foto o PDF, opcional)'}
+            {editing ? 'Agregar comprobantes (opcional)' : 'Comprobantes (foto o PDF, opcional)'}
           </label>
+
+          {comprobantesActuales.length > 0 && (
+            <ul className="receipt-list">
+              {comprobantesActuales.map((c) => (
+                <li key={c.id} className="receipt-list-item">
+                  <span className="receipt-list-name">{c.nombre}</span>
+                  <button
+                    type="button"
+                    className="btn-plain"
+                    onClick={() => handleBorrarComprobante(c.id)}
+                    disabled={borrandoId === c.id}
+                    style={{ color: 'var(--danger)' }}
+                  >
+                    {borrandoId === c.id ? 'Borrando…' : 'Borrar'}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+
           <input
             id="comprobante"
             className="input"
             type="file"
             accept="image/*,.pdf"
-            onChange={(e) => setComprobante(e.target.files?.[0] ?? null)}
+            multiple
+            onChange={(e) => setComprobantesNuevos(Array.from(e.target.files ?? []))}
           />
-          {hayComprobanteActual && (
-            <button
-              type="button"
-              className="btn-plain"
-              onClick={handleBorrarComprobante}
-              disabled={borrandoComprobante}
-              style={{ marginTop: '0.5rem', color: 'var(--danger)' }}
-            >
-              {borrandoComprobante ? 'Borrando…' : 'Borrar comprobante actual'}
-            </button>
+          {comprobantesNuevos.length > 0 && (
+            <p className="detail-value" style={{ fontSize: '0.8rem' }}>
+              {comprobantesNuevos.length === 1
+                ? '1 archivo nuevo para subir'
+                : `${comprobantesNuevos.length} archivos nuevos para subir`}
+            </p>
           )}
-          {comprobanteEliminado && <p className="error-text" style={{ color: 'var(--status-pending)' }}>Comprobante borrado — quedó pendiente.</p>}
         </div>
 
         {error && <p className="error-text">{error}</p>}

@@ -28,7 +28,7 @@ export default function App() {
   const [showForm, setShowForm] = useState(false);
   const [editTarget, setEditTarget] = useState<Movimiento | null>(null);
   const [detailTarget, setDetailTarget] = useState<Movimiento | null>(null);
-  const [viewingReceiptId, setViewingReceiptId] = useState<string | null>(null);
+  const [viewingReceipt, setViewingReceipt] = useState<{ movimientoId: string; comprobanteId: string } | null>(null);
   const [showInformes, setShowInformes] = useState(false);
   const [confirmDeleteTarget, setConfirmDeleteTarget] = useState<Movimiento | null>(null);
 
@@ -65,7 +65,7 @@ export default function App() {
     setShowForm(false);
     setEditTarget(null);
     setDetailTarget(null);
-    setViewingReceiptId(null);
+    setViewingReceipt(null);
     setConfirmDeleteTarget(null);
     setUnlocked(false);
   }
@@ -146,14 +146,15 @@ export default function App() {
         <MovimientoDetail
           movimiento={detailTarget}
           onClose={() => setDetailTarget(null)}
-          onVerComprobante={() => setViewingReceiptId(detailTarget.id)}
+          onVerComprobante={(comprobanteId) => setViewingReceipt({ movimientoId: detailTarget.id, comprobanteId })}
         />
       )}
 
-      {viewingReceiptId && (
+      {viewingReceipt && (
         <ReceiptViewerDialog
-          movimientoId={viewingReceiptId}
-          onClose={() => setViewingReceiptId(null)}
+          movimientoId={viewingReceipt.movimientoId}
+          comprobanteId={viewingReceipt.comprobanteId}
+          onClose={() => setViewingReceipt(null)}
           onUnauthorized={handleUnauthorized}
         />
       )}

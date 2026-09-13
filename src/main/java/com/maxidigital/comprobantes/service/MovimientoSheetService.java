@@ -15,7 +15,6 @@ import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.UUID;
 
 /**
  * One shared spreadsheet for the whole estate (not one-per-user, unlike
@@ -23,6 +22,17 @@ import java.util.UUID;
  * reasoning as NotesSheetService: physically deleting a row would shift
  * every row after it, and two quick actions before the frontend refetches
  * could then hit the wrong row.
+ *
+ * Las columnas H/I (antes comprobanteUrl/comprobanteNombre) quedan sin usar
+ * a propósito: un movimiento puede tener varios comprobantes ahora, así que
+ * viven como filas propias en ComprobanteSheetService. No se borran esas
+ * columnas del esquema para no tener que reacomodar todas las columnas
+ * siguientes en una planilla que ya tiene datos reales.
+ *
+ * Esta clase no sabe nada de comprobantes: cada MovimientoResponse que
+ * construye lleva una lista vacía como placeholder, y quien la llama
+ * (MovimientoController) la completa con MovimientoResponse#withComprobantes
+ * después de consultar ComprobanteSheetService.
  */
 @Service
 public class MovimientoSheetService {
@@ -49,12 +59,15 @@ public class MovimientoSheetService {
     }
 
     public MovimientoResponse append(String fecha, String tipo, double monto, String concepto, String categoria,
-                                      String bien, String comprobanteUrl, String comprobanteNombre, String notas,
-                                      String cargadoPor)
+                                      String bien, String notas, String cargadoPor)
             throws IOException {
         ensureHeader();
 
-        String id = UUID.randomUUID().toString();
+        // Id secuencial y corto (1, 2, 3...) en vez de UUID — con dos
+        // pestañas separadas (Movimientos/Comprobantes) hace falta poder
+        // ubicar a ojo, leyendo la planilla a mano, qué comprobante
+        // corresponde a qué movimiento; un UUID hace eso imposible.
+        String id = String.valueOf(nextId(readRawRows()));
         String creadoEn = Instant.now().toString();
 
         // El monto se manda como String (no como double/Double crudo) a
@@ -67,7 +80,7 @@ public class MovimientoSheetService {
         List<Object> row = List.of(
                 id, toSheetDate(fecha), tipo, String.valueOf(monto), concepto,
                 nullToEmpty(categoria), nullToEmpty(bien),
-                nullToEmpty(comprobanteUrl), nullToEmpty(comprobanteNombre),
+                "", "",
                 nullToEmpty(notas), creadoEn, ESTADO_ACTIVO, nullToEmpty(cargadoPor));
 
         ValueRange valueRange = new ValueRange().setValues(List.of(row));
@@ -77,8 +90,7 @@ public class MovimientoSheetService {
                 .execute();
 
         return MovimientoResponse.of(id, fecha, tipo, monto, concepto, nullToEmpty(categoria), nullToEmpty(bien),
-                nullToEmpty(comprobanteUrl), nullToEmpty(comprobanteNombre), nullToEmpty(notas), creadoEn,
-                nullToEmpty(cargadoPor));
+                List.of(), nullToEmpty(notas), creadoEn, nullToEmpty(cargadoPor));
     }
 
     public List<MovimientoResponse> readAll() throws IOException {
@@ -93,7 +105,7 @@ public class MovimientoSheetService {
             result.add(MovimientoResponse.of(
                     cell(row, 0), fromSheetDate(cell(row, 1)), cell(row, 2),
                     parseDouble(cell(row, 3)), cell(row, 4), cell(row, 5), cell(row, 6),
-                    cell(row, 7), cell(row, 8), cell(row, 9), cell(row, 10), cell(row, 12)));
+                    List.of(), cell(row, 9), cell(row, 10), cell(row, 12)));
         }
 
         Collections.reverse(result);
@@ -106,8 +118,7 @@ public class MovimientoSheetService {
         List<Object> row = rows.get(rowIndex);
 
         return MovimientoResponse.of(cell(row, 0), fromSheetDate(cell(row, 1)), cell(row, 2), parseDouble(cell(row, 3)),
-                cell(row, 4), cell(row, 5), cell(row, 6), cell(row, 7), cell(row, 8),
-                cell(row, 9), cell(row, 10), cell(row, 12));
+                cell(row, 4), cell(row, 5), cell(row, 6), List.of(), cell(row, 9), cell(row, 10), cell(row, 12));
     }
 
     public void softDelete(String id) throws IOException {
@@ -132,37 +143,7 @@ public class MovimientoSheetService {
         updateCell("J" + sheetRow, nullToEmpty(notas));
 
         return MovimientoResponse.of(id, fecha, tipo, monto, concepto, nullToEmpty(categoria), nullToEmpty(bien),
-                cell(row, 7), cell(row, 8), nullToEmpty(notas), cell(row, 10), cell(row, 12));
-    }
-
-    public MovimientoResponse attachComprobante(String id, String comprobanteUrl, String comprobanteNombre)
-            throws IOException {
-        List<List<Object>> rows = readRawRows();
-        int rowIndex = locateRowIndex(rows, id);
-        List<Object> row = rows.get(rowIndex);
-        int sheetRow = rowIndex + 1; // 1-indexed sheet row; header occupies row 1
-
-        updateCell("H" + sheetRow, comprobanteUrl);
-        updateCell("I" + sheetRow, comprobanteNombre);
-
-        return MovimientoResponse.of(cell(row, 0), fromSheetDate(cell(row, 1)), cell(row, 2), parseDouble(cell(row, 3)),
-                cell(row, 4), cell(row, 5), cell(row, 6), comprobanteUrl, comprobanteNombre,
-                cell(row, 9), cell(row, 10), cell(row, 12));
-    }
-
-    /** Saca el comprobante adjunto (vuelve a quedar "pendiente") — para cuando se cargó uno equivocado. */
-    public MovimientoResponse clearComprobante(String id) throws IOException {
-        List<List<Object>> rows = readRawRows();
-        int rowIndex = locateRowIndex(rows, id);
-        List<Object> row = rows.get(rowIndex);
-        int sheetRow = rowIndex + 1;
-
-        updateCell("H" + sheetRow, "");
-        updateCell("I" + sheetRow, "");
-
-        return MovimientoResponse.of(cell(row, 0), fromSheetDate(cell(row, 1)), cell(row, 2), parseDouble(cell(row, 3)),
-                cell(row, 4), cell(row, 5), cell(row, 6), "", "",
-                cell(row, 9), cell(row, 10), cell(row, 12));
+                List.of(), nullToEmpty(notas), cell(row, 10), cell(row, 12));
     }
 
     private int locateRowIndex(List<List<Object>> rows, String id) {
@@ -198,6 +179,19 @@ public class MovimientoSheetService {
                 .execute();
         List<List<Object>> values = result.getValues();
         return values != null ? values : List.of();
+    }
+
+    /** Recorre todos los ids ya usados (incluso de filas dadas de baja, para nunca repetir un número) y devuelve el siguiente. */
+    private static int nextId(List<List<Object>> rows) {
+        int max = 0;
+        for (int i = 1; i < rows.size(); i++) {
+            try {
+                max = Math.max(max, Integer.parseInt(cell(rows.get(i), 0)));
+            } catch (NumberFormatException ignored) {
+                // filas viejas con id en otro formato (UUID) no cuentan para la secuencia
+            }
+        }
+        return max + 1;
     }
 
     private static String cell(List<Object> row, int index) {

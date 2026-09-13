@@ -1,5 +1,13 @@
 export type TipoMovimiento = 'INGRESO' | 'GASTO';
 
+export interface Comprobante {
+  id: string;
+  movimientoId: string;
+  url: string;
+  nombre: string;
+  creadoEn: string;
+}
+
 export interface Movimiento {
   id: string;
   fecha: string;
@@ -8,8 +16,7 @@ export interface Movimiento {
   concepto: string;
   categoria: string;
   bien: string;
-  comprobanteUrl: string;
-  comprobanteNombre: string;
+  comprobantes: Comprobante[];
   notas: string;
   creadoEn: string;
   cargadoPor: string;
@@ -24,7 +31,7 @@ export interface NuevoMovimiento {
   categoria: string;
   bien: string;
   notas: string;
-  comprobante: File | null;
+  comprobantes: File[];
 }
 
 export type FiltroTipo = 'TODOS' | TipoMovimiento;

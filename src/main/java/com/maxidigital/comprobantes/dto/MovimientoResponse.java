@@ -1,5 +1,7 @@
 package com.maxidigital.comprobantes.dto;
 
+import java.util.List;
+
 public record MovimientoResponse(
         String id,
         String fecha,
@@ -8,8 +10,7 @@ public record MovimientoResponse(
         String concepto,
         String categoria,
         String bien,
-        String comprobanteUrl,
-        String comprobanteNombre,
+        List<ComprobanteResponse> comprobantes,
         String notas,
         String creadoEn,
         String cargadoPor,
@@ -17,11 +18,15 @@ public record MovimientoResponse(
 ) {
 
     public static MovimientoResponse of(String id, String fecha, String tipo, double monto, String concepto,
-                                         String categoria, String bien, String comprobanteUrl,
-                                         String comprobanteNombre, String notas, String creadoEn,
-                                         String cargadoPor) {
-        boolean pendiente = comprobanteUrl == null || comprobanteUrl.isBlank();
+                                         String categoria, String bien, List<ComprobanteResponse> comprobantes,
+                                         String notas, String creadoEn, String cargadoPor) {
         return new MovimientoResponse(id, fecha, tipo, monto, concepto, categoria, bien,
-                comprobanteUrl, comprobanteNombre, notas, creadoEn, cargadoPor, pendiente);
+                comprobantes, notas, creadoEn, cargadoPor, comprobantes.isEmpty());
+    }
+
+    /** Reconstruye la respuesta con la lista de comprobantes real — se arma en dos pasos porque viven en pestañas/servicios distintos. */
+    public MovimientoResponse withComprobantes(List<ComprobanteResponse> comprobantes) {
+        return MovimientoResponse.of(id, fecha, tipo, monto, concepto, categoria, bien,
+                comprobantes, notas, creadoEn, cargadoPor);
     }
 }

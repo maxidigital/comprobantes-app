@@ -5,7 +5,7 @@ import { useEscapeKey } from './useEscapeKey';
 interface Props {
   movimiento: Movimiento;
   onClose: () => void;
-  onVerComprobante: () => void;
+  onVerComprobante: (comprobanteId: string) => void;
 }
 
 export default function MovimientoDetail({ movimiento: m, onClose, onVerComprobante }: Props) {
@@ -56,16 +56,20 @@ export default function MovimientoDetail({ movimiento: m, onClose, onVerComproba
         </div>
 
         <div className="field">
-          <label>Comprobante</label>
-          <p className="detail-value">
-            {m.comprobantePendiente ? (
+          <label>{m.comprobantes.length > 1 ? 'Comprobantes' : 'Comprobante'}</label>
+          {m.comprobantePendiente ? (
+            <p className="detail-value">
               <span className="badge-pending badge-pending--text">Pendiente</span>
-            ) : (
-              <button type="button" className="chip" onClick={onVerComprobante}>
-                Ver comprobante
-              </button>
-            )}
-          </p>
+            </p>
+          ) : (
+            <div className="chip-list">
+              {m.comprobantes.map((c) => (
+                <button key={c.id} type="button" className="chip" onClick={() => onVerComprobante(c.id)}>
+                  {m.comprobantes.length > 1 ? c.nombre : 'Ver comprobante'}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="field">

@@ -96,7 +96,7 @@ export async function crearMovimiento(data: NuevoMovimiento): Promise<Movimiento
   if (data.categoria) form.set('categoria', data.categoria);
   if (data.bien) form.set('bien', data.bien);
   if (data.notas) form.set('notas', data.notas);
-  if (data.comprobante) form.set('comprobante', data.comprobante);
+  data.comprobantes.forEach((file) => form.append('comprobantes', file));
   const userName = getUserName();
   if (userName) form.set('cargadoPor', userName);
 
@@ -118,26 +118,28 @@ export async function editarMovimiento(id: string, data: NuevoMovimiento): Promi
   return response.json();
 }
 
-export async function adjuntarComprobante(id: string, file: File, fecha: string, concepto: string): Promise<Movimiento> {
+/** Agrega uno o más comprobantes a un movimiento que ya existe — no reemplaza los que ya tenía. */
+export async function agregarComprobantes(movimientoId: string, files: File[]): Promise<Movimiento> {
   const form = new FormData();
-  form.set('comprobante', file);
-  form.set('fecha', fecha);
-  form.set('concepto', concepto);
+  files.forEach((file) => form.append('comprobantes', file));
 
-  const response = await request(`/movimientos/${id}/comprobante`, { method: 'PUT', body: form });
+  const response = await request(`/movimientos/${movimientoId}/comprobantes`, { method: 'POST', body: form });
   return response.json();
 }
 
-export async function borrarComprobante(id: string): Promise<Movimiento> {
-  const response = await request(`/movimientos/${id}/comprobante`, { method: 'DELETE' });
+export async function borrarComprobante(movimientoId: string, comprobanteId: string): Promise<Movimiento> {
+  const response = await request(`/movimientos/${movimientoId}/comprobantes/${comprobanteId}`, { method: 'DELETE' });
   return response.json();
 }
 
-/** Trae el archivo del comprobante como blob (con el header de auth, no por
+/** Trae un comprobante puntual como blob (con el header de auth, no por
  * query param) para mostrarlo dentro de un visor propio de la app — así no
  * hace falta navegar afuera (una PWA instalada no tiene botón "atrás"). */
-export async function fetchComprobanteArchivo(id: string): Promise<{ blob: Blob; contentType: string }> {
-  const response = await request(`/movimientos/${id}/comprobante/archivo`);
+export async function fetchComprobanteArchivo(
+  movimientoId: string,
+  comprobanteId: string,
+): Promise<{ blob: Blob; contentType: string }> {
+  const response = await request(`/movimientos/${movimientoId}/comprobantes/${comprobanteId}/archivo`);
   const contentType = response.headers.get('Content-Type') ?? 'application/octet-stream';
   const blob = await response.blob();
   return { blob, contentType };

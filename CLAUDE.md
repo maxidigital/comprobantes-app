@@ -53,20 +53,57 @@ seguridad, es puramente identificación/transparencia entre herederos.
 
 ## Estructura de datos
 
-Una fila por movimiento en la planilla, columnas `A:M`:
+Dos pestañas en la misma planilla:
+
+**Movimientos** (la pestaña original, cualquier nombre — el backend siempre
+lee/escribe por rango `A:M`, no por nombre de pestaña):
 
 ```
 id | fecha | tipo (INGRESO/GASTO) | monto | concepto | categoria | bien |
 comprobanteUrl | comprobanteNombre | notas | creadoEn | estado | cargadoPor
 ```
 
-- Baja lógica: eliminar pone `estado = eliminado` en vez de borrar la fila
-  (evita que los índices de fila se desincronicen entre dos acciones
-  rápidas — mismo motivo que `NotesSheetService` en re.mind2).
-- **Comprobante pendiente**: `comprobanteUrl`/`comprobanteNombre` pueden
-  quedar vacíos al cargar el movimiento. El frontend filtra por esto
-  (`comprobantePendiente` en la respuesta) y permite adjuntarlo después con
-  `PUT /api/movimientos/{id}/comprobante`.
+Las columnas H/I (`comprobanteUrl`/`comprobanteNombre`) están **en desuso**
+desde que un movimiento puede tener varios comprobantes — se dejaron vacías
+en el esquema a propósito en vez de borrarlas, para no tener que reacomodar
+todas las columnas siguientes en una planilla con datos reales ya cargados.
+
+**Comprobantes** (pestaña nueva, uno-a-muchos con Movimientos):
+
+```
+id | movimientoId | url | nombre | creadoEn | estado
+```
+
+- **Ids legibles, no UUID**: tanto un movimiento como un comprobante se
+  identifican con un entero secuencial simple (`1`, `2`, `3`...), cada
+  pestaña con su propio contador — para saber a qué movimiento corresponde
+  un comprobante ya está la columna `movimientoId` al lado, no hace falta
+  que el id del comprobante la codifique también. El siguiente número se
+  calcula recorriendo los ids ya usados (incluidos los de filas dadas de
+  baja, para nunca repetir un número) — ver `MovimientoSheetService#nextId`
+  / `ComprobanteSheetService#nextId`.
+- Baja lógica en ambas pestañas: eliminar pone `estado = eliminado` en vez
+  de borrar la fila (evita que los índices de fila se desincronicen entre
+  dos acciones rápidas — mismo motivo que `NotesSheetService` en re.mind2).
+  Eliminar un movimiento hace baja lógica en cascada de sus comprobantes,
+  pero no borra los archivos reales en Drive (mismo criterio que ya tenía
+  el borrado de movimientos).
+- **Comprobante pendiente**: un movimiento sin filas activas en
+  `Comprobantes` es "pendiente" (`comprobantePendiente` derivado en la
+  respuesta, no es una columna). `POST /api/movimientos/{id}/comprobantes`
+  agrega uno o más sin tocar los que ya tenía; `DELETE
+  /api/movimientos/{movimientoId}/comprobantes/{comprobanteId}` borra uno
+  puntual (fila + archivo en Drive).
+- `GoogleClientsConfig`/`MovimientoSheetService` no saben nada de
+  comprobantes — devuelven `MovimientoResponse` con una lista vacía como
+  placeholder, y `MovimientoController` la completa con
+  `MovimientoResponse#withComprobantes(...)` después de consultar
+  `ComprobanteSheetService` (join en memoria por `movimientoId`, no un
+  JOIN de Sheets).
+- Migración (2026-09-13): los dos comprobantes que ya existían en las
+  columnas H/I se movieron a filas de `Comprobantes` con un script puntual
+  (no versionado, corrido una vez a mano contra la planilla real) y esas
+  columnas se vaciaron en sus filas de origen.
 
 ## Puesta en marcha en Google Cloud (ya hecho una vez, documentado por si hay que rehacerlo)
 
@@ -147,12 +184,14 @@ src/main/java/com/maxidigital/comprobantes/
 │   └── GoogleClientsConfig.java     # Bean Sheets (cuenta de servicio) + Bean Drive (OAuth refresh token)
 ├── security/AccessKeyInterceptor.java
 ├── controller/
-│   ├── MovimientoController.java    # GET/POST /api/movimientos, DELETE .../{id}, PUT .../{id}/comprobante
+│   ├── MovimientoController.java    # GET/POST /api/movimientos, PUT/DELETE .../{id},
+│   │                                 # POST .../{id}/comprobantes, DELETE/GET .../{id}/comprobantes/{comprobanteId}[/archivo]
 │   └── ApiExceptionHandler.java
-├── dto/MovimientoResponse.java
+├── dto/MovimientoResponse.java, ComprobanteResponse.java
 ├── service/
-│   ├── MovimientoSheetService.java  # append/readAll/softDelete/attachComprobante
-│   └── ReceiptDriveService.java     # sube el archivo a Drive
+│   ├── MovimientoSheetService.java   # append/readAll/softDelete/update — no sabe de comprobantes
+│   ├── ComprobanteSheetService.java  # pestaña "Comprobantes": append/readAllActive/findActiveByMovimiento/softDelete(All)
+│   └── ReceiptDriveService.java      # sube/borra/sirve el archivo en Drive
 └── exception/UnauthorizedException.java, NotFoundException.java
 
 frontend/src/
@@ -162,8 +201,9 @@ frontend/src/
 ├── AccessGate.tsx                   # pide nombre + APP_PASSWORD
 ├── Totals.tsx                       # ingresos / gastos / balance
 ├── MovimientosList.tsx              # listado + filtros (tipo, comprobante pendiente)
-├── MovimientoForm.tsx               # alta de movimiento (comprobante opcional)
-├── AttachReceiptDialog.tsx          # adjuntar comprobante a un movimiento pendiente
+├── MovimientoForm.tsx               # alta/edición — selección múltiple de archivos + lista de comprobantes existentes con borrado individual
+├── MovimientoDetail.tsx             # detalle de solo lectura, un chip "Ver" por comprobante
+├── ReceiptViewerDialog.tsx          # visor propio adentro de la app (nunca navega a la URL del archivo)
 ├── ConfirmDialog.tsx                # confirmación de borrado
 └── index.css                        # tokens de estética/PALETTE (ver ../estetica-react/ESTETICA-REACT.md)
 

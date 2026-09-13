@@ -4,6 +4,7 @@ import { useEscapeKey } from './useEscapeKey';
 
 interface Props {
   movimientoId: string;
+  comprobanteId: string;
   onClose: () => void;
   onUnauthorized: () => void;
 }
@@ -13,7 +14,7 @@ interface Props {
  * PWA instalada no tiene barra de navegación ni botón "atrás", así que un
  * <a target="_blank"> deja al usuario sin forma de volver al listado.
  */
-export default function ReceiptViewerDialog({ movimientoId, onClose, onUnauthorized }: Props) {
+export default function ReceiptViewerDialog({ movimientoId, comprobanteId, onClose, onUnauthorized }: Props) {
   useEscapeKey(onClose);
 
   const [objectUrl, setObjectUrl] = useState<string | null>(null);
@@ -24,7 +25,7 @@ export default function ReceiptViewerDialog({ movimientoId, onClose, onUnauthori
     let url: string | null = null;
     let cancelled = false;
 
-    fetchComprobanteArchivo(movimientoId)
+    fetchComprobanteArchivo(movimientoId, comprobanteId)
       .then(({ blob, contentType }) => {
         if (cancelled) return;
         url = URL.createObjectURL(blob);
@@ -44,7 +45,7 @@ export default function ReceiptViewerDialog({ movimientoId, onClose, onUnauthori
       cancelled = true;
       if (url) URL.revokeObjectURL(url);
     };
-  }, [movimientoId, onUnauthorized]);
+  }, [movimientoId, comprobanteId, onUnauthorized]);
 
   return (
     <div className="dialog-overlay dialog-overlay--fullscreen" onClick={onClose}>
