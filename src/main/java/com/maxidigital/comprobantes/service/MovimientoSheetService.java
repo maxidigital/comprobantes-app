@@ -57,8 +57,15 @@ public class MovimientoSheetService {
         String id = UUID.randomUUID().toString();
         String creadoEn = Instant.now().toString();
 
+        // El monto se manda como String (no como double/Double crudo) a
+        // propósito: dejar que el cliente de Sheets serialice el número
+        // directamente terminó formateándolo con la configuración regional
+        // del contenedor de Railway (coma en vez de punto) antes de
+        // guardarlo como texto — String.valueOf(double) en Java nunca
+        // depende del locale, siempre usa punto, así que evita el problema
+        // de raíz en vez de solo camuflarlo.
         List<Object> row = List.of(
-                id, toSheetDate(fecha), tipo, monto, concepto,
+                id, toSheetDate(fecha), tipo, String.valueOf(monto), concepto,
                 nullToEmpty(categoria), nullToEmpty(bien),
                 nullToEmpty(comprobanteUrl), nullToEmpty(comprobanteNombre),
                 nullToEmpty(notas), creadoEn, ESTADO_ACTIVO, nullToEmpty(cargadoPor));
@@ -140,6 +147,21 @@ public class MovimientoSheetService {
 
         return MovimientoResponse.of(cell(row, 0), fromSheetDate(cell(row, 1)), cell(row, 2), parseDouble(cell(row, 3)),
                 cell(row, 4), cell(row, 5), cell(row, 6), comprobanteUrl, comprobanteNombre,
+                cell(row, 9), cell(row, 10), cell(row, 12));
+    }
+
+    /** Saca el comprobante adjunto (vuelve a quedar "pendiente") — para cuando se cargó uno equivocado. */
+    public MovimientoResponse clearComprobante(String id) throws IOException {
+        List<List<Object>> rows = readRawRows();
+        int rowIndex = locateRowIndex(rows, id);
+        List<Object> row = rows.get(rowIndex);
+        int sheetRow = rowIndex + 1;
+
+        updateCell("H" + sheetRow, "");
+        updateCell("I" + sheetRow, "");
+
+        return MovimientoResponse.of(cell(row, 0), fromSheetDate(cell(row, 1)), cell(row, 2), parseDouble(cell(row, 3)),
+                cell(row, 4), cell(row, 5), cell(row, 6), "", "",
                 cell(row, 9), cell(row, 10), cell(row, 12));
     }
 

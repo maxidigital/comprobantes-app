@@ -74,6 +74,15 @@ public class MovimientoController {
         return movimientoSheetService.attachComprobante(id, uploaded.url(), uploaded.fileName());
     }
 
+    @DeleteMapping("/{id}/comprobante")
+    public MovimientoResponse borrarComprobante(@PathVariable String id) throws IOException {
+        MovimientoResponse movimiento = movimientoSheetService.findById(id);
+        if (movimiento.comprobanteUrl() != null && !movimiento.comprobanteUrl().isBlank()) {
+            receiptDriveService.deleteByUrl(movimiento.comprobanteUrl());
+        }
+        return movimientoSheetService.clearComprobante(id);
+    }
+
     @GetMapping("/{id}/comprobante/archivo")
     public void descargarComprobante(@PathVariable String id, HttpServletResponse response) throws IOException {
         MovimientoResponse movimiento = movimientoSheetService.findById(id);

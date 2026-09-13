@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { comprobanteArchivoUrl } from './api';
 import { currency, formatFecha } from './format';
 import type { FiltroTipo, Movimiento } from './types';
 
@@ -238,20 +237,6 @@ export default function MovimientosList({ movimientos, onOpenDetail, onEdit, onD
                   {m.bien && <span className="bien-label">{m.bien}</span>}
                 </div>
                 {m.notas && <div className="meta">{m.notas}</div>}
-
-                {!m.comprobantePendiente && (
-                  <div className="meta">
-                    <a
-                      className="chip"
-                      href={comprobanteArchivoUrl(m.id)}
-                      target="_blank"
-                      rel="noreferrer"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      Ver comprobante
-                    </a>
-                  </div>
-                )}
               </div>
             </div>
           ))}

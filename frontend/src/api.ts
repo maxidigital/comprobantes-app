@@ -128,6 +128,11 @@ export async function adjuntarComprobante(id: string, file: File, fecha: string,
   return response.json();
 }
 
+export async function borrarComprobante(id: string): Promise<Movimiento> {
+  const response = await request(`/movimientos/${id}/comprobante`, { method: 'DELETE' });
+  return response.json();
+}
+
 /** Link directo al archivo del comprobante (lo sirve el propio backend, sin
  * pasar por el visor de Drive) — incluye la clave por query param porque es
  * un <a href> que el navegador navega directo, sin poder mandar el header. */

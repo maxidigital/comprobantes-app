@@ -71,6 +71,11 @@ public class ReceiptDriveService {
         drive.files().get(fileId).executeMediaAndDownloadTo(response.getOutputStream());
     }
 
+    /** Borra el archivo de Drive — usado cuando se carga mal un comprobante y hay que sacarlo. */
+    public void deleteByUrl(String comprobanteUrl) throws IOException {
+        drive.files().delete(extractFileId(comprobanteUrl)).execute();
+    }
+
     private static String extractFileId(String comprobanteUrl) {
         Matcher matcher = FILE_ID_PATTERN.matcher(comprobanteUrl);
         if (!matcher.find()) {

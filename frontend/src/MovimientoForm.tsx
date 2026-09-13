@@ -1,5 +1,5 @@
 import { FormEvent, useState } from 'react';
-import { adjuntarComprobante, ApiError, crearMovimiento, editarMovimiento } from './api';
+import { adjuntarComprobante, ApiError, borrarComprobante, crearMovimiento, editarMovimiento } from './api';
 import type { Movimiento, TipoMovimiento } from './types';
 import { useEscapeKey } from './useEscapeKey';
 
@@ -86,9 +86,33 @@ export default function MovimientoForm({ onClose, onSaved, onUnauthorized, editi
   const [bien, setBien] = useState(editing?.bien || BIENES[0]);
   const [notas, setNotas] = useState(editing?.notas ?? '');
   const [comprobante, setComprobante] = useState<File | null>(null);
+  const [comprobanteEliminado, setComprobanteEliminado] = useState(false);
+  const [borrandoComprobante, setBorrandoComprobante] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<{ fecha?: string; concepto?: string; monto?: string }>({});
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  const hayComprobanteActual = !!editing && !editing.comprobantePendiente && !comprobanteEliminado;
+
+  async function handleBorrarComprobante() {
+    if (!editing) return;
+    if (!window.confirm('¿Borrar el comprobante adjunto? Vas a poder subir uno nuevo después.')) return;
+
+    setBorrandoComprobante(true);
+    setError(null);
+    try {
+      await borrarComprobante(editing.id);
+      setComprobanteEliminado(true);
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 401) {
+        onUnauthorized();
+        return;
+      }
+      setError(err instanceof Error ? err.message : 'No se pudo borrar el comprobante');
+    } finally {
+      setBorrandoComprobante(false);
+    }
+  }
 
   function shiftFecha(dias: number) {
     const iso = fechaToIso(fechaTexto);
@@ -242,9 +266,7 @@ export default function MovimientoForm({ onClose, onSaved, onUnauthorized, editi
 
         <div className="field">
           <label htmlFor="comprobante">
-            {editing && !editing.comprobantePendiente
-              ? 'Reemplazar comprobante (opcional)'
-              : 'Comprobante (foto o PDF, opcional)'}
+            {hayComprobanteActual ? 'Reemplazar comprobante (opcional)' : 'Comprobante (foto o PDF, opcional)'}
           </label>
           <input
             id="comprobante"
@@ -253,6 +275,18 @@ export default function MovimientoForm({ onClose, onSaved, onUnauthorized, editi
             accept="image/*,.pdf"
             onChange={(e) => setComprobante(e.target.files?.[0] ?? null)}
           />
+          {hayComprobanteActual && (
+            <button
+              type="button"
+              className="btn-plain"
+              onClick={handleBorrarComprobante}
+              disabled={borrandoComprobante}
+              style={{ marginTop: '0.5rem', color: 'var(--danger)' }}
+            >
+              {borrandoComprobante ? 'Borrando…' : 'Borrar comprobante actual'}
+            </button>
+          )}
+          {comprobanteEliminado && <p className="error-text" style={{ color: 'var(--status-pending)' }}>Comprobante borrado — quedó pendiente.</p>}
         </div>
 
         {error && <p className="error-text">{error}</p>}
