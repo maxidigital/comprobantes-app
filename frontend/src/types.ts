@@ -14,7 +14,6 @@ export interface Movimiento {
   tipo: TipoMovimiento;
   monto: number;
   concepto: string;
-  categoria: string;
   bien: string;
   comprobantes: Comprobante[];
   notas: string;
@@ -28,7 +27,6 @@ export interface NuevoMovimiento {
   tipo: TipoMovimiento;
   monto: number;
   concepto: string;
-  categoria: string;
   bien: string;
   notas: string;
   comprobantes: File[];

@@ -230,10 +230,7 @@ export default function MovimientosList({ movimientos, onOpenDetail, onEdit, onD
                   </span>
                 </div>
                 <div className="row-bottom">
-                  <span className="meta">
-                    {formatFecha(m.fecha)}
-                    {m.categoria && ` · ${m.categoria}`}
-                  </span>
+                  <span className="meta">{formatFecha(m.fecha)}</span>
                   {m.bien && <span className="bien-label">{m.bien}</span>}
                 </div>
                 {m.notas && <div className="meta">{m.notas}</div>}

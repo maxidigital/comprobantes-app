@@ -148,7 +148,6 @@ export default function MovimientoForm({ onClose, onSaved, onUnauthorized, editi
         tipo,
         monto: montoNumero,
         concepto: concepto.trim(),
-        categoria: '',
         bien: bien.trim(),
         notas: notas.trim(),
         comprobantes: comprobantesNuevos,

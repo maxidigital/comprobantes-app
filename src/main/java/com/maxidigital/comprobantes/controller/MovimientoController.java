@@ -48,12 +48,11 @@ public class MovimientoController {
                                      @RequestParam String tipo,
                                      @RequestParam double monto,
                                      @RequestParam String concepto,
-                                     @RequestParam(required = false) String categoria,
                                      @RequestParam(required = false) String bien,
                                      @RequestParam(required = false) String notas,
                                      @RequestParam(required = false) String cargadoPor,
                                      @RequestParam(required = false) MultipartFile[] comprobantes) throws IOException {
-        MovimientoResponse creado = movimientoSheetService.append(fecha, tipo, monto, concepto, categoria, bien,
+        MovimientoResponse creado = movimientoSheetService.append(fecha, tipo, monto, concepto, bien,
                 notas, cargadoPor);
 
         List<ComprobanteResponse> subidos = subirComprobantes(creado.id(), fecha, concepto, comprobantes);
@@ -69,10 +68,9 @@ public class MovimientoController {
                                           @RequestParam String tipo,
                                           @RequestParam double monto,
                                           @RequestParam String concepto,
-                                          @RequestParam(required = false) String categoria,
                                           @RequestParam(required = false) String bien,
                                           @RequestParam(required = false) String notas) throws IOException {
-        MovimientoResponse actualizado = movimientoSheetService.update(id, fecha, tipo, monto, concepto, categoria,
+        MovimientoResponse actualizado = movimientoSheetService.update(id, fecha, tipo, monto, concepto,
                 bien, notas);
         return actualizado.withComprobantes(comprobanteSheetService.findActiveByMovimiento(id));
     }

@@ -93,7 +93,6 @@ export async function crearMovimiento(data: NuevoMovimiento): Promise<Movimiento
   form.set('tipo', data.tipo);
   form.set('monto', String(data.monto));
   form.set('concepto', data.concepto);
-  if (data.categoria) form.set('categoria', data.categoria);
   if (data.bien) form.set('bien', data.bien);
   if (data.notas) form.set('notas', data.notas);
   data.comprobantes.forEach((file) => form.append('comprobantes', file));
@@ -110,7 +109,6 @@ export async function editarMovimiento(id: string, data: NuevoMovimiento): Promi
   form.set('tipo', data.tipo);
   form.set('monto', String(data.monto));
   form.set('concepto', data.concepto);
-  if (data.categoria) form.set('categoria', data.categoria);
   if (data.bien) form.set('bien', data.bien);
   if (data.notas) form.set('notas', data.notas);
 

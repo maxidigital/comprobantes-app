@@ -56,27 +56,33 @@ seguridad, es puramente identificación/transparencia entre herederos.
 Dos pestañas en la misma planilla:
 
 **Movimientos** (la pestaña original, cualquier nombre — el backend siempre
-lee/escribe por rango `A:L`, no por nombre de pestaña):
+lee/escribe por rango `A:K`, no por nombre de pestaña):
 
 ```
-id | fecha | tipo (INGRESO/GASTO) | monto | concepto | categoria | bien |
+id | fecha | tipo (INGRESO/GASTO) | monto | concepto | bien |
 comprobantesCount | notas | creadoEn | estado | cargadoPor
 ```
 
-La columna H se reaprovechó como `comprobantesCount`: un contador de solo
+La columna G se reaprovechó como `comprobantesCount`: un contador de solo
 lectura (nunca se lee de vuelta, solo se escribe) que `MovimientoController`
 mantiene al día llamando a `MovimientoSheetService#updateComprobantesCount`
 después de cada alta/baja en `Comprobantes` — para poder ver de un vistazo,
-sin cambiar de pestaña, cuántos comprobantes tiene cada movimiento. La vieja
-columna I (`comprobanteNombre`, en desuso desde que un movimiento puede
-tener varios comprobantes) se borró del todo el 2026-09-13 — con cuidado:
-un primer intento borró la columna equivocada (para ese momento `notas` ya
-había corrido a la posición I porque `comprobanteNombre` se había borrado
-a mano directamente en la planilla en algún momento intermedio) y se
-recuperaron los 3 valores de `notas` a partir de la salida ya impresa del
-script antes del borrado — sin pérdida de datos, pero como aviso: antes de
-correr un `deleteDimension` contra esta planilla, releer el rango primero
-en la misma corrida, nunca asumir el layout de una lectura anterior.
+sin cambiar de pestaña, cuántos comprobantes tiene cada movimiento.
+
+Dos columnas viejas se borraron del todo el 2026-09-13, ambas en desuso
+(nunca tuvieron un campo real en el formulario): `comprobanteNombre` (un
+movimiento puede tener varios comprobantes ahora, viven en la pestaña
+`Comprobantes`) y `categoria` (se sacó del form hace tiempo, "quita
+categoria" — quedaba siempre vacía). **Aviso para la próxima**: al borrar
+`comprobanteNombre`, un primer intento borró la columna equivocada, porque
+alguien había borrado esa misma columna a mano directamente en la planilla
+en el medio de la sesión, corriendo `notas` un lugar a la izquierda sin que
+el código lo supiera — se recuperó sin pérdida de datos a partir de la
+salida ya impresa del script antes del borrado, pero la lección es: antes
+de correr un `deleteDimension` contra esta planilla (que está en uso real,
+compartida y editable a mano), releer el rango completo fresco en la misma
+corrida y confirmar el layout, nunca asumir el de una lectura anterior o de
+lo que dice el código.
 
 **Comprobantes** (pestaña nueva, uno-a-muchos con Movimientos):
 
