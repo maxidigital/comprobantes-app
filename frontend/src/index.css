@@ -145,41 +145,6 @@ input[type='file'] {
   padding: 1rem 1rem calc(6rem + env(safe-area-inset-bottom));
 }
 
-.pull-indicator {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  height: 0;
-  color: var(--brand-primary);
-  transition: height 0.2s ease;
-}
-
-.pull-arrow {
-  font-size: 1.2rem;
-}
-
-.pull-spinner {
-  width: 20px;
-  height: 20px;
-  border: 2.5px solid color-mix(in srgb, var(--brand-primary) 30%, transparent);
-  border-top-color: var(--brand-primary);
-  border-radius: 50%;
-  animation: pull-spin 0.7s linear infinite;
-}
-
-@keyframes pull-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .pull-spinner {
-    animation: none;
-  }
-}
-
 /* ---------- Dropdown panel (header menu, filtros) ---------- */
 
 .dropdown-wrapper {

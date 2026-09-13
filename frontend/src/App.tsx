@@ -6,7 +6,6 @@ import HeaderMenu from './HeaderMenu';
 import MovimientoDetail from './MovimientoDetail';
 import MovimientoForm from './MovimientoForm';
 import MovimientosList from './MovimientosList';
-import PullToRefresh from './PullToRefresh';
 import Totals from './Totals';
 import { ApiError, clearAccessKey, eliminarMovimiento, getAccessKey, listMovimientos } from './api';
 import type { Movimiento } from './types';
@@ -100,25 +99,24 @@ export default function App() {
         <HeaderMenu
           isDark={theme === 'dark'}
           onToggleTheme={() => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))}
+          onRefresh={refreshList}
           onInformes={() => setShowInformes(true)}
           onLogout={handleUnauthorized}
         />
       </header>
 
       <main className="content">
-        <PullToRefresh onRefresh={refreshList}>
-          {movimientos === null && !loadError && <p className="empty-state">Cargando…</p>}
-          {loadError && <p className="error-text">{loadError}</p>}
+        {movimientos === null && !loadError && <p className="empty-state">Cargando…</p>}
+        {loadError && <p className="error-text">{loadError}</p>}
 
-          {movimientos !== null && (
-            <MovimientosList
-              movimientos={movimientos}
-              onOpenDetail={(m) => setDetailTarget(m)}
-              onEdit={(m) => setEditTarget(m)}
-              onDelete={(m) => setConfirmDeleteTarget(m)}
-            />
-          )}
-        </PullToRefresh>
+        {movimientos !== null && (
+          <MovimientosList
+            movimientos={movimientos}
+            onOpenDetail={(m) => setDetailTarget(m)}
+            onEdit={(m) => setEditTarget(m)}
+            onDelete={(m) => setConfirmDeleteTarget(m)}
+          />
+        )}
       </main>
 
       <button className="fab" onClick={() => setShowForm(true)} aria-label="Nuevo movimiento">

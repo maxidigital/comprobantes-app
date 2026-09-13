@@ -4,11 +4,12 @@ import { useEscapeKey } from './useEscapeKey';
 interface Props {
   isDark: boolean;
   onToggleTheme: () => void;
+  onRefresh: () => void;
   onInformes: () => void;
   onLogout: () => void;
 }
 
-export default function HeaderMenu({ isDark, onToggleTheme, onInformes, onLogout }: Props) {
+export default function HeaderMenu({ isDark, onToggleTheme, onRefresh, onInformes, onLogout }: Props) {
   const [open, setOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
@@ -41,6 +42,15 @@ export default function HeaderMenu({ isDark, onToggleTheme, onInformes, onLogout
 
       {open && (
         <div className="dropdown-panel">
+          <button
+            type="button"
+            onClick={() => {
+              onRefresh();
+              setOpen(false);
+            }}
+          >
+            🔄 Actualizar desde planilla
+          </button>
           <button
             type="button"
             onClick={() => {
