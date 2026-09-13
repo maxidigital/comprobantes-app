@@ -23,11 +23,13 @@ import java.util.List;
  * every row after it, and two quick actions before the frontend refetches
  * could then hit the wrong row.
  *
- * Las columnas H/I (antes comprobanteUrl/comprobanteNombre) quedan sin usar
- * a propósito: un movimiento puede tener varios comprobantes ahora, así que
- * viven como filas propias en ComprobanteSheetService. No se borran esas
- * columnas del esquema para no tener que reacomodar todas las columnas
- * siguientes en una planilla que ya tiene datos reales.
+ * La columna H se reaprovechó como "comprobantesCount": un contador de solo
+ * lectura (lo mantiene MovimientoController llamando a
+ * updateComprobantesCount después de cada alta/baja de comprobante) para
+ * poder ver de un vistazo, sin cambiar de pestaña, cuántos comprobantes
+ * tiene cada movimiento. La vieja columna I (comprobanteNombre) sí se borró
+ * del todo — ver la migración puntual del 2026-09-13 en CLAUDE.md — así que
+ * las columnas después de H corrieron un lugar (I pasó a ser notas, etc.).
  *
  * Esta clase no sabe nada de comprobantes: cada MovimientoResponse que
  * construye lleva una lista vacía como placeholder, y quien la llama
@@ -37,10 +39,10 @@ import java.util.List;
 @Service
 public class MovimientoSheetService {
 
-    private static final String RANGE_ALL = "A:M";
+    private static final String RANGE_ALL = "A:L";
     private static final List<Object> HEADER = List.of(
             "id", "fecha", "tipo", "monto", "concepto", "categoria", "bien",
-            "comprobanteUrl", "comprobanteNombre", "notas", "creadoEn", "estado", "cargadoPor");
+            "comprobantesCount", "notas", "creadoEn", "estado", "cargadoPor");
     private static final String ESTADO_ACTIVO = "activo";
     private static final String ESTADO_ELIMINADO = "eliminado";
 
@@ -79,8 +81,7 @@ public class MovimientoSheetService {
         // de raíz en vez de solo camuflarlo.
         List<Object> row = List.of(
                 id, toSheetDate(fecha), tipo, String.valueOf(monto), concepto,
-                nullToEmpty(categoria), nullToEmpty(bien),
-                "", "",
+                nullToEmpty(categoria), nullToEmpty(bien), "0",
                 nullToEmpty(notas), creadoEn, ESTADO_ACTIVO, nullToEmpty(cargadoPor));
 
         ValueRange valueRange = new ValueRange().setValues(List.of(row));
@@ -99,13 +100,13 @@ public class MovimientoSheetService {
 
         for (int i = 1; i < rows.size(); i++) {
             List<Object> row = rows.get(i);
-            if (ESTADO_ELIMINADO.equals(cell(row, 11))) {
+            if (ESTADO_ELIMINADO.equals(cell(row, 10))) {
                 continue;
             }
             result.add(MovimientoResponse.of(
                     cell(row, 0), fromSheetDate(cell(row, 1)), cell(row, 2),
                     parseDouble(cell(row, 3)), cell(row, 4), cell(row, 5), cell(row, 6),
-                    List.of(), cell(row, 9), cell(row, 10), cell(row, 12)));
+                    List.of(), cell(row, 8), cell(row, 9), cell(row, 11)));
         }
 
         Collections.reverse(result);
@@ -118,13 +119,13 @@ public class MovimientoSheetService {
         List<Object> row = rows.get(rowIndex);
 
         return MovimientoResponse.of(cell(row, 0), fromSheetDate(cell(row, 1)), cell(row, 2), parseDouble(cell(row, 3)),
-                cell(row, 4), cell(row, 5), cell(row, 6), List.of(), cell(row, 9), cell(row, 10), cell(row, 12));
+                cell(row, 4), cell(row, 5), cell(row, 6), List.of(), cell(row, 8), cell(row, 9), cell(row, 11));
     }
 
     public void softDelete(String id) throws IOException {
         List<List<Object>> rows = readRawRows();
         int rowIndex = locateRowIndex(rows, id);
-        updateCell("L" + (rowIndex + 1), ESTADO_ELIMINADO);
+        updateCell("K" + (rowIndex + 1), ESTADO_ELIMINADO);
     }
 
     public MovimientoResponse update(String id, String fecha, String tipo, double monto, String concepto,
@@ -140,10 +141,17 @@ public class MovimientoSheetService {
         updateCell("E" + sheetRow, concepto);
         updateCell("F" + sheetRow, nullToEmpty(categoria));
         updateCell("G" + sheetRow, nullToEmpty(bien));
-        updateCell("J" + sheetRow, nullToEmpty(notas));
+        updateCell("I" + sheetRow, nullToEmpty(notas));
 
         return MovimientoResponse.of(id, fecha, tipo, monto, concepto, nullToEmpty(categoria), nullToEmpty(bien),
-                List.of(), nullToEmpty(notas), cell(row, 10), cell(row, 12));
+                List.of(), nullToEmpty(notas), cell(row, 9), cell(row, 11));
+    }
+
+    /** Mantiene la columna H ("comprobantesCount") al día — la llama MovimientoController después de cada alta/baja de comprobante. */
+    public void updateComprobantesCount(String id, int count) throws IOException {
+        List<List<Object>> rows = readRawRows();
+        int rowIndex = locateRowIndex(rows, id);
+        updateCell("H" + (rowIndex + 1), String.valueOf(count));
     }
 
     private int locateRowIndex(List<List<Object>> rows, String id) {
@@ -167,7 +175,7 @@ public class MovimientoSheetService {
         if (readRawRows().isEmpty()) {
             ValueRange header = new ValueRange().setValues(List.of(HEADER));
             sheets.spreadsheets().values()
-                    .update(spreadsheetId, "A1:M1", header)
+                    .update(spreadsheetId, "A1:L1", header)
                     .setValueInputOption("RAW")
                     .execute();
         }

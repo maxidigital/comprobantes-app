@@ -57,6 +57,9 @@ public class MovimientoController {
                 notas, cargadoPor);
 
         List<ComprobanteResponse> subidos = subirComprobantes(creado.id(), fecha, concepto, comprobantes);
+        if (!subidos.isEmpty()) {
+            movimientoSheetService.updateComprobantesCount(creado.id(), subidos.size());
+        }
         return creado.withComprobantes(subidos);
     }
 
@@ -80,7 +83,10 @@ public class MovimientoController {
                                                     @RequestParam MultipartFile[] comprobantes) throws IOException {
         MovimientoResponse movimiento = movimientoSheetService.findById(id);
         subirComprobantes(id, movimiento.fecha(), movimiento.concepto(), comprobantes);
-        return movimiento.withComprobantes(comprobanteSheetService.findActiveByMovimiento(id));
+
+        List<ComprobanteResponse> actuales = comprobanteSheetService.findActiveByMovimiento(id);
+        movimientoSheetService.updateComprobantesCount(id, actuales.size());
+        return movimiento.withComprobantes(actuales);
     }
 
     @DeleteMapping("/{movimientoId}/comprobantes/{comprobanteId}")
@@ -90,7 +96,9 @@ public class MovimientoController {
         receiptDriveService.deleteByUrl(borrado.url());
 
         MovimientoResponse movimiento = movimientoSheetService.findById(movimientoId);
-        return movimiento.withComprobantes(comprobanteSheetService.findActiveByMovimiento(movimientoId));
+        List<ComprobanteResponse> actuales = comprobanteSheetService.findActiveByMovimiento(movimientoId);
+        movimientoSheetService.updateComprobantesCount(movimientoId, actuales.size());
+        return movimiento.withComprobantes(actuales);
     }
 
     @GetMapping("/{movimientoId}/comprobantes/{comprobanteId}/archivo")

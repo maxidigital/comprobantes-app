@@ -56,17 +56,27 @@ seguridad, es puramente identificación/transparencia entre herederos.
 Dos pestañas en la misma planilla:
 
 **Movimientos** (la pestaña original, cualquier nombre — el backend siempre
-lee/escribe por rango `A:M`, no por nombre de pestaña):
+lee/escribe por rango `A:L`, no por nombre de pestaña):
 
 ```
 id | fecha | tipo (INGRESO/GASTO) | monto | concepto | categoria | bien |
-comprobanteUrl | comprobanteNombre | notas | creadoEn | estado | cargadoPor
+comprobantesCount | notas | creadoEn | estado | cargadoPor
 ```
 
-Las columnas H/I (`comprobanteUrl`/`comprobanteNombre`) están **en desuso**
-desde que un movimiento puede tener varios comprobantes — se dejaron vacías
-en el esquema a propósito en vez de borrarlas, para no tener que reacomodar
-todas las columnas siguientes en una planilla con datos reales ya cargados.
+La columna H se reaprovechó como `comprobantesCount`: un contador de solo
+lectura (nunca se lee de vuelta, solo se escribe) que `MovimientoController`
+mantiene al día llamando a `MovimientoSheetService#updateComprobantesCount`
+después de cada alta/baja en `Comprobantes` — para poder ver de un vistazo,
+sin cambiar de pestaña, cuántos comprobantes tiene cada movimiento. La vieja
+columna I (`comprobanteNombre`, en desuso desde que un movimiento puede
+tener varios comprobantes) se borró del todo el 2026-09-13 — con cuidado:
+un primer intento borró la columna equivocada (para ese momento `notas` ya
+había corrido a la posición I porque `comprobanteNombre` se había borrado
+a mano directamente en la planilla en algún momento intermedio) y se
+recuperaron los 3 valores de `notas` a partir de la salida ya impresa del
+script antes del borrado — sin pérdida de datos, pero como aviso: antes de
+correr un `deleteDimension` contra esta planilla, releer el rango primero
+en la misma corrida, nunca asumir el layout de una lectura anterior.
 
 **Comprobantes** (pestaña nueva, uno-a-muchos con Movimientos):
 
