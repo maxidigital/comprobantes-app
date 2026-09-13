@@ -118,12 +118,22 @@ export async function editarMovimiento(id: string, data: NuevoMovimiento): Promi
   return response.json();
 }
 
-export async function adjuntarComprobante(id: string, file: File): Promise<Movimiento> {
+export async function adjuntarComprobante(id: string, file: File, fecha: string, concepto: string): Promise<Movimiento> {
   const form = new FormData();
   form.set('comprobante', file);
+  form.set('fecha', fecha);
+  form.set('concepto', concepto);
 
   const response = await request(`/movimientos/${id}/comprobante`, { method: 'PUT', body: form });
   return response.json();
+}
+
+/** Link directo al archivo del comprobante (lo sirve el propio backend, sin
+ * pasar por el visor de Drive) — incluye la clave por query param porque es
+ * un <a href> que el navegador navega directo, sin poder mandar el header. */
+export function comprobanteArchivoUrl(id: string): string {
+  const key = getAccessKey() ?? '';
+  return `/api/movimientos/${id}/comprobante/archivo?key=${encodeURIComponent(key)}`;
 }
 
 export async function eliminarMovimiento(id: string): Promise<void> {

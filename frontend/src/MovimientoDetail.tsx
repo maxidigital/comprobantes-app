@@ -1,3 +1,4 @@
+import { comprobanteArchivoUrl } from './api';
 import { currency, formatFecha } from './format';
 import type { Movimiento } from './types';
 import { useEscapeKey } from './useEscapeKey';
@@ -60,7 +61,7 @@ export default function MovimientoDetail({ movimiento: m, onClose }: Props) {
             {m.comprobantePendiente ? (
               <span className="badge-pending badge-pending--text">Pendiente</span>
             ) : (
-              <a className="chip" href={m.comprobanteUrl} target="_blank" rel="noreferrer">
+              <a className="chip" href={comprobanteArchivoUrl(m.id)} target="_blank" rel="noreferrer">
                 Ver comprobante
               </a>
             )}

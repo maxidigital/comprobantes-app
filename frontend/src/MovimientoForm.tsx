@@ -128,7 +128,7 @@ export default function MovimientoForm({ onClose, onSaved, onUnauthorized, editi
       };
       let guardado = editing ? await editarMovimiento(editing.id, datos) : await crearMovimiento(datos);
       if (editing && comprobante) {
-        guardado = await adjuntarComprobante(editing.id, comprobante);
+        guardado = await adjuntarComprobante(editing.id, comprobante, fechaIso, concepto.trim());
       }
       onSaved(guardado);
     } catch (err) {

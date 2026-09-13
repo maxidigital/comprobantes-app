@@ -4,6 +4,8 @@ import com.maxidigital.comprobantes.dto.MovimientoResponse;
 import com.maxidigital.comprobantes.service.MovimientoSheetService;
 import com.maxidigital.comprobantes.service.ReceiptDriveService;
 import com.maxidigital.comprobantes.service.ReceiptDriveService.UploadedReceipt;
+import jakarta.servlet.http.HttpServletResponse;
+import com.maxidigital.comprobantes.exception.NotFoundException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -42,7 +44,7 @@ public class MovimientoController {
         String comprobanteNombre = null;
 
         if (comprobante != null && !comprobante.isEmpty()) {
-            UploadedReceipt uploaded = receiptDriveService.upload(comprobante);
+            UploadedReceipt uploaded = receiptDriveService.upload(comprobante, fecha, concepto);
             comprobanteUrl = uploaded.url();
             comprobanteNombre = uploaded.fileName();
         }
@@ -65,9 +67,20 @@ public class MovimientoController {
 
     @PutMapping(value = "/{id}/comprobante", consumes = "multipart/form-data")
     public MovimientoResponse adjuntarComprobante(@PathVariable String id,
+                                                   @RequestParam(required = false) String fecha,
+                                                   @RequestParam(required = false) String concepto,
                                                    @RequestParam MultipartFile comprobante) throws IOException {
-        UploadedReceipt uploaded = receiptDriveService.upload(comprobante);
+        UploadedReceipt uploaded = receiptDriveService.upload(comprobante, fecha, concepto);
         return movimientoSheetService.attachComprobante(id, uploaded.url(), uploaded.fileName());
+    }
+
+    @GetMapping("/{id}/comprobante/archivo")
+    public void descargarComprobante(@PathVariable String id, HttpServletResponse response) throws IOException {
+        MovimientoResponse movimiento = movimientoSheetService.findById(id);
+        if (movimiento.comprobanteUrl() == null || movimiento.comprobanteUrl().isBlank()) {
+            throw new NotFoundException("Este movimiento no tiene comprobante adjunto");
+        }
+        receiptDriveService.streamToResponse(movimiento.comprobanteUrl(), response);
     }
 
     @DeleteMapping("/{id}")

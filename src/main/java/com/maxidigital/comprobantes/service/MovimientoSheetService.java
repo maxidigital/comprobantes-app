@@ -93,6 +93,16 @@ public class MovimientoSheetService {
         return result;
     }
 
+    public MovimientoResponse findById(String id) throws IOException {
+        List<List<Object>> rows = readRawRows();
+        int rowIndex = locateRowIndex(rows, id);
+        List<Object> row = rows.get(rowIndex);
+
+        return MovimientoResponse.of(cell(row, 0), fromSheetDate(cell(row, 1)), cell(row, 2), parseDouble(cell(row, 3)),
+                cell(row, 4), cell(row, 5), cell(row, 6), cell(row, 7), cell(row, 8),
+                cell(row, 9), cell(row, 10), cell(row, 12));
+    }
+
     public void softDelete(String id) throws IOException {
         List<List<Object>> rows = readRawRows();
         int rowIndex = locateRowIndex(rows, id);
