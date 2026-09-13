@@ -5,9 +5,10 @@ import { useEscapeKey } from './useEscapeKey';
 interface Props {
   movimiento: Movimiento;
   onClose: () => void;
+  onAttach: () => void;
 }
 
-export default function MovimientoDetail({ movimiento: m, onClose }: Props) {
+export default function MovimientoDetail({ movimiento: m, onClose, onAttach }: Props) {
   useEscapeKey(onClose);
 
   return (
@@ -58,7 +59,12 @@ export default function MovimientoDetail({ movimiento: m, onClose }: Props) {
           <label>Comprobante</label>
           <p className="detail-value">
             {m.comprobantePendiente ? (
-              <span className="badge-pending badge-pending--text">Pendiente</span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+                <span className="badge-pending badge-pending--text">Pendiente</span>
+                <button type="button" className="btn-plain" onClick={onAttach}>
+                  Adjuntar comprobante
+                </button>
+              </span>
             ) : (
               <a className="chip" href={m.comprobanteUrl} target="_blank" rel="noreferrer">
                 Ver comprobante

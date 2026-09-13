@@ -139,7 +139,16 @@ export default function App() {
         />
       )}
 
-      {detailTarget && <MovimientoDetail movimiento={detailTarget} onClose={() => setDetailTarget(null)} />}
+      {detailTarget && (
+        <MovimientoDetail
+          movimiento={detailTarget}
+          onClose={() => setDetailTarget(null)}
+          onAttach={() => {
+            setAttachTarget(detailTarget);
+            setDetailTarget(null);
+          }}
+        />
+      )}
 
       {confirmDeleteTarget && (
         <ConfirmDialog
