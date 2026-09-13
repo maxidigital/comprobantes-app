@@ -1,5 +1,5 @@
 import { FormEvent, useState } from 'react';
-import { ApiError, crearMovimiento, editarMovimiento } from './api';
+import { adjuntarComprobante, ApiError, crearMovimiento, editarMovimiento } from './api';
 import type { Movimiento, TipoMovimiento } from './types';
 import { useEscapeKey } from './useEscapeKey';
 
@@ -126,7 +126,10 @@ export default function MovimientoForm({ onClose, onSaved, onUnauthorized, editi
         notas: notas.trim(),
         comprobante,
       };
-      const guardado = editing ? await editarMovimiento(editing.id, datos) : await crearMovimiento(datos);
+      let guardado = editing ? await editarMovimiento(editing.id, datos) : await crearMovimiento(datos);
+      if (editing && comprobante) {
+        guardado = await adjuntarComprobante(editing.id, comprobante);
+      }
       onSaved(guardado);
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {
@@ -237,18 +240,20 @@ export default function MovimientoForm({ onClose, onSaved, onUnauthorized, editi
           <textarea id="notas" className="input" value={notas} onChange={(e) => setNotas(e.target.value)} />
         </div>
 
-        {!editing && (
-          <div className="field">
-            <label htmlFor="comprobante">Comprobante (foto o PDF, opcional)</label>
-            <input
-              id="comprobante"
-              className="input"
-              type="file"
-              accept="image/*,.pdf"
-              onChange={(e) => setComprobante(e.target.files?.[0] ?? null)}
-            />
-          </div>
-        )}
+        <div className="field">
+          <label htmlFor="comprobante">
+            {editing && !editing.comprobantePendiente
+              ? 'Reemplazar comprobante (opcional)'
+              : 'Comprobante (foto o PDF, opcional)'}
+          </label>
+          <input
+            id="comprobante"
+            className="input"
+            type="file"
+            accept="image/*,.pdf"
+            onChange={(e) => setComprobante(e.target.files?.[0] ?? null)}
+          />
+        </div>
 
         {error && <p className="error-text">{error}</p>}
         </div>

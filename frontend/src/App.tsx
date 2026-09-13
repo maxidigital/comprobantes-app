@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import AccessGate from './AccessGate';
-import AttachReceiptDialog from './AttachReceiptDialog';
 import ConfirmDialog from './ConfirmDialog';
 import HeaderMenu from './HeaderMenu';
 import MovimientoDetail from './MovimientoDetail';
@@ -30,7 +29,6 @@ export default function App() {
   const [detailTarget, setDetailTarget] = useState<Movimiento | null>(null);
   const [showInformes, setShowInformes] = useState(false);
   const [confirmDeleteTarget, setConfirmDeleteTarget] = useState<Movimiento | null>(null);
-  const [attachTarget, setAttachTarget] = useState<Movimiento | null>(null);
 
   useEscapeKey(() => setShowInformes(false));
   useVersionCheck();
@@ -66,7 +64,6 @@ export default function App() {
     setEditTarget(null);
     setDetailTarget(null);
     setConfirmDeleteTarget(null);
-    setAttachTarget(null);
     setUnlocked(false);
   }
 
@@ -142,16 +139,7 @@ export default function App() {
         />
       )}
 
-      {detailTarget && (
-        <MovimientoDetail
-          movimiento={detailTarget}
-          onClose={() => setDetailTarget(null)}
-          onAttach={() => {
-            setAttachTarget(detailTarget);
-            setDetailTarget(null);
-          }}
-        />
-      )}
+      {detailTarget && <MovimientoDetail movimiento={detailTarget} onClose={() => setDetailTarget(null)} />}
 
       {confirmDeleteTarget && (
         <ConfirmDialog
@@ -160,18 +148,6 @@ export default function App() {
           confirmLabel="Eliminar"
           onClose={() => setConfirmDeleteTarget(null)}
           onConfirm={handleConfirmDelete}
-        />
-      )}
-
-      {attachTarget && (
-        <AttachReceiptDialog
-          movimiento={attachTarget}
-          onClose={() => setAttachTarget(null)}
-          onAttached={(actualizado) => {
-            setMovimientos((prev) => (prev ? prev.map((m) => (m.id === actualizado.id ? actualizado : m)) : prev));
-            setAttachTarget(null);
-          }}
-          onUnauthorized={handleUnauthorized}
         />
       )}
 
