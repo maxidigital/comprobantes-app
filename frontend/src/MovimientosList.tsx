@@ -158,7 +158,7 @@ export default function MovimientosList({ movimientos, onOpenDetail, onEdit, onD
             Filtros
           </button>
           {showFiltros && (
-            <div className="dropdown-panel dropdown-panel--center">
+            <div className="dropdown-panel">
               <label className="checkbox-row">
                 <input
                   type="checkbox"

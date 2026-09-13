@@ -166,19 +166,6 @@ input[type='file'] {
   animation: dropdown-enter var(--ease-enter);
 }
 
-/* Anchored under a button that isn't necessarily near a screen edge (the
-   header hamburger always is, so it keeps the default right-aligned
-   behavior instead). Uses its own keyframes that bake translateX(-50%)
-   into every frame, since the entrance animation already animates
-   `transform` (translateY + scale) and would otherwise overwrite a static
-   translateX centering — and a fixed negative margin breaks the moment the
-   content is wider than assumed. */
-.dropdown-panel--center {
-  right: auto;
-  left: 50%;
-  animation: dropdown-enter-center var(--ease-enter);
-}
-
 .dropdown-panel button {
   display: block;
   width: 100%;
@@ -228,24 +215,9 @@ input[type='file'] {
   }
 }
 
-@keyframes dropdown-enter-center {
-  from {
-    opacity: 0;
-    transform: translateX(-50%) translateY(-6px) scale(0.97);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0) scale(1);
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   .dropdown-panel {
     animation: none;
-  }
-  .dropdown-panel--center {
-    animation: none;
-    transform: translateX(-50%);
   }
 }
 
