@@ -634,6 +634,12 @@ input[type='file'] {
     0 0 20px 2px rgba(0, 0, 0, 0.35);
 }
 
+.movement-card--pendiente {
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--status-pending) 55%, transparent),
+    0 0 20px 2px color-mix(in srgb, var(--status-pending) 25%, transparent);
+}
+
 .movement-card .row-top {
   display: flex;
   align-items: baseline;
