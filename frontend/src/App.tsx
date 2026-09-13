@@ -11,6 +11,7 @@ import Totals from './Totals';
 import { ApiError, clearAccessKey, eliminarMovimiento, getAccessKey, listMovimientos } from './api';
 import type { Movimiento } from './types';
 import { useEscapeKey } from './useEscapeKey';
+import { useVersionCheck } from './useVersionCheck';
 
 type Theme = 'light' | 'dark';
 
@@ -33,6 +34,7 @@ export default function App() {
   const [attachTarget, setAttachTarget] = useState<Movimiento | null>(null);
 
   useEscapeKey(() => setShowInformes(false));
+  const updateAvailable = useVersionCheck();
 
   useEffect(() => {
     if (unlocked) {
@@ -122,6 +124,15 @@ export default function App() {
       <button className="fab" onClick={() => setShowForm(true)} aria-label="Nuevo movimiento">
         +
       </button>
+
+      {updateAvailable && (
+        <div className="update-banner">
+          <span>Hay una actualización disponible</span>
+          <button type="button" className="btn-solid" onClick={() => window.location.reload()}>
+            Actualizar
+          </button>
+        </div>
+      )}
 
       {(showForm || editTarget) && (
         <MovimientoForm

@@ -388,6 +388,30 @@ input[type='file'] {
 }
 
 /* 5. Glow externo animado — única acción principal de la pantalla */
+.update-banner {
+  position: fixed;
+  left: 1rem;
+  right: 1rem;
+  bottom: calc(5.5rem + env(safe-area-inset-bottom));
+  z-index: 21;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  background: var(--elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 0.75rem 0.75rem 0.75rem 1rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  animation: dialog-enter var(--ease-enter);
+  font-size: 0.9rem;
+}
+
+.update-banner .btn-solid {
+  padding: 0.5rem 0.9rem;
+  white-space: nowrap;
+}
+
 .fab {
   position: fixed;
   right: calc(1.25rem + env(safe-area-inset-right));
