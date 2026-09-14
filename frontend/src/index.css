@@ -12,11 +12,7 @@
   --income: #22C55E;
   --expense: #38BDF8;
   --gasto: #F97316;
-  /* Mezcla derivada, no un color nuevo — para un bien que necesita su
-     propio tono sin pisar --income (ingresos) ni --status-pending
-     (comprobante pendiente). Se recalcula solo si cambia el tema porque
-     --brand-primary/--brand-accent ya varían por tema. */
-  --bien-alt: color-mix(in srgb, var(--brand-primary) 55%, var(--brand-accent) 45%);
+  --teal: #14B8A6;
 
   --radius-sm: 8px;
   --radius-md: 14px;
@@ -44,6 +40,7 @@
   --income: #15803D;
   --expense: #0369A1;
   --gasto: #C2410C;
+  --teal: #0F766E;
 
   color-scheme: light;
 }
@@ -63,6 +60,7 @@
     --income: #15803D;
     --expense: #0369A1;
     --gasto: #C2410C;
+    --teal: #0F766E;
 
     color-scheme: light;
   }
