@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { bienColor } from './bienes';
 import { currency, formatFecha } from './format';
 import type { FiltroTipo, Movimiento } from './types';
 
@@ -231,7 +232,11 @@ export default function MovimientosList({ movimientos, onOpenDetail, onEdit, onD
                 </div>
                 <div className="row-bottom">
                   <span className="meta">{formatFecha(m.fecha)}</span>
-                  {m.bien && <span className="bien-label">{m.bien}</span>}
+                  {m.bien && (
+                    <span className="bien-label" style={{ color: bienColor(m.bien) }}>
+                      {m.bien}
+                    </span>
+                  )}
                 </div>
                 {m.notas && <div className="meta">{m.notas}</div>}
               </div>

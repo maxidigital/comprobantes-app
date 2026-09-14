@@ -1,3 +1,4 @@
+import { bienColor } from './bienes';
 import { currency, formatFecha } from './format';
 import type { Movimiento } from './types';
 import { useEscapeKey } from './useEscapeKey';
@@ -39,7 +40,9 @@ export default function MovimientoDetail({ movimiento: m, onClose, onVerComproba
 
         <div className="field">
           <label>Bien relacionado</label>
-          <p className="detail-value">{m.bien || '—'}</p>
+          <p className="detail-value" style={m.bien ? { color: bienColor(m.bien) } : undefined}>
+            {m.bien || '—'}
+          </p>
         </div>
 
         <div className="field">

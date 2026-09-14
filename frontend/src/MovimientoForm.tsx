@@ -1,5 +1,6 @@
 import { FormEvent, useState } from 'react';
 import { agregarComprobantes, ApiError, borrarComprobante, crearMovimiento, editarMovimiento } from './api';
+import { BIENES } from './bienes';
 import type { Comprobante, Movimiento, TipoMovimiento } from './types';
 import { useEscapeKey } from './useEscapeKey';
 
@@ -9,8 +10,6 @@ interface Props {
   onUnauthorized: () => void;
   editing?: Movimiento;
 }
-
-const BIENES = ['General', 'Iriondo', 'San Martín', 'Oficina', '3 de febrero'];
 
 function todayDisplay(): string {
   return dateToDisplay(new Date());
