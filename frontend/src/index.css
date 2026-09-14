@@ -870,9 +870,9 @@ input[type='file'] {
 }
 
 .type-toggle button.active-gasto {
-  background: color-mix(in srgb, var(--expense) 14%, var(--card-bg));
-  border-color: var(--expense);
-  color: var(--expense);
+  background: color-mix(in srgb, var(--gasto) 14%, var(--card-bg));
+  border-color: var(--gasto);
+  color: var(--gasto);
 }
 
 .chip-list {

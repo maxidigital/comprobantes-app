@@ -18,7 +18,7 @@ export default function Totals({ movimientos }: Props) {
         <div className="value">{currency.format(totalIngresos)}</div>
       </div>
       <div className="card stat gasto">
-        <div className="label">Gastos</div>
+        <div className="label">Egresos</div>
         <div className="value">{currency.format(totalGastos)}</div>
       </div>
       <div className="card stat balance">

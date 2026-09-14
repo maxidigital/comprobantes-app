@@ -187,7 +187,7 @@ export default function MovimientoForm({ onClose, onSaved, onUnauthorized, editi
             Ingreso
           </button>
           <button type="button" className={tipo === 'GASTO' ? 'active-gasto' : ''} onClick={() => setTipo('GASTO')}>
-            Gasto
+            Egreso
           </button>
         </div>
 

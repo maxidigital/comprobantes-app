@@ -24,7 +24,7 @@ export default function MovimientoDetail({ movimiento: m, onClose, onVerComproba
         </div>
 
         <p className={`tipo-badge ${m.tipo === 'INGRESO' ? 'tipo-badge--ingreso' : 'tipo-badge--gasto'}`}>
-          {m.tipo === 'INGRESO' ? 'Ingreso' : 'Gasto'}
+          {m.tipo === 'INGRESO' ? 'Ingreso' : 'Egreso'}
         </p>
 
         <div className="field">

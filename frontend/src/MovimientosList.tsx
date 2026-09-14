@@ -145,7 +145,7 @@ export default function MovimientosList({ movimientos, onOpenDetail, onEdit, onD
               onClick={() => setFiltroTipo(tipo)}
               type="button"
             >
-              {tipo === 'TODOS' ? 'Todos' : tipo === 'INGRESO' ? 'Ingresos' : 'Gastos'}
+              {tipo === 'TODOS' ? 'Todos' : tipo === 'INGRESO' ? 'Ingresos' : 'Egresos'}
             </button>
           ))}
         </div>
