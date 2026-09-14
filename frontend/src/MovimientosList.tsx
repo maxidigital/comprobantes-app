@@ -203,7 +203,13 @@ export default function MovimientosList({ movimientos, onOpenDetail, onEdit, onD
               </div>
 
               <div
-                className={`card movement-card ${m.tipo === 'INGRESO' ? 'movement-card--ingreso' : 'movement-card--gasto'} ${m.comprobantePendiente ? 'movement-card--pendiente' : ''}`}
+                className={`card movement-card ${
+                  m.comprobantePendiente
+                    ? 'movement-card--pendiente'
+                    : m.tipo === 'INGRESO'
+                      ? 'movement-card--ingreso'
+                      : 'movement-card--gasto'
+                }`}
                 style={{
                   transform: `translateX(${rowTransform(m.id)}px)`,
                   transition: dragRef.current?.id === m.id ? 'none' : undefined,
