@@ -75,10 +75,11 @@ export default function MovimientoDetail({ movimiento: m, onClose, onVerComproba
           )}
         </div>
 
-        <div className="field">
-          <label>Cargado por</label>
-          <p className="detail-value">{m.cargadoPor || '—'}</p>
-        </div>
+        {m.cargadoPor && (
+          <p className="cargado-por">
+            Cargado por <span className="cargado-por-nombre">{m.cargadoPor}</span>
+          </p>
+        )}
         </div>
 
         <div className="dialog-actions">
