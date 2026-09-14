@@ -225,7 +225,7 @@ export default function MovimientosList({ movimientos, onOpenDetail, onEdit, onD
                       </span>
                     )}
                   </span>
-                  <span className={`monto ${m.tipo === 'INGRESO' ? 'ingreso' : ''}`}>
+                  <span className={`monto ${m.tipo === 'INGRESO' ? 'ingreso' : 'gasto'}`}>
                     {m.tipo === 'INGRESO' ? '+' : '-'}
                     {currency.format(m.monto)}
                   </span>

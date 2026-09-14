@@ -453,6 +453,10 @@ input[type='file'] {
   font-weight: 700;
 }
 
+.detail-value.monto.gasto {
+  color: var(--gasto);
+}
+
 .detail-value.monto.ingreso {
   color: var(--income);
 }
@@ -658,15 +662,11 @@ input[type='file'] {
 }
 
 .movement-card--ingreso {
-  box-shadow:
-    0 0 4px 1px color-mix(in srgb, var(--income) 40%, transparent),
-    0 0 34px 6px color-mix(in srgb, var(--income) 22%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--income) 55%, transparent);
 }
 
 .movement-card--gasto {
-  box-shadow:
-    0 0 4px 1px color-mix(in srgb, var(--gasto) 40%, transparent),
-    0 0 34px 6px color-mix(in srgb, var(--gasto) 22%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--gasto) 55%, transparent);
 }
 
 .movement-card--pendiente {
@@ -694,6 +694,10 @@ input[type='file'] {
 
 .movement-card .monto.ingreso {
   color: var(--income);
+}
+
+.movement-card .monto.gasto {
+  color: var(--gasto);
 }
 
 .movement-card .row-bottom {

@@ -46,7 +46,7 @@ export default function MovimientoDetail({ movimiento: m, onClose, onVerComproba
 
         <div className="field">
           <label>Monto</label>
-          <p className={`detail-value monto ${m.tipo === 'INGRESO' ? 'ingreso' : ''}`}>
+          <p className={`detail-value monto ${m.tipo === 'INGRESO' ? 'ingreso' : 'gasto'}`}>
             {m.tipo === 'INGRESO' ? '+' : '-'}
             {currency.format(m.monto)}
           </p>
