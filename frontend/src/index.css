@@ -581,8 +581,6 @@ input[type='file'] {
 
 .swipe-row {
   position: relative;
-  overflow: hidden;
-  border-radius: var(--radius-md);
 }
 
 .swipe-actions {
@@ -592,6 +590,8 @@ input[type='file'] {
   bottom: 0;
   display: flex;
   width: 160px;
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  overflow: hidden;
 }
 
 .swipe-action {
@@ -617,6 +617,7 @@ input[type='file'] {
   gap: 0.4rem;
   position: relative;
   background: var(--card-bg);
+  border-radius: var(--radius-md);
   touch-action: pan-y;
   user-select: none;
   transition: transform 0.2s ease;
