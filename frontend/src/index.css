@@ -11,6 +11,12 @@
   --danger: #EF4444;
   --income: #22C55E;
   --expense: #38BDF8;
+  --gasto: #F97316;
+  /* Mezcla derivada, no un color nuevo — para un bien que necesita su
+     propio tono sin pisar --income (ingresos) ni --status-pending
+     (comprobante pendiente). Se recalcula solo si cambia el tema porque
+     --brand-primary/--brand-accent ya varían por tema. */
+  --bien-alt: color-mix(in srgb, var(--brand-primary) 55%, var(--brand-accent) 45%);
 
   --radius-sm: 8px;
   --radius-md: 14px;
@@ -37,6 +43,7 @@
   --danger: #DC2626;
   --income: #15803D;
   --expense: #0369A1;
+  --gasto: #C2410C;
 
   color-scheme: light;
 }
@@ -55,6 +62,7 @@
     --danger: #DC2626;
     --income: #15803D;
     --expense: #0369A1;
+    --gasto: #C2410C;
 
     color-scheme: light;
   }
@@ -449,6 +457,20 @@ input[type='file'] {
   color: var(--income);
 }
 
+.tipo-badge {
+  margin: -0.25rem 0 1rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.tipo-badge--ingreso {
+  color: var(--income);
+}
+
+.tipo-badge--gasto {
+  color: var(--gasto);
+}
+
 .cargado-por {
   margin: 0.25rem 0 0;
   font-size: 0.85rem;
@@ -457,7 +479,7 @@ input[type='file'] {
 }
 
 .cargado-por-nombre {
-  color: var(--income);
+  color: var(--brand-primary);
   font-weight: 600;
 }
 
@@ -643,8 +665,8 @@ input[type='file'] {
 
 .movement-card--gasto {
   box-shadow:
-    0 0 4px 1px rgba(0, 0, 0, 0.5),
-    0 0 34px 6px rgba(0, 0, 0, 0.4);
+    0 0 4px 1px color-mix(in srgb, var(--gasto) 40%, transparent),
+    0 0 34px 6px color-mix(in srgb, var(--gasto) 22%, transparent);
 }
 
 .movement-card--pendiente {

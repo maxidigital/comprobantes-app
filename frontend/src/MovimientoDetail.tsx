@@ -23,10 +23,9 @@ export default function MovimientoDetail({ movimiento: m, onClose, onVerComproba
           </button>
         </div>
 
-        <div className="field">
-          <label>Tipo</label>
-          <p className="detail-value">{m.tipo === 'INGRESO' ? 'Ingreso' : 'Gasto'}</p>
-        </div>
+        <p className={`tipo-badge ${m.tipo === 'INGRESO' ? 'tipo-badge--ingreso' : 'tipo-badge--gasto'}`}>
+          {m.tipo === 'INGRESO' ? 'Ingreso' : 'Gasto'}
+        </p>
 
         <div className="field">
           <label>Fecha</label>
@@ -59,16 +58,15 @@ export default function MovimientoDetail({ movimiento: m, onClose, onVerComproba
         </div>
 
         <div className="field">
-          <label>{m.comprobantes.length > 1 ? 'Comprobantes' : 'Comprobante'}</label>
           {m.comprobantePendiente ? (
             <p className="detail-value">
               <span className="badge-pending badge-pending--text">Pendiente</span>
             </p>
           ) : (
             <div className="chip-list">
-              {m.comprobantes.map((c) => (
+              {m.comprobantes.map((c, i) => (
                 <button key={c.id} type="button" className="chip" onClick={() => onVerComprobante(c.id)}>
-                  {m.comprobantes.length > 1 ? c.nombre : 'Ver comprobante'}
+                  {m.comprobantes.length > 1 ? `Ver comprobante ${i + 1}` : 'Ver comprobante'}
                 </button>
               ))}
             </div>
