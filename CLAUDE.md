@@ -38,18 +38,39 @@ puerto (mismo patrón que `underwater/apps/re.mind2`).
 
 ## Acceso (sin login de Google)
 
-No hay OAuth por usuario ni niveles de admin/viewer — una única contraseña
-compartida (`APP_PASSWORD`), validada por un interceptor
-(`security/AccessKeyInterceptor`) vía el header `X-Access-Key`, protege por
-igual ver y editar/eliminar (GET/POST/PUT/DELETE). Cualquiera que la tenga
-puede hacer cualquier cosa en la app — decisión consciente para la v1, no un
-descuido: se prefirió simplicidad sobre roles diferenciados.
+No hay OAuth por usuario. Sigue habiendo una única contraseña compartida
+(`APP_PASSWORD`) — no hay password individual por heredero, la app es de
+uso familiar y no hace falta tanta seguridad — pero desde que se agregaron
+roles, el **nombre** que se tipea en el gate ya no es texto libre: tiene
+que matchear uno de los usuarios hardcodeados en `config/UsuariosConfig`
+(`Maxi:ADMIN`, `Gustavo:EDITOR`, `Nico:VIEWER`). Es una lista fija de 3-4
+nombres de la familia — se prefirió hardcodearla en vez de una env var o
+una pestaña en el Sheet: agregar/sacar un heredero es un evento raro que
+igual requiere tocar código o redeploy, no vale la pena la indirección.
+Para agregar o cambiar un usuario, editar ese archivo y redeployar.
 
-El gate inicial (`AccessGate`) pide, además de la contraseña, el **nombre**
-de quien entra — se guarda en `localStorage` (`comprobantes.userName`, sin
-validar contra nada) y se manda como `cargadoPor` en cada movimiento nuevo,
-solo para que quede registro de quién cargó qué. No es un mecanismo de
-seguridad, es puramente identificación/transparencia entre herederos.
+Roles: `ADMIN`, `EDITOR`, `VIEWER` (`security/Rol`). Por ahora `ADMIN` y
+`EDITOR` son equivalentes en permisos (solo se distinguen como etiqueta) —
+la única diferencia real es `VIEWER`, que solo puede leer. El interceptor
+(`security/AccessKeyInterceptor`, protege `/api/movimientos/**` y
+`/api/auth/**`) sigue validando la contraseña vía `X-Access-Key` (o el
+query param `key`, para el mismo caso legacy documentado ahí) y ahora
+además resuelve el rol a partir de un header `X-User-Name` (o query param
+`user`): GET queda permitido para cualquier rol, POST/PUT/DELETE
+devuelven 403 si el rol es `VIEWER`. No hay sesión server-side: cada
+request manda de nuevo contraseña + nombre, no hay estado que sobreviva a
+un restart del backend (aceptable para una app de bajo tráfico).
+
+El nombre se sigue guardando en `localStorage`
+(`comprobantes.userName`) y se manda como `cargadoPor` en cada movimiento
+nuevo, para que quede registro de quién cargó qué — ahora es una identidad
+validada contra `APP_USERS`, no un valor arbitrario. `GET /api/auth/whoami`
+es el endpoint que usa el gate (`AccessGate` → `api.ts#login`) para
+validar contraseña+nombre en un solo paso y devolver `{nombre, rol}`; el
+rol se guarda en `localStorage` (`comprobantes.userRole`) y determina en
+el frontend qué mostrar (el botón "+" de nuevo movimiento y las acciones
+de editar/eliminar quedan ocultos para `VIEWER` — puro UX, el enforcement
+real lo hace el interceptor).
 
 ## Estructura de datos
 
@@ -197,24 +218,26 @@ src/main/java/com/maxidigital/comprobantes/
 ├── ComprobantesApplication.java
 ├── config/
 │   ├── WebConfig.java               # CORS + registro del interceptor de acceso
-│   └── GoogleClientsConfig.java     # Bean Sheets (cuenta de servicio) + Bean Drive (OAuth refresh token)
-├── security/AccessKeyInterceptor.java
+│   ├── GoogleClientsConfig.java     # Bean Sheets (cuenta de servicio) + Bean Drive (OAuth refresh token)
+│   └── UsuariosConfig.java          # lista fija hardcodeada de usuarios -> rol
+├── security/AccessKeyInterceptor.java, Rol.java
 ├── controller/
 │   ├── MovimientoController.java    # GET/POST /api/movimientos, PUT/DELETE .../{id},
 │   │                                 # POST .../{id}/comprobantes, DELETE/GET .../{id}/comprobantes/{comprobanteId}[/archivo]
+│   ├── AuthController.java          # GET /api/auth/whoami -> {nombre, rol}
 │   └── ApiExceptionHandler.java
 ├── dto/MovimientoResponse.java, ComprobanteResponse.java
 ├── service/
 │   ├── MovimientoSheetService.java   # append/readAll/softDelete/update — no sabe de comprobantes
 │   ├── ComprobanteSheetService.java  # pestaña "Comprobantes": append/readAllActive/findActiveByMovimiento/softDelete(All)
 │   └── ReceiptDriveService.java      # sube/borra/sirve el archivo en Drive
-└── exception/UnauthorizedException.java, NotFoundException.java
+└── exception/UnauthorizedException.java, ForbiddenException.java, NotFoundException.java
 
 frontend/src/
 ├── main.tsx, App.tsx                # App.tsx: gate de acceso -> listado
-├── api.ts                           # fetch centralizado + manejo de X-Access-Key
+├── api.ts                           # fetch centralizado + manejo de X-Access-Key/X-User-Name + login()
 ├── types.ts
-├── AccessGate.tsx                   # pide nombre + APP_PASSWORD
+├── AccessGate.tsx                   # pide nombre + APP_PASSWORD, valida contra /api/auth/whoami
 ├── Totals.tsx                       # ingresos / gastos / balance
 ├── MovimientosList.tsx              # listado + filtros (tipo, comprobante pendiente)
 ├── MovimientoForm.tsx               # alta/edición — selección múltiple de archivos + lista de comprobantes existentes con borrado individual

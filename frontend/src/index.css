@@ -690,6 +690,11 @@ input[type='file'] {
   white-space: nowrap;
 }
 
+.movement-card .monto .monto-centavos {
+  font-size: 0.7em;
+  font-weight: 600;
+}
+
 .movement-card .monto.ingreso {
   color: var(--income);
 }

@@ -1,5 +1,5 @@
 import { FormEvent, useState } from 'react';
-import { setAccessKey, setUserName, tryAccessKey } from './api';
+import { ApiError, login, setAccessKey, setUserName, setUserRole } from './api';
 
 interface Props {
   onUnlock: () => void;
@@ -18,16 +18,17 @@ export default function AccessGate({ onUnlock }: Props) {
     setLoading(true);
     setError(null);
     try {
-      const ok = await tryAccessKey(password.trim());
-      if (ok) {
-        setAccessKey(password.trim());
-        setUserName(name.trim());
-        onUnlock();
+      const { nombre, rol } = await login(name.trim(), password.trim());
+      setAccessKey(password.trim());
+      setUserName(nombre);
+      setUserRole(rol);
+      onUnlock();
+    } catch (err) {
+      if (err instanceof ApiError) {
+        setError(err.status === 401 ? err.message : 'No se pudo conectar con el servidor');
       } else {
-        setError('Contraseña incorrecta');
+        setError('No se pudo conectar con el servidor');
       }
-    } catch {
-      setError('No se pudo conectar con el servidor');
     } finally {
       setLoading(false);
     }

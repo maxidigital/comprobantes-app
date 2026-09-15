@@ -1,7 +1,8 @@
-import type { Movimiento, NuevoMovimiento } from './types';
+import type { Movimiento, NuevoMovimiento, Rol } from './types';
 
 const ACCESS_KEY_STORAGE = 'comprobantes.accessKey';
 const USER_NAME_STORAGE = 'comprobantes.userName';
+const USER_ROLE_STORAGE = 'comprobantes.userRole';
 
 export class ApiError extends Error {
   constructor(
@@ -22,6 +23,7 @@ export function setAccessKey(key: string) {
 
 export function clearAccessKey() {
   localStorage.removeItem(ACCESS_KEY_STORAGE);
+  clearUserRole();
 }
 
 export function getUserName(): string | null {
@@ -30,6 +32,18 @@ export function getUserName(): string | null {
 
 export function setUserName(name: string) {
   localStorage.setItem(USER_NAME_STORAGE, name);
+}
+
+export function getUserRole(): Rol | null {
+  return localStorage.getItem(USER_ROLE_STORAGE) as Rol | null;
+}
+
+export function setUserRole(rol: Rol) {
+  localStorage.setItem(USER_ROLE_STORAGE, rol);
+}
+
+export function clearUserRole() {
+  localStorage.removeItem(USER_ROLE_STORAGE);
 }
 
 /** Intenta leer un error como JSON ({error: "..."}); si la respuesta no es
@@ -50,9 +64,13 @@ async function describeErrorResponse(response: Response): Promise<string> {
 
 async function request(path: string, init: RequestInit = {}): Promise<Response> {
   const key = getAccessKey();
+  const nombre = getUserName();
   const headers = new Headers(init.headers);
   if (key) {
     headers.set('X-Access-Key', key);
+  }
+  if (nombre) {
+    headers.set('X-User-Name', nombre);
   }
 
   let response: Response;
@@ -75,11 +93,14 @@ async function request(path: string, init: RequestInit = {}): Promise<Response> 
   return response;
 }
 
-/** Also doubles as the access-code check on the gate screen. */
-export async function tryAccessKey(key: string): Promise<boolean> {
-  const headers = new Headers({ 'X-Access-Key': key });
-  const response = await fetch('/api/movimientos', { headers });
-  return response.ok;
+/** Valida contraseña + nombre contra el backend y devuelve el rol resuelto (usado en el gate de acceso). */
+export async function login(nombre: string, key: string): Promise<{ nombre: string; rol: Rol }> {
+  const headers = new Headers({ 'X-Access-Key': key, 'X-User-Name': nombre });
+  const response = await fetch('/api/auth/whoami', { headers });
+  if (!response.ok) {
+    throw new ApiError(await describeErrorResponse(response), response.status);
+  }
+  return response.json();
 }
 
 export async function listMovimientos(): Promise<Movimiento[]> {

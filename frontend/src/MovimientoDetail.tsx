@@ -5,11 +5,21 @@ import { useEscapeKey } from './useEscapeKey';
 
 interface Props {
   movimiento: Movimiento;
+  puedeEditar: boolean;
   onClose: () => void;
   onVerComprobante: (comprobanteId: string) => void;
+  onEdit: (movimiento: Movimiento) => void;
+  onDelete: (movimiento: Movimiento) => void;
 }
 
-export default function MovimientoDetail({ movimiento: m, onClose, onVerComprobante }: Props) {
+export default function MovimientoDetail({
+  movimiento: m,
+  puedeEditar,
+  onClose,
+  onVerComprobante,
+  onEdit,
+  onDelete,
+}: Props) {
   useEscapeKey(onClose);
 
   return (
@@ -81,6 +91,21 @@ export default function MovimientoDetail({ movimiento: m, onClose, onVerComproba
         </div>
 
         <div className="dialog-actions">
+          {puedeEditar && (
+            <>
+              <button
+                type="button"
+                className="btn-plain"
+                style={{ color: 'var(--danger)' }}
+                onClick={() => onDelete(m)}
+              >
+                Eliminar
+              </button>
+              <button type="button" className="btn-plain" onClick={() => onEdit(m)}>
+                Editar
+              </button>
+            </>
+          )}
           <button type="button" className="btn-plain" onClick={onClose}>
             Cerrar
           </button>

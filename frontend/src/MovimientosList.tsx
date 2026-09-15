@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { bienColor } from './bienes';
-import { currency, formatFecha } from './format';
+import { formatFecha, formatMontoPartes } from './format';
 import type { FiltroTipo, Movimiento } from './types';
 
 interface Props {
   movimientos: Movimiento[];
+  puedeEditar: boolean;
   onOpenDetail: (movimiento: Movimiento) => void;
   onEdit: (movimiento: Movimiento) => void;
   onDelete: (movimiento: Movimiento) => void;
@@ -23,7 +24,7 @@ interface DragState {
   locked: 'horizontal' | 'vertical' | null;
 }
 
-export default function MovimientosList({ movimientos, onOpenDetail, onEdit, onDelete }: Props) {
+export default function MovimientosList({ movimientos, puedeEditar, onOpenDetail, onEdit, onDelete }: Props) {
   const [filtroTipo, setFiltroTipo] = useState<FiltroTipo>('TODOS');
   const [soloPendientes, setSoloPendientes] = useState(false);
   const [showFiltros, setShowFiltros] = useState(false);
@@ -114,7 +115,7 @@ export default function MovimientosList({ movimientos, onOpenDetail, onEdit, onD
       return;
     }
 
-    if (drag.deltaX < -SWIPE_OPEN_THRESHOLD) {
+    if (drag.deltaX < -SWIPE_OPEN_THRESHOLD && puedeEditar) {
       setOpenSwipeId(id);
     } else if (drag.deltaX > SWIPE_OPEN_THRESHOLD) {
       setOpenSwipeId(null);
@@ -177,30 +178,34 @@ export default function MovimientosList({ movimientos, onOpenDetail, onEdit, onD
         <p className="empty-state">No hay movimientos que coincidan con el filtro.</p>
       ) : (
         <div className="movement-list">
-          {visibles.map((m) => (
+          {visibles.map((m) => {
+            const montoPartes = formatMontoPartes(m.monto);
+            return (
             <div key={m.id} className="swipe-row">
-              <div className="swipe-actions">
-                <button
-                  type="button"
-                  className="swipe-action swipe-action--edit"
-                  onClick={() => {
-                    setOpenSwipeId(null);
-                    onEdit(m);
-                  }}
-                >
-                  Editar
-                </button>
-                <button
-                  type="button"
-                  className="swipe-action swipe-action--delete"
-                  onClick={() => {
-                    setOpenSwipeId(null);
-                    onDelete(m);
-                  }}
-                >
-                  Eliminar
-                </button>
-              </div>
+              {puedeEditar && (
+                <div className="swipe-actions">
+                  <button
+                    type="button"
+                    className="swipe-action swipe-action--edit"
+                    onClick={() => {
+                      setOpenSwipeId(null);
+                      onEdit(m);
+                    }}
+                  >
+                    Editar
+                  </button>
+                  <button
+                    type="button"
+                    className="swipe-action swipe-action--delete"
+                    onClick={() => {
+                      setOpenSwipeId(null);
+                      onDelete(m);
+                    }}
+                  >
+                    Eliminar
+                  </button>
+                </div>
+              )}
 
               <div
                 className={`card movement-card ${m.comprobantePendiente ? 'movement-card--pendiente' : ''}`}
@@ -227,7 +232,8 @@ export default function MovimientosList({ movimientos, onOpenDetail, onEdit, onD
                   </span>
                   <span className={`monto ${m.tipo === 'INGRESO' ? 'ingreso' : 'gasto'}`}>
                     {m.tipo === 'INGRESO' ? '+' : '-'}
-                    {currency.format(m.monto)}
+                    {montoPartes.principal}
+                    <span className="monto-centavos">{montoPartes.centavos}</span>
                   </span>
                 </div>
                 <div className="row-bottom">
@@ -241,7 +247,8 @@ export default function MovimientosList({ movimientos, onOpenDetail, onEdit, onD
                 {m.notas && <div className="meta">{m.notas}</div>}
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

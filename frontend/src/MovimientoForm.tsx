@@ -1,4 +1,4 @@
-import { FormEvent, useState } from 'react';
+import { ChangeEvent, FormEvent, useRef, useState } from 'react';
 import { agregarComprobantes, ApiError, borrarComprobante, crearMovimiento, editarMovimiento } from './api';
 import { BIENES } from './bienes';
 import type { Comprobante, Movimiento, TipoMovimiento } from './types';
@@ -87,14 +87,31 @@ export default function MovimientoForm({ onClose, onSaved, onUnauthorized, editi
   const [fechaTexto, setFechaTexto] = useState(editing ? isoToDisplay(editing.fecha) : todayDisplay());
   const [monto, setMonto] = useState(editing ? String(editing.monto) : '');
   const [concepto, setConcepto] = useState(editing?.concepto ?? '');
-  const [bien, setBien] = useState(editing?.bien || BIENES[0]);
+  const [bien, setBien] = useState(editing?.bien ?? '');
   const [notas, setNotas] = useState(editing?.notas ?? '');
   const [comprobantesActuales, setComprobantesActuales] = useState<Comprobante[]>(editing?.comprobantes ?? []);
   const [comprobantesNuevos, setComprobantesNuevos] = useState<File[]>([]);
   const [borrandoId, setBorrandoId] = useState<string | null>(null);
-  const [fieldErrors, setFieldErrors] = useState<{ fecha?: string; concepto?: string; monto?: string }>({});
+  const [fieldErrors, setFieldErrors] = useState<{ fecha?: string; concepto?: string; monto?: string; bien?: string }>(
+    {},
+  );
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  /** Acumula lo elegido (no lo reemplaza) y limpia el input, para poder abrir
+   * el selector varias veces y sumar comprobantes de a poco en la misma ventana. */
+  function handleAgregarArchivos(e: ChangeEvent<HTMLInputElement>) {
+    const elegidos = Array.from(e.target.files ?? []);
+    if (elegidos.length > 0) {
+      setComprobantesNuevos((prev) => [...prev, ...elegidos]);
+    }
+    e.target.value = '';
+  }
+
+  function handleQuitarArchivoNuevo(index: number) {
+    setComprobantesNuevos((prev) => prev.filter((_, i) => i !== index));
+  }
 
   async function handleBorrarComprobante(comprobanteId: string) {
     if (!editing) return;
@@ -132,6 +149,7 @@ export default function MovimientoForm({ onClose, onSaved, onUnauthorized, editi
     if (!fechaIso) nuevosErrores.fecha = 'Fecha inválida (dd/mm/aaaa)';
     if (!concepto.trim()) nuevosErrores.concepto = 'Completá el concepto';
     if (!montoNumero || montoNumero <= 0) nuevosErrores.monto = 'Ingresá un monto válido';
+    if (!bien) nuevosErrores.bien = 'Elegí un bien';
 
     if (Object.keys(nuevosErrores).length > 0 || !fechaIso) {
       setFieldErrors(nuevosErrores);
@@ -235,12 +253,16 @@ export default function MovimientoForm({ onClose, onSaved, onUnauthorized, editi
         <div className="field">
           <label htmlFor="bien">Bien relacionado</label>
           <select id="bien" className="input" value={bien} onChange={(e) => setBien(e.target.value)}>
+            <option value="" disabled>
+              Elegir bien
+            </option>
             {BIENES.map((b) => (
               <option key={b} value={b}>
                 {b}
               </option>
             ))}
           </select>
+          {fieldErrors.bien && <p className="error-text">{fieldErrors.bien}</p>}
         </div>
 
         <div className="field">
@@ -289,21 +311,37 @@ export default function MovimientoForm({ onClose, onSaved, onUnauthorized, editi
             </ul>
           )}
 
+          {comprobantesNuevos.length > 0 && (
+            <ul className="receipt-list">
+              {comprobantesNuevos.map((file, i) => (
+                <li key={`${file.name}-${i}`} className="receipt-list-item">
+                  <span className="receipt-list-name">{file.name}</span>
+                  <button
+                    type="button"
+                    className="btn-plain"
+                    onClick={() => handleQuitarArchivoNuevo(i)}
+                    style={{ color: 'var(--danger)' }}
+                  >
+                    Quitar
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+
           <input
+            ref={fileInputRef}
             id="comprobante"
             className="input"
             type="file"
             accept="image/*,.pdf"
             multiple
-            onChange={(e) => setComprobantesNuevos(Array.from(e.target.files ?? []))}
+            style={{ display: 'none' }}
+            onChange={handleAgregarArchivos}
           />
-          {comprobantesNuevos.length > 0 && (
-            <p className="detail-value" style={{ fontSize: '0.8rem' }}>
-              {comprobantesNuevos.length === 1
-                ? '1 archivo nuevo para subir'
-                : `${comprobantesNuevos.length} archivos nuevos para subir`}
-            </p>
-          )}
+          <button type="button" className="btn-plain" onClick={() => fileInputRef.current?.click()}>
+            + Agregar comprobante
+          </button>
         </div>
 
         {error && <p className="error-text">{error}</p>}

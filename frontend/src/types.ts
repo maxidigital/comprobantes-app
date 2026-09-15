@@ -1,5 +1,7 @@
 export type TipoMovimiento = 'INGRESO' | 'GASTO';
 
+export type Rol = 'ADMIN' | 'EDITOR' | 'VIEWER';
+
 export interface Comprobante {
   id: string;
   movimientoId: string;

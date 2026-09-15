@@ -7,7 +7,7 @@ import MovimientoForm from './MovimientoForm';
 import MovimientosList from './MovimientosList';
 import ReceiptViewerDialog from './ReceiptViewerDialog';
 import Totals from './Totals';
-import { ApiError, clearAccessKey, eliminarMovimiento, getAccessKey, listMovimientos } from './api';
+import { ApiError, clearAccessKey, eliminarMovimiento, getAccessKey, getUserRole, listMovimientos } from './api';
 import type { Movimiento } from './types';
 import { useEscapeKey } from './useEscapeKey';
 import { useVersionCheck } from './useVersionCheck';
@@ -31,6 +31,7 @@ export default function App() {
   const [viewingReceipt, setViewingReceipt] = useState<{ movimientoId: string; comprobanteId: string } | null>(null);
   const [showInformes, setShowInformes] = useState(false);
   const [confirmDeleteTarget, setConfirmDeleteTarget] = useState<Movimiento | null>(null);
+  const puedeEditar = getUserRole() !== 'VIEWER';
 
   useEscapeKey(() => setShowInformes(false));
   useVersionCheck();
@@ -112,6 +113,7 @@ export default function App() {
         {movimientos !== null && (
           <MovimientosList
             movimientos={movimientos}
+            puedeEditar={puedeEditar}
             onOpenDetail={(m) => setDetailTarget(m)}
             onEdit={(m) => setEditTarget(m)}
             onDelete={(m) => setConfirmDeleteTarget(m)}
@@ -119,9 +121,11 @@ export default function App() {
         )}
       </main>
 
-      <button className="fab" onClick={() => setShowForm(true)} aria-label="Nuevo movimiento">
-        +
-      </button>
+      {puedeEditar && (
+        <button className="fab" onClick={() => setShowForm(true)} aria-label="Nuevo movimiento">
+          +
+        </button>
+      )}
 
       {(showForm || editTarget) && (
         <MovimientoForm
@@ -145,8 +149,17 @@ export default function App() {
       {detailTarget && (
         <MovimientoDetail
           movimiento={detailTarget}
+          puedeEditar={puedeEditar}
           onClose={() => setDetailTarget(null)}
           onVerComprobante={(comprobanteId) => setViewingReceipt({ movimientoId: detailTarget.id, comprobanteId })}
+          onEdit={(m) => {
+            setDetailTarget(null);
+            setEditTarget(m);
+          }}
+          onDelete={(m) => {
+            setDetailTarget(null);
+            setConfirmDeleteTarget(m);
+          }}
         />
       )}
 
