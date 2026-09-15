@@ -210,6 +210,12 @@ input[type='file'] {
   accent-color: var(--brand-primary);
 }
 
+.dropdown-panel-separator {
+  height: 1px;
+  margin: 0.3rem 0.2rem;
+  background: var(--border);
+}
+
 @keyframes dropdown-enter {
   from {
     opacity: 0;

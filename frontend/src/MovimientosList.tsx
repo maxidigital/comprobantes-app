@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { bienColor } from './bienes';
+import { BIENES, bienColor } from './bienes';
 import { formatFecha, formatMontoPartes } from './format';
 import type { FiltroTipo, Movimiento } from './types';
 
@@ -27,6 +27,7 @@ interface DragState {
 export default function MovimientosList({ movimientos, puedeEditar, onOpenDetail, onEdit, onDelete }: Props) {
   const [filtroTipo, setFiltroTipo] = useState<FiltroTipo>('TODOS');
   const [soloPendientes, setSoloPendientes] = useState(false);
+  const [bienesSeleccionados, setBienesSeleccionados] = useState<Set<string>>(new Set());
   const [showFiltros, setShowFiltros] = useState(false);
   const filtrosRef = useRef<HTMLDivElement>(null);
 
@@ -58,11 +59,24 @@ export default function MovimientosList({ movimientos, puedeEditar, onOpenDetail
     return movimientos.filter((m) => {
       if (filtroTipo !== 'TODOS' && m.tipo !== filtroTipo) return false;
       if (soloPendientes && !m.comprobantePendiente) return false;
+      if (bienesSeleccionados.size > 0 && !bienesSeleccionados.has(m.bien)) return false;
       return true;
     });
-  }, [movimientos, filtroTipo, soloPendientes]);
+  }, [movimientos, filtroTipo, soloPendientes, bienesSeleccionados]);
 
   const pendientesCount = useMemo(() => movimientos.filter((m) => m.comprobantePendiente).length, [movimientos]);
+
+  function toggleBien(bien: string) {
+    setBienesSeleccionados((prev) => {
+      const next = new Set(prev);
+      if (next.has(bien)) {
+        next.delete(bien);
+      } else {
+        next.add(bien);
+      }
+      return next;
+    });
+  }
 
   function handlePointerDown(e: React.PointerEvent, id: string) {
     if (e.pointerType === 'mouse' && e.button !== 0) return;
@@ -153,7 +167,7 @@ export default function MovimientosList({ movimientos, puedeEditar, onOpenDetail
         <div className="dropdown-wrapper" ref={filtrosRef}>
           <button
             type="button"
-            className={`chip chip-toggle ${soloPendientes ? 'active' : ''}`}
+            className={`chip chip-toggle ${soloPendientes || bienesSeleccionados.size > 0 ? 'active' : ''}`}
             onClick={() => setShowFiltros((v) => !v)}
             aria-expanded={showFiltros}
           >
@@ -169,6 +183,21 @@ export default function MovimientosList({ movimientos, puedeEditar, onOpenDetail
                 />
                 Con comprobante pendiente{pendientesCount > 0 ? ` (${pendientesCount})` : ''}
               </label>
+
+              <div className="dropdown-panel-separator" />
+
+              {BIENES.map((bien) => (
+                <label className="checkbox-row" key={bien}>
+                  <input
+                    type="checkbox"
+                    checked={bienesSeleccionados.has(bien)}
+                    onChange={() => toggleBien(bien)}
+                  />
+                  <span className="bien-label" style={{ color: bienColor(bien) }}>
+                    {bien}
+                  </span>
+                </label>
+              ))}
             </div>
           )}
         </div>
