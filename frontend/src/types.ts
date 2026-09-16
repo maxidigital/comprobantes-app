@@ -35,3 +35,18 @@ export interface NuevoMovimiento {
 }
 
 export type FiltroTipo = 'TODOS' | TipoMovimiento;
+
+export interface Aviso {
+  id: string;
+  fecha: string;
+  texto: string;
+  bien: string;
+  autor: string;
+  creadoEn: string;
+}
+
+export interface NuevoAviso {
+  fecha: string;
+  texto: string;
+  bien: string;
+}

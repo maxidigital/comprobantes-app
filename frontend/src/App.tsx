@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import AccessGate from './AccessGate';
+import AvisoForm from './AvisoForm';
 import ConfirmDialog from './ConfirmDialog';
 import HeaderMenu from './HeaderMenu';
 import MovimientoDetail from './MovimientoDetail';
@@ -7,8 +8,17 @@ import MovimientoForm from './MovimientoForm';
 import MovimientosList from './MovimientosList';
 import ReceiptViewerDialog from './ReceiptViewerDialog';
 import Totals from './Totals';
-import { ApiError, clearAccessKey, eliminarMovimiento, getAccessKey, getUserRole, listMovimientos } from './api';
-import type { Movimiento } from './types';
+import {
+  ApiError,
+  clearAccessKey,
+  eliminarAviso,
+  eliminarMovimiento,
+  getAccessKey,
+  getUserRole,
+  listAvisos,
+  listMovimientos,
+} from './api';
+import type { Aviso, Movimiento } from './types';
 import { useEscapeKey } from './useEscapeKey';
 import { useVersionCheck } from './useVersionCheck';
 
@@ -22,6 +32,7 @@ function getInitialTheme(): Theme {
 export default function App() {
   const [unlocked, setUnlocked] = useState(!!getAccessKey());
   const [movimientos, setMovimientos] = useState<Movimiento[] | null>(null);
+  const [avisos, setAvisos] = useState<Aviso[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [theme, setTheme] = useState<Theme>(getInitialTheme());
 
@@ -31,9 +42,14 @@ export default function App() {
   const [viewingReceipt, setViewingReceipt] = useState<{ movimientoId: string; comprobanteId: string } | null>(null);
   const [showInformes, setShowInformes] = useState(false);
   const [confirmDeleteTarget, setConfirmDeleteTarget] = useState<Movimiento | null>(null);
+  const [showCrearMenu, setShowCrearMenu] = useState(false);
+  const [showAvisoForm, setShowAvisoForm] = useState(false);
+  const [confirmDeleteAvisoTarget, setConfirmDeleteAvisoTarget] = useState<Aviso | null>(null);
+  const fabMenuRef = useRef<HTMLDivElement>(null);
   const puedeEditar = getUserRole() !== 'VIEWER';
 
   useEscapeKey(() => setShowInformes(false));
+  useEscapeKey(() => setShowCrearMenu(false));
   useVersionCheck();
 
   useEffect(() => {
@@ -43,6 +59,17 @@ export default function App() {
   }, [unlocked]);
 
   useEffect(() => {
+    if (!showCrearMenu) return;
+    function handleOutside(e: MouseEvent) {
+      if (fabMenuRef.current && !fabMenuRef.current.contains(e.target as Node)) {
+        setShowCrearMenu(false);
+      }
+    }
+    document.addEventListener('mousedown', handleOutside);
+    return () => document.removeEventListener('mousedown', handleOutside);
+  }, [showCrearMenu]);
+
+  useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem('comprobantes.theme', theme);
   }, [theme]);
@@ -50,8 +77,9 @@ export default function App() {
   async function refreshList() {
     setLoadError(null);
     try {
-      const data = await listMovimientos();
-      setMovimientos(data);
+      const [movimientosData, avisosData] = await Promise.all([listMovimientos(), listAvisos()]);
+      setMovimientos(movimientosData);
+      setAvisos(avisosData);
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {
         handleUnauthorized();
@@ -68,6 +96,9 @@ export default function App() {
     setDetailTarget(null);
     setViewingReceipt(null);
     setConfirmDeleteTarget(null);
+    setShowCrearMenu(false);
+    setShowAvisoForm(false);
+    setConfirmDeleteAvisoTarget(null);
     setUnlocked(false);
   }
 
@@ -83,6 +114,21 @@ export default function App() {
         return;
       }
       setLoadError(err instanceof Error ? err.message : 'No se pudo eliminar el movimiento');
+    }
+  }
+
+  async function handleConfirmDeleteAviso() {
+    if (!confirmDeleteAvisoTarget) return;
+    try {
+      await eliminarAviso(confirmDeleteAvisoTarget.id);
+      setAvisos((prev) => prev.filter((a) => a.id !== confirmDeleteAvisoTarget.id));
+      setConfirmDeleteAvisoTarget(null);
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 401) {
+        handleUnauthorized();
+        return;
+      }
+      setLoadError(err instanceof Error ? err.message : 'No se pudo eliminar el aviso');
     }
   }
 
@@ -113,18 +159,49 @@ export default function App() {
         {movimientos !== null && (
           <MovimientosList
             movimientos={movimientos}
+            avisos={avisos}
             puedeEditar={puedeEditar}
             onOpenDetail={(m) => setDetailTarget(m)}
             onEdit={(m) => setEditTarget(m)}
             onDelete={(m) => setConfirmDeleteTarget(m)}
+            onDeleteAviso={(a) => setConfirmDeleteAvisoTarget(a)}
           />
         )}
       </main>
 
       {puedeEditar && (
-        <button className="fab" onClick={() => setShowForm(true)} aria-label="Nuevo movimiento">
-          +
-        </button>
+        <div ref={fabMenuRef}>
+          <button
+            className="fab"
+            onClick={() => setShowCrearMenu((v) => !v)}
+            aria-label="Nuevo"
+            aria-expanded={showCrearMenu}
+          >
+            +
+          </button>
+          {showCrearMenu && (
+            <div className="dropdown-panel fab-menu">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowCrearMenu(false);
+                  setShowForm(true);
+                }}
+              >
+                Nuevo movimiento
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowCrearMenu(false);
+                  setShowAvisoForm(true);
+                }}
+              >
+                Nuevo aviso
+              </button>
+            </div>
+          )}
+        </div>
       )}
 
       {(showForm || editTarget) && (
@@ -141,6 +218,17 @@ export default function App() {
             });
             setShowForm(false);
             setEditTarget(null);
+          }}
+          onUnauthorized={handleUnauthorized}
+        />
+      )}
+
+      {showAvisoForm && (
+        <AvisoForm
+          onClose={() => setShowAvisoForm(false)}
+          onSaved={(a) => {
+            setAvisos((prev) => [a, ...prev]);
+            setShowAvisoForm(false);
           }}
           onUnauthorized={handleUnauthorized}
         />
@@ -179,6 +267,16 @@ export default function App() {
           confirmLabel="Eliminar"
           onClose={() => setConfirmDeleteTarget(null)}
           onConfirm={handleConfirmDelete}
+        />
+      )}
+
+      {confirmDeleteAvisoTarget && (
+        <ConfirmDialog
+          title="Eliminar aviso"
+          message="¿Eliminar este aviso? Esta acción no se puede deshacer desde la app."
+          confirmLabel="Eliminar"
+          onClose={() => setConfirmDeleteAvisoTarget(null)}
+          onConfirm={handleConfirmDeleteAviso}
         />
       )}
 

@@ -296,6 +296,11 @@ input[type='file'] {
   color: var(--brand-primary);
 }
 
+.chip-icon {
+  padding: 0.3rem 0.55rem;
+  font-size: 0.95rem;
+}
+
 .badge-pending {
   display: inline-flex;
   align-items: center;
@@ -353,6 +358,15 @@ input[type='file'] {
   justify-content: center;
   z-index: 20;
   animation: fab-glow-a 2.6s ease-in-out infinite, fab-glow-b 3.7s ease-in-out infinite;
+}
+
+.fab-menu {
+  position: fixed;
+  top: auto;
+  right: calc(1.25rem + env(safe-area-inset-right));
+  bottom: calc(1.5rem + 58px + 0.75rem + env(safe-area-inset-bottom));
+  min-width: 190px;
+  z-index: 20;
 }
 
 @keyframes fab-glow-a {
@@ -804,8 +818,14 @@ input[type='file'] {
 }
 
 @media (min-width: 640px) {
+  .dialog-overlay--fullscreen {
+    justify-content: center;
+  }
+
   .dialog--fullscreen {
-    border-radius: 0;
+    max-width: 640px;
+    width: 100%;
+    border-radius: var(--radius-lg);
   }
 }
 

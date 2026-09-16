@@ -1,4 +1,4 @@
-import type { Movimiento, NuevoMovimiento, Rol } from './types';
+import type { Aviso, Movimiento, NuevoAviso, NuevoMovimiento, Rol } from './types';
 
 const ACCESS_KEY_STORAGE = 'comprobantes.accessKey';
 const USER_NAME_STORAGE = 'comprobantes.userName';
@@ -166,4 +166,25 @@ export async function fetchComprobanteArchivo(
 
 export async function eliminarMovimiento(id: string): Promise<void> {
   await request(`/movimientos/${id}`, { method: 'DELETE' });
+}
+
+export async function listAvisos(): Promise<Aviso[]> {
+  const response = await request('/avisos');
+  return response.json();
+}
+
+export async function crearAviso(data: NuevoAviso): Promise<Aviso> {
+  const form = new FormData();
+  form.set('fecha', data.fecha);
+  form.set('bien', data.bien);
+  form.set('texto', data.texto);
+  const userName = getUserName();
+  if (userName) form.set('autor', userName);
+
+  const response = await request('/avisos', { method: 'POST', body: form });
+  return response.json();
+}
+
+export async function eliminarAviso(id: string): Promise<void> {
+  await request(`/avisos/${id}`, { method: 'DELETE' });
 }

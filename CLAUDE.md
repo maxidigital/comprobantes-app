@@ -74,7 +74,7 @@ real lo hace el interceptor).
 
 ## Estructura de datos
 
-Dos pestañas en la misma planilla:
+Tres pestañas en la misma planilla:
 
 **Movimientos** (la pestaña original, cualquier nombre — el backend siempre
 lee/escribe por rango `A:K`, no por nombre de pestaña):
@@ -141,6 +141,34 @@ id | movimientoId | url | nombre | creadoEn | estado
   columnas H/I se movieron a filas de `Comprobantes` con un script puntual
   (no versionado, corrido una vez a mano contra la planilla real) y esas
   columnas se vaciaron en sus filas de origen.
+
+**Avisos** (pestaña nueva, sin relación con Movimientos):
+
+```
+id | fecha | texto | bien | autor | creadoEn | estado
+```
+
+- Para que el administrador (o un editor) le comunique algo a los demás
+  herederos ("subieron las expensas de Iriondo") sin que sea un movimiento
+  de plata. Mismo patrón que `Comprobantes`: `AvisoSheetService` maneja su
+  propia pestaña con `ensureSheetExists` (se crea sola si no existe),
+  contador de ids propio y baja lógica por `estado` — no sabe nada de
+  `Movimientos` y viceversa.
+- **No afecta `Totals`/el balance en absoluto** — es una entidad separada.
+  El frontend (`MovimientosList`) es el único lugar que los conoce a
+  ambos: arma una lista combinada ordenada por `fecha` (con `creadoEn`
+  como desempate) solo para mostrarlos intercalados cronológicamente, sin
+  tocar los cálculos.
+- Lleva `bien` obligatorio y el filtro de bien de la lista lo trata igual
+  que a un movimiento; el filtro de tipo (Ingresos/Egresos) y el de
+  "comprobante pendiente" no le aplican (un aviso no es ni ingreso ni
+  egreso, así que siempre pasa esos dos filtros). Hay un chip aparte
+  (📢, fuera del dropdown de "Filtros") para ocultarlos del todo.
+- Mismos permisos que movimientos (VIEWER solo lee, EDITOR/ADMIN
+  crean/eliminan). Se puede crear y eliminar, **no editar** — si hay un
+  error se borra y se vuelve a cargar.
+- El FAB "+" ahora abre un mini menú ("Nuevo movimiento" / "Nuevo aviso")
+  en vez de ir directo al formulario de movimiento.
 
 ## Puesta en marcha en Google Cloud (ya hecho una vez, documentado por si hay que rehacerlo)
 
@@ -225,22 +253,26 @@ src/main/java/com/maxidigital/comprobantes/
 │   ├── MovimientoController.java    # GET/POST /api/movimientos, PUT/DELETE .../{id},
 │   │                                 # POST .../{id}/comprobantes, DELETE/GET .../{id}/comprobantes/{comprobanteId}[/archivo]
 │   ├── AuthController.java          # GET /api/auth/whoami -> {nombre, rol}
+│   ├── AvisoController.java         # GET/POST /api/avisos, DELETE .../{id}
 │   └── ApiExceptionHandler.java
-├── dto/MovimientoResponse.java, ComprobanteResponse.java
+├── dto/MovimientoResponse.java, ComprobanteResponse.java, AvisoResponse.java
 ├── service/
 │   ├── MovimientoSheetService.java   # append/readAll/softDelete/update — no sabe de comprobantes
 │   ├── ComprobanteSheetService.java  # pestaña "Comprobantes": append/readAllActive/findActiveByMovimiento/softDelete(All)
+│   ├── AvisoSheetService.java        # pestaña "Avisos": append/readAllActive/softDelete, ajena a Movimientos
 │   └── ReceiptDriveService.java      # sube/borra/sirve el archivo en Drive
 └── exception/UnauthorizedException.java, ForbiddenException.java, NotFoundException.java
 
 frontend/src/
-├── main.tsx, App.tsx                # App.tsx: gate de acceso -> listado
+├── main.tsx, App.tsx                # App.tsx: gate de acceso -> listado, FAB con elegidor movimiento/aviso
 ├── api.ts                           # fetch centralizado + manejo de X-Access-Key/X-User-Name + login()
 ├── types.ts
+├── fecha.ts                         # helpers de fecha dd/mm/yyyy <-> ISO, compartidos por MovimientoForm y AvisoForm
 ├── AccessGate.tsx                   # pide nombre + APP_PASSWORD, valida contra /api/auth/whoami
-├── Totals.tsx                       # ingresos / gastos / balance
-├── MovimientosList.tsx              # listado + filtros (tipo, comprobante pendiente)
+├── Totals.tsx                       # ingresos / gastos / balance (solo movimientos, ajeno a avisos)
+├── MovimientosList.tsx              # listado + filtros (tipo, comprobante pendiente, bien) — arma la lista combinada movimientos+avisos
 ├── MovimientoForm.tsx               # alta/edición — selección múltiple de archivos + lista de comprobantes existentes con borrado individual
+├── AvisoForm.tsx                    # alta de un aviso (fecha, bien, texto) — sin modo edición
 ├── MovimientoDetail.tsx             # detalle de solo lectura, un chip "Ver" por comprobante
 ├── ReceiptViewerDialog.tsx          # visor propio adentro de la app (nunca navega a la URL del archivo)
 ├── ConfirmDialog.tsx                # confirmación de borrado
