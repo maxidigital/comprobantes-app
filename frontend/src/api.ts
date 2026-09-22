@@ -3,6 +3,7 @@ import type { Aviso, Movimiento, NuevoAviso, NuevoMovimiento, Rol } from './type
 const ACCESS_KEY_STORAGE = 'comprobantes.accessKey';
 const USER_NAME_STORAGE = 'comprobantes.userName';
 const USER_ROLE_STORAGE = 'comprobantes.userRole';
+const LAST_SEEN_STORAGE = 'comprobantes.lastSeenNovedades';
 
 export class ApiError extends Error {
   constructor(
@@ -44,6 +45,14 @@ export function setUserRole(rol: Rol) {
 
 export function clearUserRole() {
   localStorage.removeItem(USER_ROLE_STORAGE);
+}
+
+export function getLastSeenNovedades(): string | null {
+  return localStorage.getItem(LAST_SEEN_STORAGE);
+}
+
+export function setLastSeenNovedades(iso: string) {
+  localStorage.setItem(LAST_SEEN_STORAGE, iso);
 }
 
 /** Intenta leer un error como JSON ({error: "..."}); si la respuesta no es

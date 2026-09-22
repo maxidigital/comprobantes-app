@@ -133,6 +133,12 @@ input[type='file'] {
   border-bottom: 1px solid var(--border);
 }
 
+.top-bar-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
 .top-bar h1 {
   font-size: 1.125rem;
 }
@@ -325,6 +331,14 @@ input[type='file'] {
   padding: 0.35rem 0.75rem;
   height: auto;
   font-size: 0.85rem;
+}
+
+.badge-novedades {
+  background: color-mix(in srgb, var(--brand-primary) 16%, transparent);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--brand-primary) 50%, transparent),
+    0 0 16px 2px color-mix(in srgb, var(--brand-primary) 22%, transparent);
+  color: var(--brand-primary);
 }
 
 .chip-toggle {

@@ -14,9 +14,11 @@ import {
   eliminarAviso,
   eliminarMovimiento,
   getAccessKey,
+  getLastSeenNovedades,
   getUserRole,
   listAvisos,
   listMovimientos,
+  setLastSeenNovedades,
 } from './api';
 import type { Aviso, Movimiento } from './types';
 import { useEscapeKey } from './useEscapeKey';
@@ -34,6 +36,7 @@ export default function App() {
   const [movimientos, setMovimientos] = useState<Movimiento[] | null>(null);
   const [avisos, setAvisos] = useState<Aviso[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [novedadesCount, setNovedadesCount] = useState(0);
   const [theme, setTheme] = useState<Theme>(getInitialTheme());
 
   const [showForm, setShowForm] = useState(false);
@@ -78,6 +81,11 @@ export default function App() {
     setLoadError(null);
     try {
       const [movimientosData, avisosData] = await Promise.all([listMovimientos(), listAvisos()]);
+      const lastSeen = getLastSeenNovedades();
+      const nuevos = lastSeen
+        ? [...movimientosData, ...avisosData].filter((item) => item.creadoEn > lastSeen).length
+        : 0;
+      setNovedadesCount(nuevos);
       setMovimientos(movimientosData);
       setAvisos(avisosData);
     } catch (err) {
@@ -87,6 +95,11 @@ export default function App() {
       }
       setLoadError(err instanceof Error ? err.message : 'No se pudo cargar el listado');
     }
+  }
+
+  function handleDismissNovedades() {
+    setLastSeenNovedades(new Date().toISOString());
+    setNovedadesCount(0);
   }
 
   function handleUnauthorized() {
@@ -143,13 +156,25 @@ export default function App() {
           <h1>Administración</h1>
           <div className="subtitle">Sucesión Bottazzi</div>
         </div>
-        <HeaderMenu
-          isDark={theme === 'dark'}
-          onToggleTheme={() => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))}
-          onRefresh={refreshList}
-          onInformes={() => setShowInformes(true)}
-          onLogout={handleUnauthorized}
-        />
+        <div className="top-bar-actions">
+          <button
+            type="button"
+            className="btn-plain menu-icon-btn"
+            onClick={handleDismissNovedades}
+            aria-label="Novedades"
+            title={novedadesCount > 0 ? `${novedadesCount} novedades desde tu última visita` : 'Sin novedades'}
+          >
+            🔔
+            {novedadesCount > 0 && <span className="badge-pending badge-novedades">{novedadesCount}</span>}
+          </button>
+          <HeaderMenu
+            isDark={theme === 'dark'}
+            onToggleTheme={() => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))}
+            onRefresh={refreshList}
+            onInformes={() => setShowInformes(true)}
+            onLogout={handleUnauthorized}
+          />
+        </div>
       </header>
 
       <main className="content">
