@@ -70,6 +70,9 @@ export default function HeaderMenu({ isDark, onToggleTheme, onRefresh, onInforme
           >
             {isDark ? <SunIcon /> : <MoonIcon />} {isDark ? 'Modo claro' : 'Modo oscuro'}
           </button>
+
+          <div className="dropdown-panel-separator" />
+
           <button
             type="button"
             onClick={() => {

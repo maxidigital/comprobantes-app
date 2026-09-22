@@ -79,7 +79,7 @@ export default function FilterBar({
           Filtros
         </button>
         {showFiltros && (
-          <div className="dropdown-panel">
+          <div className="dropdown-panel dropdown-panel--centered">
             <label className="checkbox-row">
               <input
                 type="checkbox"

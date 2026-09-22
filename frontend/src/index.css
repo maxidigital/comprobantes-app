@@ -186,6 +186,16 @@ input[type='file'] {
   animation: dropdown-enter var(--ease-enter);
 }
 
+/* Anclado a un trigger que no está pegado al borde derecho (el chip
+ * "Filtros", en medio del filter-bar) — se centra solo sobre el botón en
+ * vez de heredar el right:0 pensado para el ☰/FAB, que sí están en la
+ * esquina. */
+.dropdown-panel--centered {
+  right: auto;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
 .dropdown-panel button {
   display: flex;
   align-items: center;
