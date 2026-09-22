@@ -34,8 +34,10 @@ export default function FilterBar({
   pendientesCount,
 }: Props) {
   const [showFiltros, setShowFiltros] = useState(false);
+  const [showRangos, setShowRangos] = useState(false);
   const [showRangoPersonalizado, setShowRangoPersonalizado] = useState(false);
   const filtrosRef = useRef<HTMLDivElement>(null);
+  const rangosRef = useRef<HTMLDivElement>(null);
 
   const [desdeTexto, setDesdeTexto] = useState(fechaDesde ? isoToDisplay(fechaDesde) : '');
   const [hastaTexto, setHastaTexto] = useState(fechaHasta ? isoToDisplay(fechaHasta) : '');
@@ -62,6 +64,26 @@ export default function FilterBar({
       document.removeEventListener('keydown', handleEscape);
     };
   }, [showFiltros]);
+
+  useEffect(() => {
+    if (!showRangos) return;
+
+    function handleOutside(e: MouseEvent) {
+      if (rangosRef.current && !rangosRef.current.contains(e.target as Node)) {
+        setShowRangos(false);
+      }
+    }
+    function handleEscape(e: KeyboardEvent) {
+      if (e.key === 'Escape') setShowRangos(false);
+    }
+
+    document.addEventListener('mousedown', handleOutside);
+    document.addEventListener('keydown', handleEscape);
+    return () => {
+      document.removeEventListener('mousedown', handleOutside);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [showRangos]);
 
   function esPresetActivo([desde, hasta]: [string, string]): boolean {
     return fechaDesde === desde && fechaHasta === hasta;
@@ -120,9 +142,7 @@ export default function FilterBar({
       <div className="dropdown-wrapper" ref={filtrosRef}>
         <button
           type="button"
-          className={`chip chip-toggle ${
-            soloPendientes || bienesSeleccionados.size > 0 || fechaDesde || fechaHasta ? 'active' : ''
-          }`}
+          className={`chip chip-toggle ${soloPendientes || bienesSeleccionados.size > 0 ? 'active' : ''}`}
           onClick={() => setShowFiltros((v) => !v)}
           aria-expanded={showFiltros}
         >
@@ -149,9 +169,20 @@ export default function FilterBar({
                 </span>
               </label>
             ))}
-
-            <div className="dropdown-panel-separator" />
-
+          </div>
+        )}
+      </div>
+      <div className="dropdown-wrapper" ref={rangosRef}>
+        <button
+          type="button"
+          className={`chip chip-toggle ${fechaDesde || fechaHasta ? 'active' : ''}`}
+          onClick={() => setShowRangos((v) => !v)}
+          aria-expanded={showRangos}
+        >
+          Rangos
+        </button>
+        {showRangos && (
+          <div className="dropdown-panel dropdown-panel--centered">
             <div className="chip-list filtro-fechas-presets">
               <button
                 type="button"
