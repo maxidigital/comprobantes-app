@@ -160,7 +160,7 @@ export default function App() {
         <div className="top-bar-actions">
           <button
             type="button"
-            className="btn-plain menu-icon-btn"
+            className="btn-plain menu-icon-btn bell-btn"
             onClick={handleDismissNovedades}
             aria-label="Novedades"
             title={novedadesCount > 0 ? `${novedadesCount} novedades desde tu última visita` : 'Sin novedades'}
