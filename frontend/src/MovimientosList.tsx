@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { BIENES, bienColor } from './bienes';
+import { useMemo, useRef, useState } from 'react';
+import { bienColor } from './bienes';
 import { formatFecha, formatMontoPartes } from './format';
 import { MegaphoneIcon } from './icons';
 import type { Aviso, FiltroTipo, Movimiento } from './types';
@@ -7,6 +7,10 @@ import type { Aviso, FiltroTipo, Movimiento } from './types';
 interface Props {
   movimientos: Movimiento[];
   avisos: Aviso[];
+  filtroTipo: FiltroTipo;
+  soloPendientes: boolean;
+  bienesSeleccionados: Set<string>;
+  mostrarAvisos: boolean;
   puedeEditar: boolean;
   onOpenDetail: (movimiento: Movimiento) => void;
   onEdit: (movimiento: Movimiento) => void;
@@ -37,42 +41,19 @@ type Item =
 export default function MovimientosList({
   movimientos,
   avisos,
+  filtroTipo,
+  soloPendientes,
+  bienesSeleccionados,
+  mostrarAvisos,
   puedeEditar,
   onOpenDetail,
   onEdit,
   onDelete,
   onDeleteAviso,
 }: Props) {
-  const [filtroTipo, setFiltroTipo] = useState<FiltroTipo>('TODOS');
-  const [soloPendientes, setSoloPendientes] = useState(false);
-  const [bienesSeleccionados, setBienesSeleccionados] = useState<Set<string>>(new Set());
-  const [mostrarAvisos, setMostrarAvisos] = useState(true);
-  const [showFiltros, setShowFiltros] = useState(false);
-  const filtrosRef = useRef<HTMLDivElement>(null);
-
   const [openSwipeId, setOpenSwipeId] = useState<string | null>(null);
   const dragRef = useRef<DragState | null>(null);
   const [, forceRender] = useState(0);
-
-  useEffect(() => {
-    if (!showFiltros) return;
-
-    function handleOutside(e: MouseEvent) {
-      if (filtrosRef.current && !filtrosRef.current.contains(e.target as Node)) {
-        setShowFiltros(false);
-      }
-    }
-    function handleEscape(e: KeyboardEvent) {
-      if (e.key === 'Escape') setShowFiltros(false);
-    }
-
-    document.addEventListener('mousedown', handleOutside);
-    document.addEventListener('keydown', handleEscape);
-    return () => {
-      document.removeEventListener('mousedown', handleOutside);
-      document.removeEventListener('keydown', handleEscape);
-    };
-  }, [showFiltros]);
 
   const itemsCombinados = useMemo(() => {
     const items: Item[] = [
@@ -104,20 +85,6 @@ export default function MovimientosList({
       return true;
     });
   }, [itemsCombinados, filtroTipo, soloPendientes, bienesSeleccionados]);
-
-  const pendientesCount = useMemo(() => movimientos.filter((m) => m.comprobantePendiente).length, [movimientos]);
-
-  function toggleBien(bien: string) {
-    setBienesSeleccionados((prev) => {
-      const next = new Set(prev);
-      if (next.has(bien)) {
-        next.delete(bien);
-      } else {
-        next.add(bien);
-      }
-      return next;
-    });
-  }
 
   function handlePointerDown(e: React.PointerEvent, id: string) {
     if (e.pointerType === 'mouse' && e.button !== 0) return;
@@ -191,75 +158,7 @@ export default function MovimientosList({
   }
 
   return (
-    <div>
-      <div className="filter-bar">
-        <div className="segmented">
-          <button
-            type="button"
-            className={filtroTipo === 'INGRESO' ? 'active' : ''}
-            onClick={() => setFiltroTipo((prev) => (prev === 'INGRESO' ? 'TODOS' : 'INGRESO'))}
-            aria-pressed={filtroTipo === 'INGRESO'}
-          >
-            Ingresos
-          </button>
-          <button
-            type="button"
-            className={filtroTipo === 'GASTO' ? 'active' : ''}
-            onClick={() => setFiltroTipo((prev) => (prev === 'GASTO' ? 'TODOS' : 'GASTO'))}
-            aria-pressed={filtroTipo === 'GASTO'}
-          >
-            Egresos
-          </button>
-        </div>
-        <div className="dropdown-wrapper" ref={filtrosRef}>
-          <button
-            type="button"
-            className={`chip chip-toggle ${soloPendientes || bienesSeleccionados.size > 0 ? 'active' : ''}`}
-            onClick={() => setShowFiltros((v) => !v)}
-            aria-expanded={showFiltros}
-          >
-            Filtros
-          </button>
-          {showFiltros && (
-            <div className="dropdown-panel">
-              <label className="checkbox-row">
-                <input
-                  type="checkbox"
-                  checked={soloPendientes}
-                  onChange={(e) => setSoloPendientes(e.target.checked)}
-                />
-                Con comprobante pendiente{pendientesCount > 0 ? ` (${pendientesCount})` : ''}
-              </label>
-
-              <div className="dropdown-panel-separator" />
-
-              {BIENES.map((bien) => (
-                <label className="checkbox-row" key={bien}>
-                  <input
-                    type="checkbox"
-                    checked={bienesSeleccionados.has(bien)}
-                    onChange={() => toggleBien(bien)}
-                  />
-                  <span className="bien-label" style={{ color: bienColor(bien) }}>
-                    {bien}
-                  </span>
-                </label>
-              ))}
-            </div>
-          )}
-        </div>
-        <button
-          type="button"
-          className={`chip chip-toggle chip-icon ${!mostrarAvisos ? 'active' : ''}`}
-          onClick={() => setMostrarAvisos((v) => !v)}
-          aria-pressed={!mostrarAvisos}
-          aria-label={mostrarAvisos ? 'Ocultar avisos' : 'Mostrar avisos'}
-          title={mostrarAvisos ? 'Ocultar avisos' : 'Mostrar avisos'}
-        >
-          <MegaphoneIcon />
-        </button>
-      </div>
-
+    <>
       {visibles.length === 0 ? (
         <p className="empty-state">No hay movimientos que coincidan con el filtro.</p>
       ) : (
@@ -391,6 +290,6 @@ export default function MovimientosList({
           })}
         </div>
       )}
-    </div>
+    </>
   );
 }

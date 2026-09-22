@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import AccessGate from './AccessGate';
 import AvisoForm from './AvisoForm';
 import ConfirmDialog from './ConfirmDialog';
+import FilterBar from './FilterBar';
 import HeaderMenu from './HeaderMenu';
 import { BellIcon } from './icons';
 import MovimientoDetail from './MovimientoDetail';
@@ -21,9 +22,8 @@ import {
   listMovimientos,
   setLastSeenNovedades,
 } from './api';
-import type { Aviso, Movimiento } from './types';
+import type { Aviso, FiltroTipo, Movimiento } from './types';
 import { useEscapeKey } from './useEscapeKey';
-import { useHeaderHeightVar } from './useHeaderHeightVar';
 import { useVersionCheck } from './useVersionCheck';
 
 type Theme = 'light' | 'dark';
@@ -40,6 +40,10 @@ export default function App() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [novedadesCount, setNovedadesCount] = useState(0);
   const [theme, setTheme] = useState<Theme>(getInitialTheme());
+  const [filtroTipo, setFiltroTipo] = useState<FiltroTipo>('TODOS');
+  const [soloPendientes, setSoloPendientes] = useState(false);
+  const [bienesSeleccionados, setBienesSeleccionados] = useState<Set<string>>(new Set());
+  const [mostrarAvisos, setMostrarAvisos] = useState(true);
 
   const [showForm, setShowForm] = useState(false);
   const [editTarget, setEditTarget] = useState<Movimiento | null>(null);
@@ -51,10 +55,25 @@ export default function App() {
   const [showAvisoForm, setShowAvisoForm] = useState(false);
   const [confirmDeleteAvisoTarget, setConfirmDeleteAvisoTarget] = useState<Aviso | null>(null);
   const fabMenuRef = useRef<HTMLDivElement>(null);
-  const headerRef = useRef<HTMLElement>(null);
   const puedeEditar = getUserRole() !== 'VIEWER';
 
-  useHeaderHeightVar(headerRef);
+  const pendientesCount = useMemo(
+    () => (movimientos ?? []).filter((m) => m.comprobantePendiente).length,
+    [movimientos],
+  );
+
+  function toggleBien(bien: string) {
+    setBienesSeleccionados((prev) => {
+      const next = new Set(prev);
+      if (next.has(bien)) {
+        next.delete(bien);
+      } else {
+        next.add(bien);
+      }
+      return next;
+    });
+  }
+
   useEscapeKey(() => setShowInformes(false));
   useEscapeKey(() => setShowCrearMenu(false));
   useVersionCheck();
@@ -155,31 +174,47 @@ export default function App() {
 
   return (
     <div className="app-shell">
-      <header className="top-bar" ref={headerRef}>
-        <div>
-          <h1>Administración</h1>
-          <div className="subtitle">Sucesión Bottazzi</div>
-        </div>
-        <div className="top-bar-actions">
-          <button
-            type="button"
-            className="btn-plain menu-icon-btn bell-btn"
-            onClick={handleDismissNovedades}
-            aria-label="Novedades"
-            title={novedadesCount > 0 ? `${novedadesCount} novedades desde tu última visita` : 'Sin novedades'}
-          >
-            <BellIcon />
-            {novedadesCount > 0 && <span className="badge-pending badge-novedades">{novedadesCount}</span>}
-          </button>
-          <HeaderMenu
-            isDark={theme === 'dark'}
-            onToggleTheme={() => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))}
-            onRefresh={refreshList}
-            onInformes={() => setShowInformes(true)}
-            onLogout={handleUnauthorized}
+      <div className="sticky-header">
+        <header className="top-bar">
+          <div>
+            <h1>Administración</h1>
+            <div className="subtitle">Sucesión Bottazzi</div>
+          </div>
+          <div className="top-bar-actions">
+            <button
+              type="button"
+              className="btn-plain menu-icon-btn bell-btn"
+              onClick={handleDismissNovedades}
+              aria-label="Novedades"
+              title={novedadesCount > 0 ? `${novedadesCount} novedades desde tu última visita` : 'Sin novedades'}
+            >
+              <BellIcon />
+              {novedadesCount > 0 && <span className="badge-pending badge-novedades">{novedadesCount}</span>}
+            </button>
+            <HeaderMenu
+              isDark={theme === 'dark'}
+              onToggleTheme={() => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))}
+              onRefresh={refreshList}
+              onInformes={() => setShowInformes(true)}
+              onLogout={handleUnauthorized}
+            />
+          </div>
+        </header>
+
+        {movimientos !== null && (
+          <FilterBar
+            filtroTipo={filtroTipo}
+            onFiltroTipoChange={setFiltroTipo}
+            soloPendientes={soloPendientes}
+            onSoloPendientesChange={setSoloPendientes}
+            bienesSeleccionados={bienesSeleccionados}
+            onToggleBien={toggleBien}
+            mostrarAvisos={mostrarAvisos}
+            onToggleAvisos={() => setMostrarAvisos((v) => !v)}
+            pendientesCount={pendientesCount}
           />
-        </div>
-      </header>
+        )}
+      </div>
 
       <main className="content">
         {movimientos === null && !loadError && <p className="empty-state">Cargando…</p>}
@@ -189,6 +224,10 @@ export default function App() {
           <MovimientosList
             movimientos={movimientos}
             avisos={avisos}
+            filtroTipo={filtroTipo}
+            soloPendientes={soloPendientes}
+            bienesSeleccionados={bienesSeleccionados}
+            mostrarAvisos={mostrarAvisos}
             puedeEditar={puedeEditar}
             onOpenDetail={(m) => setDetailTarget(m)}
             onEdit={(m) => setEditTarget(m)}
