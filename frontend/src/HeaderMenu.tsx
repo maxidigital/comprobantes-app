@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ChartIcon, MoonIcon, RefreshIcon, SunIcon } from './icons';
+import { ChartIcon, MenuIcon, MoonIcon, RefreshIcon, SunIcon } from './icons';
 import { useEscapeKey } from './useEscapeKey';
 
 interface Props {
@@ -38,7 +38,7 @@ export default function HeaderMenu({ isDark, onToggleTheme, onRefresh, onInforme
         aria-label="Menú"
         aria-expanded={open}
       >
-        ☰
+        <MenuIcon />
       </button>
 
       {open && (

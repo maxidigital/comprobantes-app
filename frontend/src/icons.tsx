@@ -13,6 +13,16 @@ const commonProps = {
   height: '1em',
 };
 
+export function MenuIcon({ className }: IconProps) {
+  return (
+    <svg {...commonProps} className={className} aria-hidden="true">
+      <path d="M4 6h16" />
+      <path d="M4 12h16" />
+      <path d="M4 18h16" />
+    </svg>
+  );
+}
+
 export function BellIcon({ className }: IconProps) {
   return (
     <svg {...commonProps} className={className} aria-hidden="true">
