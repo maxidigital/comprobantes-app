@@ -194,16 +194,22 @@ export default function MovimientosList({
     <div>
       <div className="filter-bar">
         <div className="segmented">
-          {(['TODOS', 'INGRESO', 'GASTO'] as FiltroTipo[]).map((tipo) => (
-            <button
-              key={tipo}
-              className={filtroTipo === tipo ? 'active' : ''}
-              onClick={() => setFiltroTipo(tipo)}
-              type="button"
-            >
-              {tipo === 'TODOS' ? 'Todos' : tipo === 'INGRESO' ? 'Ingresos' : 'Egresos'}
-            </button>
-          ))}
+          <button
+            type="button"
+            className={filtroTipo === 'INGRESO' ? 'active' : ''}
+            onClick={() => setFiltroTipo((prev) => (prev === 'INGRESO' ? 'TODOS' : 'INGRESO'))}
+            aria-pressed={filtroTipo === 'INGRESO'}
+          >
+            Ingresos
+          </button>
+          <button
+            type="button"
+            className={filtroTipo === 'GASTO' ? 'active' : ''}
+            onClick={() => setFiltroTipo((prev) => (prev === 'GASTO' ? 'TODOS' : 'GASTO'))}
+            aria-pressed={filtroTipo === 'GASTO'}
+          >
+            Egresos
+          </button>
         </div>
         <div className="dropdown-wrapper" ref={filtrosRef}>
           <button
