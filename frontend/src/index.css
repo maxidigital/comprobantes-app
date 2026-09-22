@@ -177,6 +177,8 @@ input[type='file'] {
   right: 0;
   min-width: 190px;
   max-width: calc(100vw - 2rem);
+  max-height: min(70vh, 480px);
+  overflow-y: auto;
   background: var(--elevated);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
@@ -194,6 +196,10 @@ input[type='file'] {
   right: auto;
   left: 50%;
   transform: translateX(-50%);
+}
+
+.dropdown-panel--ancho {
+  min-width: 280px;
 }
 
 /* Solo hijos directos — un botón .chip anidado más adentro (p.ej. los
@@ -733,12 +739,6 @@ input[type='file'] {
 
 .movement-card--gasto {
   box-shadow: 0 0 0 1px color-mix(in srgb, var(--gasto) 55%, transparent);
-}
-
-.movement-card--pendiente {
-  box-shadow:
-    0 0 4px 1px color-mix(in srgb, var(--status-pending) 50%, transparent),
-    0 0 34px 6px color-mix(in srgb, var(--status-pending) 30%, transparent);
 }
 
 .movement-card .row-top {

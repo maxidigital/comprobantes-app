@@ -1,8 +1,19 @@
 import { useEffect, useRef, useState } from 'react';
 import { BIENES, bienColor } from './bienes';
-import { formatFechaInput, fechaToIso, isoToDisplay, rangoEsteAnio, rangoEsteMes, rangoMesPasado } from './fecha';
+import {
+  formatFechaInput,
+  fechaToIso,
+  isoToDisplay,
+  rangoAnio,
+  rangoEsteAnio,
+  rangoEsteMes,
+  rangoMes,
+  rangoMesPasado,
+} from './fecha';
 import { MegaphoneIcon } from './icons';
 import type { FiltroTipo } from './types';
+
+const MESES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 
 interface Props {
   filtroTipo: FiltroTipo;
@@ -14,6 +25,7 @@ interface Props {
   fechaDesde: string | null;
   fechaHasta: string | null;
   onFechaRangeChange: (desde: string | null, hasta: string | null) => void;
+  aniosConDatos: number[];
   mostrarAvisos: boolean;
   onToggleAvisos: () => void;
   pendientesCount: number;
@@ -29,6 +41,7 @@ export default function FilterBar({
   fechaDesde,
   fechaHasta,
   onFechaRangeChange,
+  aniosConDatos,
   mostrarAvisos,
   onToggleAvisos,
   pendientesCount,
@@ -95,6 +108,17 @@ export default function FilterBar({
     } else {
       onFechaRangeChange(rango[0], rango[1]);
     }
+  }
+
+  /** Año sobre el que actúan los chips de mes: si ya hay un año completo
+   * seleccionado (p.ej. se tocó el chip "2022"), los meses se acotan a
+   * ese año; si no, al año actual. */
+  function anioActivoParaMeses(): number {
+    if (fechaDesde && fechaHasta) {
+      const anio = Number(fechaDesde.slice(0, 4));
+      if (esPresetActivo(rangoAnio(anio))) return anio;
+    }
+    return new Date().getFullYear();
   }
 
   function handleDesdeTextoChange(raw: string) {
@@ -182,7 +206,7 @@ export default function FilterBar({
           Rangos
         </button>
         {showRangos && (
-          <div className="dropdown-panel dropdown-panel--centered">
+          <div className="dropdown-panel dropdown-panel--centered dropdown-panel--ancho">
             <div className="chip-list filtro-fechas-presets">
               <button
                 type="button"
@@ -205,6 +229,34 @@ export default function FilterBar({
               >
                 Este año
               </button>
+            </div>
+
+            <div className="dropdown-panel-separator" />
+
+            <div className="chip-list filtro-fechas-presets">
+              {aniosConDatos.map((anio) => (
+                <button
+                  key={anio}
+                  type="button"
+                  className={`chip chip-toggle ${esPresetActivo(rangoAnio(anio)) ? 'active' : ''}`}
+                  onClick={() => togglePreset(rangoAnio(anio))}
+                >
+                  {anio}
+                </button>
+              ))}
+            </div>
+
+            <div className="chip-list filtro-fechas-presets">
+              {MESES.map((mes) => (
+                <button
+                  key={mes}
+                  type="button"
+                  className={`chip chip-toggle ${esPresetActivo(rangoMes(anioActivoParaMeses(), mes)) ? 'active' : ''}`}
+                  onClick={() => togglePreset(rangoMes(anioActivoParaMeses(), mes))}
+                >
+                  {mes}
+                </button>
+              ))}
             </div>
 
             <button

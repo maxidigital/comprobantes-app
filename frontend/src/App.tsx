@@ -64,6 +64,14 @@ export default function App() {
     [movimientos],
   );
 
+  const aniosConDatos = useMemo(() => {
+    const anioActual = new Date().getFullYear();
+    const anios = new Set<number>([anioActual]);
+    for (const m of movimientos ?? []) anios.add(Number(m.fecha.slice(0, 4)));
+    for (const a of avisos) anios.add(Number(a.fecha.slice(0, 4)));
+    return [...anios].sort((a, b) => a - b);
+  }, [movimientos, avisos]);
+
   function toggleBien(bien: string) {
     setBienesSeleccionados((prev) => {
       const next = new Set(prev);
@@ -217,6 +225,7 @@ export default function App() {
               setFechaDesde(desde);
               setFechaHasta(hasta);
             }}
+            aniosConDatos={aniosConDatos}
             mostrarAvisos={mostrarAvisos}
             onToggleAvisos={() => setMostrarAvisos((v) => !v)}
             pendientesCount={pendientesCount}

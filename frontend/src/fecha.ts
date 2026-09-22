@@ -57,8 +57,14 @@ export function rangoMesPasado(): [string, string] {
 }
 
 export function rangoEsteAnio(): [string, string] {
-  const hoy = new Date();
-  const desde = new Date(hoy.getFullYear(), 0, 1);
-  const hasta = new Date(hoy.getFullYear(), 11, 31);
-  return [dateToIso(desde), dateToIso(hasta)];
+  return rangoAnio(new Date().getFullYear());
+}
+
+export function rangoAnio(anio: number): [string, string] {
+  return [dateToIso(new Date(anio, 0, 1)), dateToIso(new Date(anio, 11, 31))];
+}
+
+/** mes: 1-12 */
+export function rangoMes(anio: number, mes: number): [string, string] {
+  return [dateToIso(new Date(anio, mes - 1, 1)), dateToIso(new Date(anio, mes, 0))];
 }
