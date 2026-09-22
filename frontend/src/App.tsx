@@ -43,6 +43,8 @@ export default function App() {
   const [filtroTipo, setFiltroTipo] = useState<FiltroTipo>('TODOS');
   const [soloPendientes, setSoloPendientes] = useState(false);
   const [bienesSeleccionados, setBienesSeleccionados] = useState<Set<string>>(new Set());
+  const [fechaDesde, setFechaDesde] = useState<string | null>(null);
+  const [fechaHasta, setFechaHasta] = useState<string | null>(null);
   const [mostrarAvisos, setMostrarAvisos] = useState(true);
 
   const [showForm, setShowForm] = useState(false);
@@ -209,6 +211,12 @@ export default function App() {
             onSoloPendientesChange={setSoloPendientes}
             bienesSeleccionados={bienesSeleccionados}
             onToggleBien={toggleBien}
+            fechaDesde={fechaDesde}
+            fechaHasta={fechaHasta}
+            onFechaRangeChange={(desde, hasta) => {
+              setFechaDesde(desde);
+              setFechaHasta(hasta);
+            }}
             mostrarAvisos={mostrarAvisos}
             onToggleAvisos={() => setMostrarAvisos((v) => !v)}
             pendientesCount={pendientesCount}
@@ -227,6 +235,8 @@ export default function App() {
             filtroTipo={filtroTipo}
             soloPendientes={soloPendientes}
             bienesSeleccionados={bienesSeleccionados}
+            fechaDesde={fechaDesde}
+            fechaHasta={fechaHasta}
             mostrarAvisos={mostrarAvisos}
             puedeEditar={puedeEditar}
             onOpenDetail={(m) => setDetailTarget(m)}

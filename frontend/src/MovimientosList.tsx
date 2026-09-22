@@ -10,6 +10,8 @@ interface Props {
   filtroTipo: FiltroTipo;
   soloPendientes: boolean;
   bienesSeleccionados: Set<string>;
+  fechaDesde: string | null;
+  fechaHasta: string | null;
   mostrarAvisos: boolean;
   puedeEditar: boolean;
   onOpenDetail: (movimiento: Movimiento) => void;
@@ -44,6 +46,8 @@ export default function MovimientosList({
   filtroTipo,
   soloPendientes,
   bienesSeleccionados,
+  fechaDesde,
+  fechaHasta,
   mostrarAvisos,
   puedeEditar,
   onOpenDetail,
@@ -82,9 +86,11 @@ export default function MovimientosList({
         if (soloPendientes && !item.movimiento.comprobantePendiente) return false;
       }
       if (bienesSeleccionados.size > 0 && !bienesSeleccionados.has(item.bien)) return false;
+      if (fechaDesde && item.fecha < fechaDesde) return false;
+      if (fechaHasta && item.fecha > fechaHasta) return false;
       return true;
     });
-  }, [itemsCombinados, filtroTipo, soloPendientes, bienesSeleccionados]);
+  }, [itemsCombinados, filtroTipo, soloPendientes, bienesSeleccionados, fechaDesde, fechaHasta]);
 
   function handlePointerDown(e: React.PointerEvent, id: string) {
     if (e.pointerType === 'mouse' && e.button !== 0) return;

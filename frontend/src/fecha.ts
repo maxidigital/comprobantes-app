@@ -32,3 +32,33 @@ export function fechaToIso(texto: string): string | null {
   if (mes < 1 || mes > 12 || dia < 1 || dia > 31) return null;
   return `${yyyy}-${mm}-${dd}`;
 }
+
+/** Date -> yyyy-MM-dd usando los componentes locales (nunca toISOString,
+ * que trunca a UTC y puede correr la fecha un día según el huso horario). */
+export function dateToIso(d: Date): string {
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+export function rangoEsteMes(): [string, string] {
+  const hoy = new Date();
+  const desde = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+  const hasta = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0);
+  return [dateToIso(desde), dateToIso(hasta)];
+}
+
+export function rangoMesPasado(): [string, string] {
+  const hoy = new Date();
+  const desde = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1);
+  const hasta = new Date(hoy.getFullYear(), hoy.getMonth(), 0);
+  return [dateToIso(desde), dateToIso(hasta)];
+}
+
+export function rangoEsteAnio(): [string, string] {
+  const hoy = new Date();
+  const desde = new Date(hoy.getFullYear(), 0, 1);
+  const hasta = new Date(hoy.getFullYear(), 11, 31);
+  return [dateToIso(desde), dateToIso(hasta)];
+}

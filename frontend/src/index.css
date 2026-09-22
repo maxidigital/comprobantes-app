@@ -196,7 +196,10 @@ input[type='file'] {
   transform: translateX(-50%);
 }
 
-.dropdown-panel button {
+/* Solo hijos directos — un botón .chip anidado más adentro (p.ej. los
+ * presets de fecha dentro de un .chip-list) no debe heredar este look de
+ * ítem de menú. */
+.dropdown-panel > button {
   display: flex;
   align-items: center;
   gap: 0.55rem;
@@ -211,7 +214,7 @@ input[type='file'] {
   transition: background var(--ease-hover);
 }
 
-.dropdown-panel button:hover {
+.dropdown-panel > button:hover {
   background: var(--bg);
 }
 
@@ -957,6 +960,30 @@ input[type='file'] {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
+}
+
+.filtro-fechas-presets {
+  padding: 0.4rem 0.7rem;
+}
+
+.dropdown-panel > .dropdown-panel-toggle {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.filtro-fechas-custom {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.3rem 0.7rem 0.5rem;
+}
+
+.filtro-fechas-custom label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.8rem;
+  color: var(--text-muted);
 }
 
 .receipt-list {
