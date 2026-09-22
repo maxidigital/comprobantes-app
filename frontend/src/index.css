@@ -197,7 +197,7 @@ input[type='file'] {
   color: var(--text);
   padding: 0.65rem 0.7rem;
   border-radius: var(--radius-sm);
-  font-size: 0.9rem;
+  font-size: 1.05rem;
   transition: background var(--ease-hover);
 }
 
@@ -269,7 +269,7 @@ input[type='file'] {
   align-items: center;
   justify-content: center;
   gap: 0.3rem;
-  font-size: 2.1rem;
+  font-size: 1.85rem;
   line-height: 1;
   padding: 0.5rem 0.65rem;
 }
@@ -384,7 +384,7 @@ input[type='file'] {
   border: none;
   background: var(--brand-primary);
   color: white;
-  font-size: 1.6rem;
+  font-size: 2rem;
   display: flex;
   align-items: center;
   justify-content: center;
