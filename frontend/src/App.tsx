@@ -3,6 +3,7 @@ import AccessGate from './AccessGate';
 import AvisoForm from './AvisoForm';
 import ConfirmDialog from './ConfirmDialog';
 import HeaderMenu from './HeaderMenu';
+import { BellIcon } from './icons';
 import MovimientoDetail from './MovimientoDetail';
 import MovimientoForm from './MovimientoForm';
 import MovimientosList from './MovimientosList';
@@ -164,7 +165,7 @@ export default function App() {
             aria-label="Novedades"
             title={novedadesCount > 0 ? `${novedadesCount} novedades desde tu última visita` : 'Sin novedades'}
           >
-            🔔
+            <BellIcon />
             {novedadesCount > 0 && <span className="badge-pending badge-novedades">{novedadesCount}</span>}
           </button>
           <HeaderMenu

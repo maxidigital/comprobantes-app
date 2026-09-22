@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { BIENES, bienColor } from './bienes';
 import { formatFecha, formatMontoPartes } from './format';
+import { MegaphoneIcon } from './icons';
 import type { Aviso, FiltroTipo, Movimiento } from './types';
 
 interface Props {
@@ -249,7 +250,7 @@ export default function MovimientosList({
           aria-label={mostrarAvisos ? 'Ocultar avisos' : 'Mostrar avisos'}
           title={mostrarAvisos ? 'Ocultar avisos' : 'Mostrar avisos'}
         >
-          📢
+          <MegaphoneIcon />
         </button>
       </div>
 
@@ -293,7 +294,9 @@ export default function MovimientosList({
                     }}
                   >
                     <div className="row-top">
-                      <span className="concepto">📢 {a.texto}</span>
+                      <span className="concepto">
+                        <MegaphoneIcon className="icon-inline" /> {a.texto}
+                      </span>
                     </div>
                     <div className="row-bottom">
                       <span className="meta">

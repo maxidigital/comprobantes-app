@@ -179,7 +179,9 @@ input[type='file'] {
 }
 
 .dropdown-panel button {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
   width: 100%;
   text-align: left;
   background: none;
@@ -255,6 +257,9 @@ input[type='file'] {
 }
 
 .menu-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
   font-size: 1.4rem;
   line-height: 1;
   padding: 0.5rem 0.65rem;
@@ -718,6 +723,10 @@ input[type='file'] {
 .movement-card .concepto {
   font-weight: 600;
   overflow-wrap: anywhere;
+}
+
+.icon-inline {
+  vertical-align: -0.15em;
 }
 
 .movement-card .monto {

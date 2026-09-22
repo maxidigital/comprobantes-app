@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { ChartIcon, MoonIcon, RefreshIcon, SunIcon } from './icons';
 import { useEscapeKey } from './useEscapeKey';
 
 interface Props {
@@ -49,7 +50,7 @@ export default function HeaderMenu({ isDark, onToggleTheme, onRefresh, onInforme
               setOpen(false);
             }}
           >
-            🔄 Actualizar desde planilla
+            <RefreshIcon /> Actualizar desde planilla
           </button>
           <button
             type="button"
@@ -58,7 +59,7 @@ export default function HeaderMenu({ isDark, onToggleTheme, onRefresh, onInforme
               setOpen(false);
             }}
           >
-            📊 Informes
+            <ChartIcon /> Informes
           </button>
           <button
             type="button"
@@ -67,7 +68,7 @@ export default function HeaderMenu({ isDark, onToggleTheme, onRefresh, onInforme
               setOpen(false);
             }}
           >
-            {isDark ? '☀️ Modo claro' : '🌙 Modo oscuro'}
+            {isDark ? <SunIcon /> : <MoonIcon />} {isDark ? 'Modo claro' : 'Modo oscuro'}
           </button>
           <button
             type="button"
