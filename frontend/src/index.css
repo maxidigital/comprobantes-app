@@ -622,11 +622,16 @@ input[type='file'] {
 /* ---------- Filters ---------- */
 
 .filter-bar {
+  position: sticky;
+  top: var(--top-bar-height, 4.5rem);
+  z-index: 9;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 0.5rem;
-  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  margin-bottom: 0.25rem;
+  background: var(--bg);
 }
 
 .segmented {

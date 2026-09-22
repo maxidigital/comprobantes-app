@@ -23,6 +23,7 @@ import {
 } from './api';
 import type { Aviso, Movimiento } from './types';
 import { useEscapeKey } from './useEscapeKey';
+import { useHeaderHeightVar } from './useHeaderHeightVar';
 import { useVersionCheck } from './useVersionCheck';
 
 type Theme = 'light' | 'dark';
@@ -50,8 +51,10 @@ export default function App() {
   const [showAvisoForm, setShowAvisoForm] = useState(false);
   const [confirmDeleteAvisoTarget, setConfirmDeleteAvisoTarget] = useState<Aviso | null>(null);
   const fabMenuRef = useRef<HTMLDivElement>(null);
+  const headerRef = useRef<HTMLElement>(null);
   const puedeEditar = getUserRole() !== 'VIEWER';
 
+  useHeaderHeightVar(headerRef);
   useEscapeKey(() => setShowInformes(false));
   useEscapeKey(() => setShowCrearMenu(false));
   useVersionCheck();
@@ -152,7 +155,7 @@ export default function App() {
 
   return (
     <div className="app-shell">
-      <header className="top-bar">
+      <header className="top-bar" ref={headerRef}>
         <div>
           <h1>Administración</h1>
           <div className="subtitle">Sucesión Bottazzi</div>
