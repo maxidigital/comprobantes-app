@@ -986,6 +986,21 @@ input[type='file'] {
   color: var(--text-muted);
 }
 
+.filtro-fecha-hasta-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.filtro-fecha-hasta-row .input {
+  flex: 1;
+  min-width: 0;
+}
+
+.filtro-fecha-hasta-row .chip {
+  flex-shrink: 0;
+}
+
 .receipt-list {
   list-style: none;
   margin: 0 0 0.6rem;

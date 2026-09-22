@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { BIENES, bienColor } from './bienes';
 import {
+  dateToIso,
   formatFechaInput,
   fechaToIso,
   isoToDisplay,
@@ -9,6 +10,7 @@ import {
   rangoEsteMes,
   rangoMes,
   rangoMesPasado,
+  todayDisplay,
 } from './fecha';
 import { MegaphoneIcon } from './icons';
 import type { FiltroTipo } from './types';
@@ -141,6 +143,11 @@ export default function FilterBar({
     }
     const iso = fechaToIso(formatted);
     if (iso) onFechaRangeChange(fechaDesde, iso);
+  }
+
+  function handleHastaHoy() {
+    setHastaTexto(todayDisplay());
+    onFechaRangeChange(fechaDesde, dateToIso(new Date()));
   }
 
   return (
@@ -284,15 +291,20 @@ export default function FilterBar({
                 </label>
                 <label>
                   Hasta
-                  <input
-                    type="text"
-                    className="input"
-                    inputMode="numeric"
-                    placeholder="dd/mm/aaaa"
-                    maxLength={10}
-                    value={hastaTexto}
-                    onChange={(e) => handleHastaTextoChange(e.target.value)}
-                  />
+                  <div className="filtro-fecha-hasta-row">
+                    <input
+                      type="text"
+                      className="input"
+                      inputMode="numeric"
+                      placeholder="dd/mm/aaaa"
+                      maxLength={10}
+                      value={hastaTexto}
+                      onChange={(e) => handleHastaTextoChange(e.target.value)}
+                    />
+                    <button type="button" className="chip chip-toggle" onClick={handleHastaHoy}>
+                      Hoy
+                    </button>
+                  </div>
                 </label>
               </div>
             )}
