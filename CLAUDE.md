@@ -207,6 +207,17 @@ solo permite desde ahí (creación de credenciales OAuth):
      nuevo `python3 scripts/oauth_exchange.py` para renovarlo. Pendiente:
      resolver el publish a producción con más calma para que esto no haga
      falta nunca más.
+   - **⚠️ Después de renovarlo, actualizar también `GOOGLE_OAUTH_REFRESH_TOKEN`
+     en Railway** (`railway variables --set "GOOGLE_OAUTH_REFRESH_TOKEN=$(python3 -c
+     "import json; print(json.load(open('secrets/oauth-tokens.json'))['refresh_token'])")"`)
+     y esperar el redeploy. `oauth_exchange.py` solo escribe el archivo
+     local — el backend de producción sigue corriendo con el token viejo
+     cargado en memoria hasta que se redeploya, y como Google invalida el
+     refresh token anterior al emitir uno nuevo, cualquier pedido a Drive
+     con el token viejo empieza a fallar ("error al comunicarse con Google
+     Sheets/Drive") hasta que se actualiza la variable. Pasó una vez
+     (2026-09-22): se renovó el token a mano para una importación masiva
+     de comprobantes y se tardó en notar que Railway seguía con el viejo.
 6. Configurar las variables de entorno del backend (Railway):
 
 | Variable | Descripción |
@@ -284,6 +295,9 @@ frontend/src/
 
 - **Publicar la app OAuth a producción** para que el refresh token no venza
   a los 7 días (ver nota en "Puesta en marcha"). Mientras tanto, renovarlo a
-  mano con `scripts/oauth_exchange.py` cuando falle una subida.
+  mano con `scripts/oauth_exchange.py` cuando falle una subida — y no
+  olvidar el paso siguiente de actualizar `GOOGLE_OAUTH_REFRESH_TOKEN` en
+  Railway (ver nota ⚠️ junto al paso 5 de "Puesta en marcha"), sin eso el
+  redeploy nunca se entera del token nuevo.
 - Panel de análisis para escritorio (gráficos, totales por categoría/bien y por período).
 - Íconos PWA reales — los actuales (`frontend/public/icons/`) son placeholders generados, no arte final.

@@ -35,6 +35,11 @@ export function formatMontoPartes(monto: number): { principal: string; centavos:
 const dateFormatter = new Intl.DateTimeFormat('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
 export function formatFecha(fecha: string): string {
-  const date = new Date(fecha);
+  // "yyyy-MM-dd" a secas lo parsea el motor de JS como medianoche UTC, no
+  // local — en un huso horario detrás de UTC (Argentina) el día mostrado
+  // termina siendo el anterior. Se le agrega la hora local explícita, mismo
+  // truco que ya usa MovimientoForm para el datepicker.
+  const esIsoSinHora = /^\d{4}-\d{2}-\d{2}$/.test(fecha);
+  const date = new Date(esIsoSinHora ? `${fecha}T00:00:00` : fecha);
   return Number.isNaN(date.getTime()) ? fecha : dateFormatter.format(date);
 }
