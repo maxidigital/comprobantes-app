@@ -8,6 +8,7 @@ import { BellIcon } from './icons';
 import MovimientoDetail from './MovimientoDetail';
 import MovimientoForm from './MovimientoForm';
 import MovimientosList from './MovimientosList';
+import PreguntaIADialog from './PreguntaIADialog';
 import ReceiptViewerDialog from './ReceiptViewerDialog';
 import Totals from './Totals';
 import {
@@ -52,6 +53,7 @@ export default function App() {
   const [detailTarget, setDetailTarget] = useState<Movimiento | null>(null);
   const [viewingReceipt, setViewingReceipt] = useState<{ movimientoId: string; comprobanteId: string } | null>(null);
   const [showInformes, setShowInformes] = useState(false);
+  const [showPreguntaIA, setShowPreguntaIA] = useState(false);
   const [confirmDeleteTarget, setConfirmDeleteTarget] = useState<Movimiento | null>(null);
   const [showCrearMenu, setShowCrearMenu] = useState(false);
   const [showAvisoForm, setShowAvisoForm] = useState(false);
@@ -145,6 +147,7 @@ export default function App() {
     setShowCrearMenu(false);
     setShowAvisoForm(false);
     setConfirmDeleteAvisoTarget(null);
+    setShowPreguntaIA(false);
     setUnlocked(false);
   }
 
@@ -206,6 +209,7 @@ export default function App() {
               onToggleTheme={() => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))}
               onRefresh={refreshList}
               onInformes={() => setShowInformes(true)}
+              onPreguntarIA={() => setShowPreguntaIA(true)}
               onLogout={handleUnauthorized}
             />
           </div>
@@ -365,6 +369,10 @@ export default function App() {
           onClose={() => setConfirmDeleteAvisoTarget(null)}
           onConfirm={handleConfirmDeleteAviso}
         />
+      )}
+
+      {showPreguntaIA && (
+        <PreguntaIADialog onClose={() => setShowPreguntaIA(false)} onUnauthorized={handleUnauthorized} />
       )}
 
       {showInformes && movimientos !== null && (

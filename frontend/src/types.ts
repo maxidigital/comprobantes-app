@@ -50,3 +50,10 @@ export interface NuevoAviso {
   texto: string;
   bien: string;
 }
+
+export type AutorMensaje = 'USUARIO' | 'IA';
+
+export interface MensajeChat {
+  autor: AutorMensaje;
+  texto: string;
+}

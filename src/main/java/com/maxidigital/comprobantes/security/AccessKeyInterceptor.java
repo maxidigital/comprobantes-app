@@ -59,7 +59,12 @@ public class AccessKeyInterceptor implements HandlerInterceptor {
             throw new UnauthorizedException("Usuario no reconocido");
         }
 
-        if (usuario.rol() == Rol.VIEWER && !HttpMethod.GET.matches(request.getMethod())) {
+        // /api/preguntas es POST solo porque el body lleva todo el historial
+        // del chat (no entra prolijo en un query param) — nunca escribe
+        // nada en la planilla, así que un VIEWER también puede usarlo.
+        boolean esSoloLectura = HttpMethod.GET.matches(request.getMethod())
+                || request.getRequestURI().startsWith("/api/preguntas");
+        if (usuario.rol() == Rol.VIEWER && !esSoloLectura) {
             throw new ForbiddenException("Tu usuario solo tiene permiso de lectura");
         }
 

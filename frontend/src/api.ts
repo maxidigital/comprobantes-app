@@ -1,4 +1,4 @@
-import type { Aviso, Movimiento, NuevoAviso, NuevoMovimiento, Rol } from './types';
+import type { Aviso, MensajeChat, Movimiento, NuevoAviso, NuevoMovimiento, Rol } from './types';
 
 const ACCESS_KEY_STORAGE = 'comprobantes.accessKey';
 const USER_NAME_STORAGE = 'comprobantes.userName';
@@ -196,4 +196,15 @@ export async function crearAviso(data: NuevoAviso): Promise<Aviso> {
 
 export async function eliminarAviso(id: string): Promise<void> {
   await request(`/avisos/${id}`, { method: 'DELETE' });
+}
+
+/** Manda todo el historial del chat (el último mensaje es la pregunta nueva) — el backend no guarda la conversación. */
+export async function preguntarIA(mensajes: MensajeChat[]): Promise<string> {
+  const response = await request('/preguntas', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ mensajes }),
+  });
+  const body: { respuesta: string } = await response.json();
+  return body.respuesta;
 }

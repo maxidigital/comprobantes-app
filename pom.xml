@@ -55,6 +55,13 @@
             <version>v3-rev20220815-2.0.0</version>
         </dependency>
 
+        <!-- Mismo cliente de OpenAI que usa underwater/apps/re.mind2 (Whisper) -->
+        <dependency>
+            <groupId>com.theokanning.openai-gpt3-java</groupId>
+            <artifactId>service</artifactId>
+            <version>0.18.2</version>
+        </dependency>
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>

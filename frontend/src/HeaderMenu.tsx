@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ChartIcon, MenuIcon, MoonIcon, RefreshIcon, SunIcon } from './icons';
+import { ChartIcon, MenuIcon, MoonIcon, RefreshIcon, SparkleIcon, SunIcon } from './icons';
 import { useEscapeKey } from './useEscapeKey';
 
 interface Props {
@@ -7,10 +7,11 @@ interface Props {
   onToggleTheme: () => void;
   onRefresh: () => void;
   onInformes: () => void;
+  onPreguntarIA: () => void;
   onLogout: () => void;
 }
 
-export default function HeaderMenu({ isDark, onToggleTheme, onRefresh, onInformes, onLogout }: Props) {
+export default function HeaderMenu({ isDark, onToggleTheme, onRefresh, onInformes, onPreguntarIA, onLogout }: Props) {
   const [open, setOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
@@ -60,6 +61,15 @@ export default function HeaderMenu({ isDark, onToggleTheme, onRefresh, onInforme
             }}
           >
             <ChartIcon /> Informes
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              onPreguntarIA();
+              setOpen(false);
+            }}
+          >
+            <SparkleIcon /> Preguntale a la IA
           </button>
           <button
             type="button"

@@ -170,6 +170,43 @@ id | fecha | texto | bien | autor | creadoEn | estado
 - El FAB "+" ahora abre un mini menú ("Nuevo movimiento" / "Nuevo aviso")
   en vez de ir directo al formulario de movimiento.
 
+## Preguntale a la IA
+
+Chat (entrada en el menú, junto a "Informes") para preguntar en lenguaje
+natural sobre los movimientos — ej. "promedio de alquileres de Iriondo en
+2026". **La IA interpreta, Java calcula**: nunca se le pasa la tabla al
+modelo ni se le pide que haga cuentas. OpenAI (`gpt-4o-mini`, cuenta de
+Maxi, librería `openai-gpt3-java` 0.18.2 igual que re.mind2) solo traduce
+la pregunta a una llamada a `consultar_movimientos` (filtros
+`tipo`/`bien`/`conceptoContiene`/`fechaDesde`/`fechaHasta` + una agregación
+`suma`/`promedio`/`conteo`/`maximo`/`minimo`), `AsistenteIAService` filtra
+`MovimientoSheetService#readAll` y calcula el número real, y el modelo lo
+redacta. Esa versión de la librería solo tiene el function calling viejo
+(una función por respuesta), así que una comparación hace varias rondas
+seguidas (tope 4, la última forzada sin función).
+
+- El system prompt lleva el contexto de cada bien que no sale de los datos
+  (`AsistenteIAService#BIENES_CONOCIDOS`: Iriondo en remodelación sin
+  alquiler, 3 de febrero habitada por Viviana, cómo se cargan los
+  descuentos de San Martín, etc.). **Si cambia la situación de un bien, o
+  aparece uno nuevo, actualizar ese mapa y redeployar**.
+- Solo responde sobre la sucesión (movimientos, bienes y qué significan
+  conceptos de la planilla como TGI/EPE/API); cualquier otro tema lo
+  rechaza con una frase fija. Es una regla del system prompt, no un filtro
+  duro, pero en el peor caso lo que se escapa es texto: la IA no puede
+  escribir nada ni ver otra cosa que los números que devuelve la función.
+- Solo Movimientos (no Avisos ni comprobantes). Listados y agrupaciones
+  ("mes con más gastos", "total por bien") quedan fuera de alcance por
+  ahora — la extensión natural es sumar `listar`/`agruparPor` al schema.
+- `POST /api/preguntas` con `{mensajes: [{autor: USUARIO|IA, texto}]}`
+  (todo el historial, el último es la pregunta nueva). Es POST por el body,
+  pero de solo lectura: `AccessKeyInterceptor` tiene una excepción puntual
+  por path para que VIEWER también pueda usarlo.
+- El historial vive en `localStorage` (`comprobantes.chatIA`), no en el
+  backend — sin sesión server-side, igual que el resto de la app.
+- Necesita `OPENAI_API_KEY`; sin ella la app arranca igual y solo el chat
+  responde con error.
+
 ## Puesta en marcha en Google Cloud (ya hecho una vez, documentado por si hay que rehacerlo)
 
 Proyecto usado: **`comprobantes-app-508410`** (cuenta `bottazzi.100@gmail.com`).
@@ -227,6 +264,7 @@ solo permite desde ahí (creación de credenciales OAuth):
 | `DRIVE_FOLDER_ID` | Id en `secrets/drive-folder.json` |
 | `GOOGLE_OAUTH_CLIENT_ID` / `GOOGLE_OAUTH_CLIENT_SECRET` | De `secrets/oauth-client.json` |
 | `GOOGLE_OAUTH_REFRESH_TOKEN` | De `secrets/oauth-tokens.json` (`refresh_token`) — usado solo para subir comprobantes a Drive |
+| `OPENAI_API_KEY` | Para "Preguntale a la IA" (en local, `dev-env.sh` la lee de `secrets/openai-api-key.txt` si existe) |
 | `APP_PASSWORD` | Contraseña única compartida (ver y editar) |
 | `CORS_ALLOWED_ORIGINS` | Origins permitidos en dev (default `http://localhost:5173`) |
 
@@ -258,20 +296,23 @@ src/main/java/com/maxidigital/comprobantes/
 ├── config/
 │   ├── WebConfig.java               # CORS + registro del interceptor de acceso
 │   ├── GoogleClientsConfig.java     # Bean Sheets (cuenta de servicio) + Bean Drive (OAuth refresh token)
-│   └── UsuariosConfig.java          # lista fija hardcodeada de usuarios -> rol
+│   ├── UsuariosConfig.java          # lista fija hardcodeada de usuarios -> rol
+│   └── OpenAiConfig.java            # bean OpenAiService (OPENAI_API_KEY)
 ├── security/AccessKeyInterceptor.java, Rol.java
 ├── controller/
 │   ├── MovimientoController.java    # GET/POST /api/movimientos, PUT/DELETE .../{id},
 │   │                                 # POST .../{id}/comprobantes, DELETE/GET .../{id}/comprobantes/{comprobanteId}[/archivo]
 │   ├── AuthController.java          # GET /api/auth/whoami -> {nombre, rol}
 │   ├── AvisoController.java         # GET/POST /api/avisos, DELETE .../{id}
+│   ├── PreguntaController.java      # POST /api/preguntas (chat IA, solo lectura)
 │   └── ApiExceptionHandler.java
-├── dto/MovimientoResponse.java, ComprobanteResponse.java, AvisoResponse.java
+├── dto/MovimientoResponse.java, ComprobanteResponse.java, AvisoResponse.java, PreguntaRequest.java, PreguntaResponse.java
 ├── service/
 │   ├── MovimientoSheetService.java   # append/readAll/softDelete/update — no sabe de comprobantes
 │   ├── ComprobanteSheetService.java  # pestaña "Comprobantes": append/readAllActive/findActiveByMovimiento/softDelete(All)
 │   ├── AvisoSheetService.java        # pestaña "Avisos": append/readAllActive/softDelete, ajena a Movimientos
-│   └── ReceiptDriveService.java      # sube/borra/sirve el archivo en Drive
+│   ├── ReceiptDriveService.java      # sube/borra/sirve el archivo en Drive
+│   └── AsistenteIAService.java       # chat IA: loop de function calling + el filtro/cálculo real en Java
 └── exception/UnauthorizedException.java, ForbiddenException.java, NotFoundException.java
 
 frontend/src/
@@ -287,6 +328,7 @@ frontend/src/
 ├── MovimientoDetail.tsx             # detalle de solo lectura, un chip "Ver" por comprobante
 ├── ReceiptViewerDialog.tsx          # visor propio adentro de la app (nunca navega a la URL del archivo)
 ├── ConfirmDialog.tsx                # confirmación de borrado
+├── PreguntaIADialog.tsx             # chat "Preguntale a la IA" (historial en localStorage)
 └── index.css                        # tokens de estética/PALETTE (ver ../estetica-react/ESTETICA-REACT.md)
 
 ```

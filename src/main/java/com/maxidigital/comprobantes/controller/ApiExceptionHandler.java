@@ -3,6 +3,7 @@ package com.maxidigital.comprobantes.controller;
 import com.maxidigital.comprobantes.exception.ForbiddenException;
 import com.maxidigital.comprobantes.exception.NotFoundException;
 import com.maxidigital.comprobantes.exception.UnauthorizedException;
+import com.theokanning.openai.OpenAiHttpException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -33,6 +34,12 @@ public class ApiExceptionHandler {
     public ResponseEntity<Map<String, String>> handleIOException(IOException ex) {
         return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
                 .body(Map.of("error", "Error al comunicarse con Google Sheets/Drive: " + ex.getMessage()));
+    }
+
+    @ExceptionHandler(OpenAiHttpException.class)
+    public ResponseEntity<Map<String, String>> handleOpenAi(OpenAiHttpException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
+                .body(Map.of("error", "Error al comunicarse con OpenAI: " + ex.getMessage()));
     }
 
     /**

@@ -14,6 +14,11 @@ export DRIVE_FOLDER_ID="$(python3 -c "import json; print(json.load(open('secrets
 export GOOGLE_OAUTH_CLIENT_ID="$(python3 -c "import json; print(json.load(open('secrets/oauth-client.json'))['client_id'])")"
 export GOOGLE_OAUTH_CLIENT_SECRET="$(python3 -c "import json; print(json.load(open('secrets/oauth-client.json'))['client_secret'])")"
 export GOOGLE_OAUTH_REFRESH_TOKEN="$(python3 -c "import json; print(json.load(open('secrets/oauth-tokens.json'))['refresh_token'])")"
+# Para "Preguntale a la IA" — opcional: sin esto la app arranca igual y solo
+# falla el chat. Se lee de secrets/openai-api-key.txt si existe.
+if [ -z "${OPENAI_API_KEY:-}" ] && [ -f secrets/openai-api-key.txt ]; then
+  export OPENAI_API_KEY="$(tr -d '[:space:]' < secrets/openai-api-key.txt)"
+fi
 export APP_PASSWORD="${APP_PASSWORD:-dev-password}"
 
 echo "Env vars de Google cargadas. APP_PASSWORD=$APP_PASSWORD"

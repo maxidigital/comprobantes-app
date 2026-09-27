@@ -36,7 +36,7 @@ public class WebConfig implements WebMvcConfigurer {
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(accessKeyInterceptor)
-                .addPathPatterns("/api/movimientos/**", "/api/auth/**", "/api/avisos/**");
+                .addPathPatterns("/api/movimientos/**", "/api/auth/**", "/api/avisos/**", "/api/preguntas/**");
     }
 
     /**
