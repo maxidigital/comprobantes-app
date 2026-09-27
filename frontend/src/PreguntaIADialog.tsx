@@ -1,4 +1,6 @@
-import { FormEvent, useEffect, useRef, useState } from 'react';
+import { FormEvent, ReactNode, useEffect, useRef, useState } from 'react';
+import Markdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { ApiError, preguntarIA } from './api';
 import type { MensajeChat } from './types';
 import { useEscapeKey } from './useEscapeKey';
@@ -12,6 +14,15 @@ const SUGERENCIAS = [
   '¿Cuánto se gastó en total en 2025?',
   '¿Cuál fue el gasto más grande de San Martín?',
 ];
+
+/** En el celular una tabla ancha se desplaza de costado dentro de la burbuja en vez de romper la pantalla. */
+function TablaConScroll({ children }: { children?: ReactNode }) {
+  return (
+    <div className="chat-tabla-scroll">
+      <table>{children}</table>
+    </div>
+  );
+}
 
 function leerHistorial(): MensajeChat[] {
   try {
@@ -113,11 +124,22 @@ export default function PreguntaIADialog({ onClose, onUnauthorized }: Props) {
           )}
 
           <div className="chat-mensajes">
-            {mensajes.map((m, i) => (
-              <div key={i} className={`chat-burbuja chat-burbuja--${m.autor === 'IA' ? 'ia' : 'usuario'}`}>
-                {m.texto}
-              </div>
-            ))}
+            {mensajes.map((m, i) =>
+              m.autor === 'IA' ? (
+                // La IA responde en Markdown (negritas, listas, tablas para
+                // resultados agrupados). react-markdown no renderiza HTML
+                // crudo, así que no hace falta sanitizar.
+                <div key={i} className="chat-burbuja chat-burbuja--ia chat-markdown">
+                  <Markdown remarkPlugins={[remarkGfm]} components={{ table: TablaConScroll }}>
+                    {m.texto}
+                  </Markdown>
+                </div>
+              ) : (
+                <div key={i} className="chat-burbuja chat-burbuja--usuario">
+                  {m.texto}
+                </div>
+              ),
+            )}
             {enviando && <div className="chat-burbuja chat-burbuja--ia chat-burbuja--pensando">Pensando…</div>}
             <div ref={finRef} />
           </div>

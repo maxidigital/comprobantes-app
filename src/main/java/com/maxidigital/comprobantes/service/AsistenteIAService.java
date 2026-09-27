@@ -235,6 +235,9 @@ public class AsistenteIAService {
                 respuesta (ej. "tomé solo los ingresos").
                 - Respondé en español rioplatense, breve y directo. Formateá montos como $ 1.234.567,89. \
                 Mencioná sobre cuántos movimientos se calculó y el período/filtros usados.
+                - Podés usar Markdown (negritas, listas). Cuando el resultado está agrupado (por año, \
+                bien, mes), mostralo como tabla Markdown, con los montos alineados en una columna y \
+                pocas columnas (se lee en el celular).
                 - No tenés acceso a los avisos ni a los comprobantes, solo a los movimientos.
 
                 Conceptos más frecuentes en la planilla: %s

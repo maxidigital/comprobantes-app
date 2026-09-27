@@ -1130,3 +1130,55 @@ textarea.input {
   padding: 0.7rem 0.9rem;
   font-size: 1rem;
 }
+
+.chat-markdown {
+  white-space: normal;
+}
+
+.chat-markdown > :first-child {
+  margin-top: 0;
+}
+
+.chat-markdown > :last-child {
+  margin-bottom: 0;
+}
+
+.chat-markdown p,
+.chat-markdown ul,
+.chat-markdown ol {
+  margin: 0.5rem 0;
+}
+
+.chat-markdown ul,
+.chat-markdown ol {
+  padding-left: 1.2rem;
+}
+
+.chat-tabla-scroll {
+  overflow-x: auto;
+  margin: 0.5rem 0;
+}
+
+.chat-tabla-scroll table {
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.chat-tabla-scroll th,
+.chat-tabla-scroll td {
+  padding: 0.35rem 0.6rem;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+}
+
+.chat-tabla-scroll th {
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+/* La IA pone el monto en la última columna: alineado a la derecha, los números quedan encolumnados. */
+.chat-tabla-scroll th:last-child,
+.chat-tabla-scroll td:last-child {
+  text-align: right;
+}

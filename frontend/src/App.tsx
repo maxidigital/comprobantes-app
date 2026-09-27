@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import AccessGate from './AccessGate';
 import AvisoForm from './AvisoForm';
 import ConfirmDialog from './ConfirmDialog';
@@ -8,7 +8,6 @@ import { BellIcon } from './icons';
 import MovimientoDetail from './MovimientoDetail';
 import MovimientoForm from './MovimientoForm';
 import MovimientosList from './MovimientosList';
-import PreguntaIADialog from './PreguntaIADialog';
 import ReceiptViewerDialog from './ReceiptViewerDialog';
 import Totals from './Totals';
 import {
@@ -26,6 +25,10 @@ import {
 import type { Aviso, FiltroTipo, Movimiento } from './types';
 import { useEscapeKey } from './useEscapeKey';
 import { useVersionCheck } from './useVersionCheck';
+
+// Carga diferida: el render de Markdown (react-markdown + remark-gfm) casi
+// duplica el bundle, y solo hace falta al abrir el chat.
+const PreguntaIADialog = lazy(() => import('./PreguntaIADialog'));
 
 type Theme = 'light' | 'dark';
 
@@ -372,7 +375,9 @@ export default function App() {
       )}
 
       {showPreguntaIA && (
-        <PreguntaIADialog onClose={() => setShowPreguntaIA(false)} onUnauthorized={handleUnauthorized} />
+        <Suspense fallback={null}>
+          <PreguntaIADialog onClose={() => setShowPreguntaIA(false)} onUnauthorized={handleUnauthorized} />
+        </Suspense>
       )}
 
       {showInformes && movimientos !== null && (
