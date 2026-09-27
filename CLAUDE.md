@@ -179,7 +179,8 @@ modelo ni se le pide que haga cuentas. OpenAI (`gpt-4o-mini`, cuenta de
 Maxi, librería `openai-gpt3-java` 0.18.2 igual que re.mind2) solo traduce
 la pregunta a una llamada a `consultar_movimientos` (filtros
 `tipo`/`bien`/`conceptoContiene`/`fechaDesde`/`fechaHasta` + una agregación
-`suma`/`promedio`/`conteo`/`maximo`/`minimo`), `AsistenteIAService` filtra
+`suma`/`promedio`/`conteo`/`maximo`/`minimo`, en total o con
+`agruparPor: mes`), `AsistenteIAService` filtra
 `MovimientoSheetService#readAll` y calcula el número real, y el modelo lo
 redacta. Esa versión de la librería solo tiene el function calling viejo
 (una función por respuesta), así que una comparación hace varias rondas
@@ -195,9 +196,14 @@ seguidas (tope 4, la última forzada sin función).
   rechaza con una frase fija. Es una regla del system prompt, no un filtro
   duro, pero en el peor caso lo que se escapa es texto: la IA no puede
   escribir nada ni ver otra cosa que los números que devuelve la función.
-- Solo Movimientos (no Avisos ni comprobantes). Listados y agrupaciones
-  ("mes con más gastos", "total por bien") quedan fuera de alcance por
-  ahora — la extensión natural es sumar `listar`/`agruparPor` al schema.
+- `agruparPor: mes` recorre todos los meses del período, incluidos los que
+  están en 0, y devuelve ya calculados `mesesSinMovimientos` y
+  `mesesConVariosMovimientos`. Así contesta "¿falta cargar algún
+  alquiler?": con la lista completa de meses, el modelo solo mencionaba el
+  último mes en 0. Además, el prompt le prohíbe concluir "no falta nada" a
+  partir de un total (antes lo hacía).
+- Solo Movimientos (no Avisos ni comprobantes). Listar movimientos sigue
+  fuera de alcance; "total por bien" se resuelve con una consulta por bien.
 - `POST /api/preguntas` con `{mensajes: [{autor: USUARIO|IA, texto}]}`
   (todo el historial, el último es la pregunta nueva). Es POST por el body,
   pero de solo lectura: `AccessKeyInterceptor` tiene una excepción puntual

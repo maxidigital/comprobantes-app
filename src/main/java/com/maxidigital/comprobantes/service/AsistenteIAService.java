@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 import java.io.IOException;
 import java.text.Normalizer;
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -60,6 +61,8 @@ public class AsistenteIAService {
     // ("alquileres" -> "Alquiler") sin tener que adivinar.
     private static final int MAX_CONCEPTOS_EN_PROMPT = 80;
     private static final Set<String> AGREGACIONES = Set.of("suma", "promedio", "conteo", "maximo", "minimo");
+    // Tope para agruparPor=mes — todo el historial (desde 2022) son ~60 meses.
+    private static final int MAX_MESES = 120;
 
     private static final ObjectMapper JSON = new ObjectMapper();
 
@@ -188,10 +191,24 @@ public class AsistenteIAService {
                 "expensas"). La búsqueda ignora mayúsculas y acentos.
                 - Si la pregunta menciona un año o un mes, traducilo a fechaDesde/fechaHasta \
                 (yyyy-MM-dd, ambos inclusive). Si no menciona período, no pongas fechas (todo el historial).
-                - Solo podés calcular una suma, promedio, conteo, máximo o mínimo sobre el monto de los \
-                movimientos filtrados. Si te piden un listado de movimientos o agrupar (ej. "el mes con \
-                más gastos", "el total de cada bien"), explicá amablemente que por ahora solo podés \
-                responder con un número por consulta y sugerí una pregunta que sí puedas contestar.
+                - Podés calcular una suma, promedio, conteo, máximo o mínimo sobre el monto de los \
+                movimientos filtrados, en total o por mes (agruparPor = "mes", que devuelve cada mes del \
+                período, incluidos los que tienen 0 movimientos). Para "el total de cada bien" hacé una \
+                consulta por bien. Si te piden un listado de movimientos, explicá amablemente que por \
+                ahora no podés listarlos y sugerí una pregunta que sí puedas contestar.
+                - Para saber si falta cargar algo que se repite todos los meses (ej. un alquiler), \
+                consultá con agruparPor = "mes" y agregacion = "conteo", filtrando bien el concepto (para \
+                alquileres: tipo INGRESO y conceptoContiene "alquiler"). Si el contexto dice desde cuándo \
+                se alquila un bien, usá esa fecha como fechaDesde. La respuesta trae mesesSinMovimientos \
+                y mesesConVariosMovimientos ya calculados: mencioná TODOS los meses sin movimientos, no \
+                solo el más reciente (si son muchos, agrupalos por rangos). Tené en \
+                cuenta que un mes con 2 o más movimientos puede ser un pago atrasado que cubre meses \
+                anteriores en 0 (mencionalo como posibilidad, no lo des por seguro), y que el mes en curso \
+                puede no haberse cobrado todavía. Si no pusiste fechaDesde, el período arranca en el \
+                primer movimiento que coincide.
+                - NUNCA concluyas que "no falta nada", que algo "está completo" o "está al día" a partir de \
+                un total o un conteo general. Si con lo que devuelve la función no podés verificarlo, \
+                decí que no lo podés verificar.
                 - Si una consulta da 0 o un resultado raro y el contexto de los bienes lo explica (ej. un \
                 bien que no se alquila), decilo en vez de solo informar que no hay movimientos.
                 - Si la pregunta es ambigua, elegí la interpretación más razonable y aclarala en la \
@@ -219,12 +236,18 @@ public class AsistenteIAService {
 
         return ChatFunctionDynamic.builder()
                 .name(FUNCION)
-                .description("Filtra los movimientos de la sucesión y calcula una agregación sobre el monto. "
+                .description("Filtra los movimientos de la sucesión y calcula una agregación sobre el monto, en total o por mes. "
                         + "Todos los filtros son opcionales y se combinan con AND.")
                 .addProperty(ChatFunctionProperty.builder()
                         .name("agregacion").type("string").required(true)
                         .enumValues(AGREGACIONES)
                         .description("Qué calcular sobre el monto de los movimientos que pasan el filtro")
+                        .build())
+                .addProperty(ChatFunctionProperty.builder()
+                        .name("agruparPor").type("string")
+                        .enumValues(Set.of("mes"))
+                        .description("Opcional. \"mes\" calcula la agregación por separado para cada mes del período, "
+                                + "incluidos los meses sin movimientos (con cantidad 0). Omitir para un único resultado total")
                         .build())
                 .addProperty(ChatFunctionProperty.builder()
                         .name("tipo").type("string")
@@ -271,6 +294,7 @@ public class AsistenteIAService {
         String conceptoContiene = texto(args, "conceptoContiene");
         String fechaDesde = texto(args, "fechaDesde");
         String fechaHasta = texto(args, "fechaHasta");
+        String agruparPor = texto(args, "agruparPor");
 
         Map<String, Object> resultado = new LinkedHashMap<>();
         Map<String, Object> filtros = new LinkedHashMap<>();
@@ -281,7 +305,12 @@ public class AsistenteIAService {
         filtros.put("fechaHasta", fechaHasta);
         resultado.put("filtrosAplicados", filtros);
         resultado.put("agregacion", agregacion);
+        resultado.put("agruparPor", agruparPor);
 
+        if (agruparPor != null && !"mes".equals(agruparPor)) {
+            resultado.put("error", "agruparPor inválido, el único valor posible es \"mes\"");
+            return aJson(resultado);
+        }
         if (agregacion == null || !AGREGACIONES.contains(agregacion)) {
             resultado.put("error", "agregacion inválida, usar una de " + AGREGACIONES);
             return aJson(resultado);
@@ -297,22 +326,77 @@ public class AsistenteIAService {
                 .toList();
 
         resultado.put("cantidadMovimientos", filtrados.size());
-        if (filtrados.isEmpty()) {
+        if (filtrados.isEmpty() && (agruparPor == null || fechaDesde == null)) {
             return aJson(resultado);
         }
 
-        resultado.put("fechaPrimerMovimiento", filtrados.stream().map(MovimientoResponse::fecha).min(String::compareTo).orElse(null));
-        resultado.put("fechaUltimoMovimiento", filtrados.stream().map(MovimientoResponse::fecha).max(String::compareTo).orElse(null));
-
-        switch (agregacion) {
-            case "suma" -> resultado.put("valor", redondear(filtrados.stream().mapToDouble(MovimientoResponse::monto).sum()));
-            case "promedio" -> resultado.put("valor", redondear(filtrados.stream().mapToDouble(MovimientoResponse::monto).average().orElse(0)));
-            case "conteo" -> resultado.put("valor", filtrados.size());
-            case "maximo" -> resultado.put("movimiento", resumen(filtrados.stream().max(Comparator.comparingDouble(MovimientoResponse::monto)).orElseThrow()));
-            case "minimo" -> resultado.put("movimiento", resumen(filtrados.stream().min(Comparator.comparingDouble(MovimientoResponse::monto)).orElseThrow()));
-            default -> { }
+        if (!filtrados.isEmpty()) {
+            resultado.put("fechaPrimerMovimiento", filtrados.stream().map(MovimientoResponse::fecha).min(String::compareTo).orElse(null));
+            resultado.put("fechaUltimoMovimiento", filtrados.stream().map(MovimientoResponse::fecha).max(String::compareTo).orElse(null));
         }
+
+        if (agruparPor == null) {
+            resultado.putAll(agregar(filtrados, agregacion));
+            return aJson(resultado);
+        }
+
+        // Por mes: se recorre cada mes del período (no solo los que tienen
+        // movimientos), porque los meses en 0 son justamente la respuesta a
+        // "¿falta cargar algún alquiler?". Sin fechaHasta, el período termina
+        // en el mes actual.
+        YearMonth desde = fechaDesde != null ? mesDe(fechaDesde) : mesDe((String) resultado.get("fechaPrimerMovimiento"));
+        YearMonth hoy = YearMonth.now();
+        YearMonth hasta = fechaHasta != null && mesDe(fechaHasta).isBefore(hoy) ? mesDe(fechaHasta) : hoy;
+        if (desde == null || hasta == null) {
+            resultado.put("error", "fechaDesde/fechaHasta tienen que tener formato yyyy-MM-dd");
+            return aJson(resultado);
+        }
+        if (desde.plusMonths(MAX_MESES).isBefore(hasta)) {
+            resultado.put("error", "el período es demasiado largo para agrupar por mes (máximo " + MAX_MESES + " meses), acotá fechaDesde/fechaHasta");
+            return aJson(resultado);
+        }
+
+        Map<String, List<MovimientoResponse>> porMes = filtrados.stream()
+                .collect(Collectors.groupingBy(m -> m.fecha().length() >= 7 ? m.fecha().substring(0, 7) : m.fecha()));
+        List<Map<String, Object>> meses = new ArrayList<>();
+        for (YearMonth mes = desde; !mes.isAfter(hasta); mes = mes.plusMonths(1)) {
+            List<MovimientoResponse> delMes = porMes.getOrDefault(mes.toString(), List.of());
+            Map<String, Object> fila = new LinkedHashMap<>();
+            fila.put("mes", mes.toString());
+            fila.put("cantidad", delMes.size());
+            if (!delMes.isEmpty() && !"conteo".equals(agregacion)) {
+                fila.putAll(agregar(delMes, agregacion));
+            }
+            meses.add(fila);
+        }
+        // Resumen ya calculado: con 50+ meses en la lista, el modelo tiende a
+        // mencionar solo el más reciente en 0 y se saltea los viejos.
+        resultado.put("mesActual", hoy.toString());
+        resultado.put("mesesSinMovimientos", meses.stream()
+                .filter(f -> (int) f.get("cantidad") == 0).map(f -> f.get("mes")).toList());
+        resultado.put("mesesConVariosMovimientos", meses.stream()
+                .filter(f -> (int) f.get("cantidad") > 1).map(f -> f.get("mes") + " (" + f.get("cantidad") + ")").toList());
+        resultado.put("meses", meses);
         return aJson(resultado);
+    }
+
+    /** Una agregación sobre una lista no vacía — {"valor": n} o, para máximo/mínimo, {"movimiento": {...}}. */
+    private static Map<String, Object> agregar(List<MovimientoResponse> lista, String agregacion) {
+        return switch (agregacion) {
+            case "suma" -> Map.of("valor", redondear(lista.stream().mapToDouble(MovimientoResponse::monto).sum()));
+            case "promedio" -> Map.of("valor", redondear(lista.stream().mapToDouble(MovimientoResponse::monto).average().orElse(0)));
+            case "maximo" -> Map.of("movimiento", resumen(lista.stream().max(Comparator.comparingDouble(MovimientoResponse::monto)).orElseThrow()));
+            case "minimo" -> Map.of("movimiento", resumen(lista.stream().min(Comparator.comparingDouble(MovimientoResponse::monto)).orElseThrow()));
+            default -> Map.of("valor", lista.size());
+        };
+    }
+
+    private static YearMonth mesDe(String isoDate) {
+        try {
+            return YearMonth.from(LocalDate.parse(isoDate));
+        } catch (RuntimeException e) {
+            return null;
+        }
     }
 
     private static Map<String, Object> resumen(MovimientoResponse m) {
