@@ -197,13 +197,27 @@ seguidas (tope 4, la última forzada sin función).
   duro, pero en el peor caso lo que se escapa es texto: la IA no puede
   escribir nada ni ver otra cosa que los números que devuelve la función.
 - `agruparPor: mes` recorre todos los meses del período, incluidos los que
-  están en 0, y devuelve ya calculados `mesesSinMovimientos` y
-  `mesesConVariosMovimientos`. Así contesta "¿falta cargar algún
-  alquiler?": con la lista completa de meses, el modelo solo mencionaba el
-  último mes en 0. Además, el prompt le prohíbe concluir "no falta nada" a
-  partir de un total (antes lo hacía).
-- Solo Movimientos (no Avisos ni comprobantes). Listar movimientos sigue
-  fuera de alcance; "total por bien" se resuelve con una consulta por bien.
+  están en 0, y así contesta "¿falta cargar algún alquiler?". Un pago
+  atrasado se carga con la fecha real de cobro y el mes al que corresponde
+  en las **notas** ("Enero 2024", "Julio a noviembre 2022", "Agosto"), y
+  así se importó todo el historial. `AsistenteIAService#mesesMencionados`
+  lee esos meses (rangos, meses sin año) y cuenta como cubiertos los meses
+  en 0 que algún cobro menciona, aunque ese cobro caiga fuera del período.
+  Java devuelve ya calculados `mesesFaltantes`/`mesesCubiertosSegunNotas`
+  (agrupados en rangos) y una `conclusion` en una frase, porque el modelo,
+  con las listas crudas, omitía meses o presentaba los cubiertos como
+  faltantes. **Para que un pago atrasado no figure como faltante, las notas
+  tienen que decir el mes.**
+- Solo a ADMIN/EDITOR, y solo cuando preguntan por faltantes: si hay meses
+  faltantes y cobros agrupados en un mes cuyas notas no dicen a qué mes
+  corresponden (`cobrosAgrupadosSinMesEnNotas`), la IA sugiere completar
+  las notas. A un VIEWER nunca le sugiere corregir la planilla.
+- El prompt le prohíbe concluir "no falta nada" a partir de un total (antes
+  lo hacía).
+- Solo Movimientos (no Avisos ni comprobantes); las notas se leen solo
+  como parte del detalle de un movimiento, no se pueden buscar. Listar
+  movimientos sigue fuera de alcance; "total por bien" se resuelve con una
+  consulta por bien.
 - `POST /api/preguntas` con `{mensajes: [{autor: USUARIO|IA, texto}]}`
   (todo el historial, el último es la pregunta nueva). Es POST por el body,
   pero de solo lectura: `AccessKeyInterceptor` tiene una excepción puntual

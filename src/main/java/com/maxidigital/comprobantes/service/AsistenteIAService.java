@@ -29,6 +29,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -82,7 +84,9 @@ public class AsistenteIAService {
                 + "(Expensas Ordinarias)\" son INGRESO.");
         BIENES_CONOCIDOS.put("Iriondo", "En remodelación: no se alquila, así que no genera ingresos por alquiler. "
                 + "Los gastos de la refacción en sí se manejan en otra caja y no están en esta planilla.");
-        BIENES_CONOCIDOS.put("Oficina", "Alquilada desde marzo de 2026.");
+        BIENES_CONOCIDOS.put("Oficina", "Tuvo un contrato de abril de 2022 a agosto de 2023 (último alquiler cobrado), que se rescindió; estuvo "
+                + "sin alquilar hasta que se volvió a alquilar en marzo de 2026. Para ver si falta un alquiler "
+                + "del contrato actual, consultar desde 2026-03-01.");
         BIENES_CONOCIDOS.put("3 de febrero", "La habita Viviana, una de las herederas (fue la última pareja de "
                 + "Ricardo Bottazzi). No se alquila, así que no genera ingresos.");
         BIENES_CONOCIDOS.put("General", "Para movimientos que no pertenecen a ningún bien en particular "
@@ -101,7 +105,8 @@ public class AsistenteIAService {
         this.configurado = !apiKey.isBlank();
     }
 
-    public String responder(List<MensajeChat> historial) throws IOException {
+    /** puedeEditar: si quien pregunta puede cargar movimientos (ADMIN/EDITOR) — solo a esos se les sugiere corregir la planilla. */
+    public String responder(List<MensajeChat> historial, boolean puedeEditar) throws IOException {
         if (!configurado) {
             throw new IllegalStateException("Falta configurar OPENAI_API_KEY en el servidor");
         }
@@ -112,7 +117,7 @@ public class AsistenteIAService {
         List<MovimientoResponse> movimientos = movimientoSheetService.readAll();
 
         List<ChatMessage> mensajes = new ArrayList<>();
-        mensajes.add(new ChatMessage(ChatMessageRole.SYSTEM.value(), systemPrompt(movimientos)));
+        mensajes.add(new ChatMessage(ChatMessageRole.SYSTEM.value(), systemPrompt(movimientos, puedeEditar)));
         List<MensajeChat> recientes = historial.subList(Math.max(0, historial.size() - MAX_MENSAJES_HISTORIAL), historial.size());
         for (MensajeChat m : recientes) {
             String rol = MensajeChat.AUTOR_IA.equals(m.autor()) ? ChatMessageRole.ASSISTANT.value() : ChatMessageRole.USER.value();
@@ -153,7 +158,7 @@ public class AsistenteIAService {
         return "No pude armar una respuesta, probá reformular la pregunta.";
     }
 
-    private String systemPrompt(List<MovimientoResponse> movimientos) {
+    private String systemPrompt(List<MovimientoResponse> movimientos, boolean puedeEditar) {
         String conceptos = movimientos.stream()
                 .collect(Collectors.groupingBy(m -> m.concepto().trim(), Collectors.counting()))
                 .entrySet().stream()
@@ -199,13 +204,15 @@ public class AsistenteIAService {
                 - Para saber si falta cargar algo que se repite todos los meses (ej. un alquiler), \
                 consultá con agruparPor = "mes" y agregacion = "conteo", filtrando bien el concepto (para \
                 alquileres: tipo INGRESO y conceptoContiene "alquiler"). Si el contexto dice desde cuándo \
-                se alquila un bien, usá esa fecha como fechaDesde. La respuesta trae mesesSinMovimientos \
-                y mesesConVariosMovimientos ya calculados: mencioná TODOS los meses sin movimientos, no \
-                solo el más reciente (si son muchos, agrupalos por rangos). Tené en \
-                cuenta que un mes con 2 o más movimientos puede ser un pago atrasado que cubre meses \
-                anteriores en 0 (mencionalo como posibilidad, no lo des por seguro), y que el mes en curso \
+                se alquila un bien, usá esa fecha como fechaDesde. La respuesta trae ya calculados, \
+                agrupados en rangos: mesesFaltantes (los que de verdad faltan) y mesesCubiertosSegunNotas \
+                (meses sin cobro propio que otro cobro indica en sus notas que corresponde a ese mes: \
+                pagos atrasados, NO faltan). Trae también "conclusion": \
+                basá la respuesta en esa frase, que es la verdad calculada. Nunca presentes como \
+                faltante un mes que no esté en mesesFaltantes. Tené en cuenta que el mes en curso \
                 puede no haberse cobrado todavía. Si no pusiste fechaDesde, el período arranca en el \
                 primer movimiento que coincide.
+                %s
                 - NUNCA concluyas que "no falta nada", que algo "está completo" o "está al día" a partir de \
                 un total o un conteo general. Si con lo que devuelve la función no podés verificarlo, \
                 decí que no lo podés verificar.
@@ -218,7 +225,24 @@ public class AsistenteIAService {
                 - No tenés acceso a los avisos ni a los comprobantes, solo a los movimientos.
 
                 Conceptos más frecuentes en la planilla: %s
-                """.formatted(LocalDate.now(), describirBienes(), conceptos);
+                """.formatted(LocalDate.now(), describirBienes(), sugerenciaDeCorreccion(puedeEditar), conceptos);
+    }
+
+    /**
+     * La sugerencia de corregir la planilla solo tiene sentido para quien
+     * puede cargar movimientos, y solo cuando pregunta por meses faltantes —
+     * nunca como comentario espontáneo en otra respuesta.
+     */
+    private static String sugerenciaDeCorreccion(boolean puedeEditar) {
+        if (!puedeEditar) {
+            return "- Quien pregunta solo puede consultar, no cargar movimientos: no le sugieras corregir la planilla.";
+        }
+        return """
+                - Quien pregunta puede cargar movimientos. SOLO cuando pregunte si falta cargar algo, si \
+                cobrosAgrupadosSinMesEnNotas NO está vacío (cobros que cayeron juntos en un mes y cuyas \
+                notas no dicen a qué mes corresponden), mencionalos (fecha y monto) y sugerile que lo indique en las notas de esos movimientos (ej. \
+                "Enero 2024", con mes y año), o que los cargue como ingresos separados, para que la próxima \
+                consulta ya no los cuente como faltantes. Si cobrosAgrupadosSinMesEnNotas está vacío, no sugieras nada. No hagas esta sugerencia en otras preguntas.""";
     }
 
     private static String describirBienes() {
@@ -316,10 +340,12 @@ public class AsistenteIAService {
             return aJson(resultado);
         }
 
-        List<MovimientoResponse> filtrados = movimientos.stream()
+        List<MovimientoResponse> sinFiltroDeFechas = movimientos.stream()
                 .filter(m -> tipo == null || tipo.equalsIgnoreCase(m.tipo()))
                 .filter(m -> bien == null || normalizar(bien).equals(normalizar(m.bien())))
                 .filter(m -> conceptoContiene == null || normalizar(m.concepto()).contains(normalizar(conceptoContiene)))
+                .toList();
+        List<MovimientoResponse> filtrados = sinFiltroDeFechas.stream()
                 // Fechas en ISO (yyyy-MM-dd): la comparación de strings respeta el orden cronológico.
                 .filter(m -> fechaDesde == null || m.fecha().compareTo(fechaDesde) >= 0)
                 .filter(m -> fechaHasta == null || m.fecha().compareTo(fechaHasta) <= 0)
@@ -367,15 +393,65 @@ public class AsistenteIAService {
             if (!delMes.isEmpty() && !"conteo".equals(agregacion)) {
                 fila.putAll(agregar(delMes, agregacion));
             }
+            // El detalle (con notas) solo de los meses con varios movimientos:
+            // son los que pueden ser pagos atrasados, y las notas pueden decir
+            // a qué mes corresponde cada uno.
+            if (delMes.size() > 1) {
+                fila.put("movimientos", delMes.stream().map(AsistenteIAService::resumen).toList());
+            }
             meses.add(fila);
         }
         // Resumen ya calculado: con 50+ meses en la lista, el modelo tiende a
         // mencionar solo el más reciente en 0 y se saltea los viejos.
         resultado.put("mesActual", hoy.toString());
-        resultado.put("mesesSinMovimientos", meses.stream()
-                .filter(f -> (int) f.get("cantidad") == 0).map(f -> f.get("mes")).toList());
+        List<String> mesesSinMovimientos = meses.stream()
+                .filter(f -> (int) f.get("cantidad") == 0).map(f -> (String) f.get("mes")).toList();
+        // Un pago atrasado se carga con la fecha real de cobro y el mes al que
+        // corresponde en las notas ("Enero 2024", "Julio a noviembre 2022") —
+        // así se importó todo el historial. Esos meses no faltan: se cruza
+        // acá, en Java, porque el modelo tenía las notas y aun así los daba
+        // por faltantes. Se miran también los cobros fuera del período: un
+        // atrasado se cobra después del mes que cubre.
+        Set<String> cubiertos = new TreeSet<>();
+        for (MovimientoResponse m : sinFiltroDeFechas) {
+            for (YearMonth mes : mesesMencionados(m.notas(), m.fecha())) {
+                if (mesesSinMovimientos.contains(mes.toString())) {
+                    cubiertos.add(mes.toString());
+                }
+            }
+        }
+        // Rangos ya armados ("2024-01 a 2024-03"): copiando una lista larga
+        // de meses sueltos, el modelo se comía o inventaba alguno.
+        List<String> faltantes = mesesSinMovimientos.stream().filter(mes -> !cubiertos.contains(mes)).toList();
+        List<String> rangosFaltantes = comoRangos(faltantes);
+        List<String> rangosCubiertos = comoRangos(new ArrayList<>(cubiertos));
+        // La conclusión en una frase, armada acá: con las dos listas a la
+        // vista, el modelo llegó a presentar los meses cubiertos como
+        // faltantes.
+        String conclusion = faltantes.isEmpty()
+                ? "No falta ningún mes en el período."
+                : "Falta" + (faltantes.size() == 1 ? " 1 mes: " : "n " + faltantes.size() + " meses: ") + String.join(", ", rangosFaltantes) + ".";
+        if (!cubiertos.isEmpty()) {
+            conclusion += " Hay " + cubiertos.size() + (cubiertos.size() == 1 ? " mes" : " meses")
+                    + " sin cobro propio que están cubiertos por pagos atrasados según las notas: " + String.join(", ", rangosCubiertos) + ".";
+        }
+        resultado.put("conclusion", conclusion);
+        resultado.put("mesesFaltantes", rangosFaltantes);
+        resultado.put("mesesCubiertosSegunNotas", rangosCubiertos);
         resultado.put("mesesConVariosMovimientos", meses.stream()
                 .filter(f -> (int) f.get("cantidad") > 1).map(f -> f.get("mes") + " (" + f.get("cantidad") + ")").toList());
+        // Los cobros que caen juntos en un mes sin decir en las notas a qué
+        // mes corresponden: lo único que justifica sugerirle al
+        // administrador que complete la planilla.
+        // Sin meses faltantes no hay nada que corregir (y así no salta por
+        // cobros que no son de un mes, como los punitorios).
+        resultado.put("cobrosAgrupadosSinMesEnNotas", faltantes.isEmpty() ? List.of() : porMes.values().stream()
+                .filter(delMes -> delMes.size() > 1)
+                .flatMap(List::stream)
+                .filter(m -> mesesMencionados(m.notas(), m.fecha()).isEmpty())
+                .sorted(Comparator.comparing(MovimientoResponse::fecha))
+                .map(AsistenteIAService::resumen)
+                .toList());
         resultado.put("meses", meses);
         return aJson(resultado);
     }
@@ -389,6 +465,88 @@ public class AsistenteIAService {
             case "minimo" -> Map.of("movimiento", resumen(lista.stream().min(Comparator.comparingDouble(MovimientoResponse::monto)).orElseThrow()));
             default -> Map.of("valor", lista.size());
         };
+    }
+
+    private static final List<String> NOMBRES_MES = List.of("enero", "febrero", "marzo", "abril", "mayo", "junio",
+            "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre");
+    private static final Pattern MES = Pattern.compile(
+            "\\b(" + String.join("|", NOMBRES_MES) + "|setiembre)(?:\\s+(?:del?\\s+)?(\\d{4}))?\\b");
+    private static final Pattern SEPARADOR_RANGO = Pattern.compile("\\s+(?:a|al|hasta)\\s+");
+
+    private record MesEnNotas(int mes, Integer anio, int inicio, int fin) { }
+
+    /**
+     * Meses que aparecen escritos en las notas: "Marzo 2024", "alquiler de
+     * enero de 2025", rangos ("Julio a noviembre 2022", "diciembre 2022 a
+     * abril 2023") y meses sin año ("Agosto"). A un mes sin año le toca el
+     * del siguiente mes mencionado que lo tenga (el caso "julio a noviembre
+     * 2022"); si no hay, el del cobro, o el anterior si ese mes todavía no
+     * había llegado a la fecha del cobro ("Diciembre" cobrado en enero).
+     */
+    static List<YearMonth> mesesMencionados(String notas, String fechaCobro) {
+        List<YearMonth> resultado = new ArrayList<>();
+        if (notas == null || notas.isBlank()) return resultado;
+
+        String texto = normalizar(notas);
+        List<MesEnNotas> encontrados = new ArrayList<>();
+        Matcher matcher = MES.matcher(texto);
+        while (matcher.find()) {
+            String nombre = matcher.group(1).equals("setiembre") ? "septiembre" : matcher.group(1);
+            Integer anio = matcher.group(2) != null ? Integer.valueOf(matcher.group(2)) : null;
+            encontrados.add(new MesEnNotas(NOMBRES_MES.indexOf(nombre) + 1, anio, matcher.start(), matcher.end()));
+        }
+
+        YearMonth cobro = mesDe(fechaCobro);
+        List<YearMonth> meses = new ArrayList<>();
+        Integer anioSiguiente = null;
+        for (int i = encontrados.size() - 1; i >= 0; i--) {
+            MesEnNotas e = encontrados.get(i);
+            YearMonth mes;
+            if (e.anio() != null) {
+                mes = YearMonth.of(e.anio(), e.mes());
+            } else if (anioSiguiente != null) {
+                mes = YearMonth.of(anioSiguiente, e.mes());
+            } else if (cobro != null) {
+                mes = YearMonth.of(cobro.getYear(), e.mes());
+                if (mes.isAfter(cobro)) mes = mes.minusYears(1);
+            } else {
+                continue;
+            }
+            anioSiguiente = mes.getYear();
+            meses.add(0, mes);
+        }
+        if (meses.size() != encontrados.size()) {
+            return resultado;
+        }
+
+        for (int i = 0; i < meses.size(); i++) {
+            boolean esRango = i + 1 < meses.size()
+                    && SEPARADOR_RANGO.matcher(texto.substring(encontrados.get(i).fin(), encontrados.get(i + 1).inicio())).matches()
+                    && !meses.get(i + 1).isBefore(meses.get(i));
+            if (esRango) {
+                for (YearMonth m = meses.get(i); !m.isAfter(meses.get(i + 1)); m = m.plusMonths(1)) {
+                    resultado.add(m);
+                }
+                i++;
+            } else {
+                resultado.add(meses.get(i));
+            }
+        }
+        return resultado;
+    }
+
+    /** ["2024-01", "2024-02", "2024-03", "2024-06"] -> ["2024-01 a 2024-03", "2024-06"] (la lista viene ordenada). */
+    static List<String> comoRangos(List<String> meses) {
+        List<String> rangos = new ArrayList<>();
+        for (int i = 0; i < meses.size(); i++) {
+            int j = i;
+            while (j + 1 < meses.size() && YearMonth.parse(meses.get(j)).plusMonths(1).equals(YearMonth.parse(meses.get(j + 1)))) {
+                j++;
+            }
+            rangos.add(i == j ? meses.get(i) : meses.get(i) + " a " + meses.get(j));
+            i = j;
+        }
+        return rangos;
     }
 
     private static YearMonth mesDe(String isoDate) {
@@ -406,6 +564,9 @@ public class AsistenteIAService {
         r.put("tipo", m.tipo());
         r.put("concepto", m.concepto());
         r.put("bien", m.bien());
+        if (m.notas() != null && !m.notas().isBlank()) {
+            r.put("notas", m.notas());
+        }
         return r;
     }
 
