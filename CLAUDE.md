@@ -180,11 +180,14 @@ Maxi, librería `openai-gpt3-java` 0.18.2 igual que re.mind2) solo traduce
 la pregunta a una llamada a `consultar_movimientos` (filtros
 `tipo`/`bien`/`conceptoContiene`/`fechaDesde`/`fechaHasta` + una agregación
 `suma`/`promedio`/`conteo`/`maximo`/`minimo`, en total o con
-`agruparPor: mes`), `AsistenteIAService` filtra
+`agruparPor: mes|anio|bien|anio_y_bien`), `AsistenteIAService` filtra
 `MovimientoSheetService#readAll` y calcula el número real, y el modelo lo
 redacta. Esa versión de la librería solo tiene el function calling viejo
 (una función por respuesta), así que una comparación hace varias rondas
-seguidas (tope 4, la última forzada sin función).
+seguidas (tope 4). **La primera ronda fuerza la llamada a la función**:
+dejándolo elegir, el modelo contestó "no hay gastos de agua en Iriondo"
+deduciéndolo del contexto (está en remodelación) sin consultar, y eran 64
+movimientos. La última ronda se fuerza sin función.
 
 - El system prompt lleva el contexto de cada bien que no sale de los datos
   (`AsistenteIAService#BIENES_CONOCIDOS`: Iriondo en remodelación sin
@@ -196,8 +199,10 @@ seguidas (tope 4, la última forzada sin función).
   rechaza con una frase fija. Es una regla del system prompt, no un filtro
   duro, pero en el peor caso lo que se escapa es texto: la IA no puede
   escribir nada ni ver otra cosa que los números que devuelve la función.
-- `agruparPor: mes` recorre todos los meses del período, incluidos los que
-  están en 0, y así contesta "¿falta cargar algún alquiler?". Un pago
+- `agruparPor: mes` con `conteo` recorre todos los meses del período,
+  incluidos los que están en 0, y así contesta "¿falta cargar algún
+  alquiler?". El análisis de faltantes va solo con `conteo`; en una suma o
+  un promedio por mes metía ruido en respuestas que no tenían nada que ver. Un pago
   atrasado se carga con la fecha real de cobro y el mes al que corresponde
   en las **notas** ("Enero 2024", "Julio a noviembre 2022", "Agosto"), y
   así se importó todo el historial. `AsistenteIAService#mesesMencionados`

@@ -28,7 +28,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -63,6 +65,7 @@ public class AsistenteIAService {
     // ("alquileres" -> "Alquiler") sin tener que adivinar.
     private static final int MAX_CONCEPTOS_EN_PROMPT = 80;
     private static final Set<String> AGREGACIONES = Set.of("suma", "promedio", "conteo", "maximo", "minimo");
+    private static final Set<String> AGRUPACIONES = Set.of("mes", "anio", "bien", "anio_y_bien");
     // Tope para agruparPor=mes — todo el historial (desde 2022) son ~60 meses.
     private static final int MAX_MESES = 120;
 
@@ -83,7 +86,8 @@ public class AsistenteIAService {
                 + "y cada descuento (honorarios de administración, TGI) como GASTO aparte. Las \"Nota de Credito "
                 + "(Expensas Ordinarias)\" son INGRESO.");
         BIENES_CONOCIDOS.put("Iriondo", "En remodelación: no se alquila, así que no genera ingresos por alquiler. "
-                + "Los gastos de la refacción en sí se manejan en otra caja y no están en esta planilla.");
+                + "Sigue teniendo gastos corrientes (agua, EPE, expensas, TGI, etc.) que sí están en la planilla; "
+                + "solo los gastos de la refacción en sí se manejan en otra caja y no están acá.");
         BIENES_CONOCIDOS.put("Oficina", "Tuvo un contrato de abril de 2022 a agosto de 2023 (último alquiler cobrado), que se rescindió; estuvo "
                 + "sin alquilar hasta que se volvió a alquilar en marzo de 2026. Para ver si falta un alquiler "
                 + "del contrato actual, consultar desde 2026-03-01.");
@@ -127,15 +131,20 @@ public class AsistenteIAService {
         ChatFunctionDynamic funcion = definirFuncion(movimientos);
 
         for (int ronda = 1; ronda <= MAX_RONDAS; ronda++) {
-            // En la última ronda se prohíbe llamar a la función: obliga al
-            // modelo a contestar con lo que ya consultó en vez de cortar sin
-            // respuesta.
+            // En la primera ronda la consulta es obligatoria: dejándolo
+            // elegir, el modelo llegó a contestar "no hay gastos de agua en
+            // Iriondo" deduciéndolo del contexto (está en remodelación), sin
+            // consultar — eran 64 movimientos. En la última ronda se prohíbe
+            // llamar a la función: obliga a contestar con lo ya consultado.
             boolean ultima = ronda == MAX_RONDAS;
+            ChatCompletionRequestFunctionCall modo = ronda == 1
+                    ? ChatCompletionRequestFunctionCall.of(FUNCION)
+                    : ChatCompletionRequestFunctionCall.of(ultima ? "none" : "auto");
             ChatCompletionRequest request = ChatCompletionRequest.builder()
                     .model(MODELO)
                     .messages(mensajes)
                     .functions(List.of(funcion))
-                    .functionCall(ChatCompletionRequestFunctionCall.of(ultima ? "none" : "auto"))
+                    .functionCall(modo)
                     .temperature(0.0)
                     .build();
 
@@ -196,10 +205,14 @@ public class AsistenteIAService {
                 "expensas"). La búsqueda ignora mayúsculas y acentos.
                 - Si la pregunta menciona un año o un mes, traducilo a fechaDesde/fechaHasta \
                 (yyyy-MM-dd, ambos inclusive). Si no menciona período, no pongas fechas (todo el historial).
+                - El contexto de los bienes sirve para interpretar resultados, NUNCA para deducir un \
+                número o que "no hay movimientos" sin consultar. Toda cifra sale de la función.
                 - Podés calcular una suma, promedio, conteo, máximo o mínimo sobre el monto de los \
-                movimientos filtrados, en total o por mes (agruparPor = "mes", que devuelve cada mes del \
-                período, incluidos los que tienen 0 movimientos). Para "el total de cada bien" hacé una \
-                consulta por bien. Si te piden un listado de movimientos, explicá amablemente que por \
+                movimientos filtrados, en total o agrupado con agruparPor: "anio", "bien", "anio_y_bien" \
+                (ej. "promedio por año por bien" es una sola consulta con "anio_y_bien") o "mes" (cada mes \
+                del período, incluidos los que tienen 0 movimientos). "promedio" es el promedio por \
+                movimiento: si el usuario pide un promedio mensual o anual, aclarale qué calculaste. \
+                Si te piden un listado de movimientos, explicá amablemente que por \
                 ahora no podés listarlos y sugerí una pregunta que sí puedas contestar.
                 - Para saber si falta cargar algo que se repite todos los meses (ej. un alquiler), \
                 consultá con agruparPor = "mes" y agregacion = "conteo", filtrando bien el concepto (para \
@@ -269,9 +282,9 @@ public class AsistenteIAService {
                         .build())
                 .addProperty(ChatFunctionProperty.builder()
                         .name("agruparPor").type("string")
-                        .enumValues(Set.of("mes"))
-                        .description("Opcional. \"mes\" calcula la agregación por separado para cada mes del período, "
-                                + "incluidos los meses sin movimientos (con cantidad 0). Omitir para un único resultado total")
+                        .enumValues(AGRUPACIONES)
+                        .description("Opcional. Calcula la agregación por separado para cada grupo. \"mes\" incluye los meses "
+                                + "del período sin movimientos (con cantidad 0). Omitir para un único resultado total")
                         .build())
                 .addProperty(ChatFunctionProperty.builder()
                         .name("tipo").type("string")
@@ -331,8 +344,8 @@ public class AsistenteIAService {
         resultado.put("agregacion", agregacion);
         resultado.put("agruparPor", agruparPor);
 
-        if (agruparPor != null && !"mes".equals(agruparPor)) {
-            resultado.put("error", "agruparPor inválido, el único valor posible es \"mes\"");
+        if (agruparPor != null && !AGRUPACIONES.contains(agruparPor)) {
+            resultado.put("error", "agruparPor inválido, usar uno de " + AGRUPACIONES);
             return aJson(resultado);
         }
         if (agregacion == null || !AGREGACIONES.contains(agregacion)) {
@@ -366,6 +379,26 @@ public class AsistenteIAService {
             return aJson(resultado);
         }
 
+        if (!"mes".equals(agruparPor)) {
+            Function<MovimientoResponse, String> clave = switch (agruparPor) {
+                case "anio" -> m -> anioDe(m);
+                case "bien" -> MovimientoResponse::bien;
+                default -> m -> anioDe(m) + " | " + m.bien();
+            };
+            Map<String, List<MovimientoResponse>> grupos = filtrados.stream()
+                    .collect(Collectors.groupingBy(clave, TreeMap::new, Collectors.toList()));
+            List<Map<String, Object>> filas = new ArrayList<>();
+            grupos.forEach((grupo, lista) -> {
+                Map<String, Object> fila = new LinkedHashMap<>();
+                fila.put("grupo", grupo);
+                fila.put("cantidad", lista.size());
+                fila.putAll(agregar(lista, agregacion));
+                filas.add(fila);
+            });
+            resultado.put("grupos", filas);
+            return aJson(resultado);
+        }
+
         // Por mes: se recorre cada mes del período (no solo los que tienen
         // movimientos), porque los meses en 0 son justamente la respuesta a
         // "¿falta cargar algún alquiler?". Sin fechaHasta, el período termina
@@ -396,10 +429,17 @@ public class AsistenteIAService {
             // El detalle (con notas) solo de los meses con varios movimientos:
             // son los que pueden ser pagos atrasados, y las notas pueden decir
             // a qué mes corresponde cada uno.
-            if (delMes.size() > 1) {
+            if (delMes.size() > 1 && "conteo".equals(agregacion)) {
                 fila.put("movimientos", delMes.stream().map(AsistenteIAService::resumen).toList());
             }
             meses.add(fila);
+        }
+        // El análisis de meses faltantes es para "¿falta cargar algo?", que
+        // siempre se pregunta con conteo: en una suma o un promedio por mes
+        // ("mes con más gastos") solo metía ruido en la respuesta.
+        if (!"conteo".equals(agregacion)) {
+            resultado.put("meses", meses);
+            return aJson(resultado);
         }
         // Resumen ya calculado: con 50+ meses en la lista, el modelo tiende a
         // mencionar solo el más reciente en 0 y se saltea los viejos.
@@ -465,6 +505,10 @@ public class AsistenteIAService {
             case "minimo" -> Map.of("movimiento", resumen(lista.stream().min(Comparator.comparingDouble(MovimientoResponse::monto)).orElseThrow()));
             default -> Map.of("valor", lista.size());
         };
+    }
+
+    private static String anioDe(MovimientoResponse m) {
+        return m.fecha().length() >= 4 ? m.fecha().substring(0, 4) : m.fecha();
     }
 
     private static final List<String> NOMBRES_MES = List.of("enero", "febrero", "marzo", "abril", "mayo", "junio",
