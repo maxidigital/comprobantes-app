@@ -1,4 +1,14 @@
-import type { Aviso, MensajeChat, Movimiento, NuevoAviso, NuevoMovimiento, Rol } from './types';
+import type {
+  Aviso,
+  CajaId,
+  MensajeChat,
+  Movimiento,
+  MovimientoCaja,
+  NuevoAviso,
+  NuevoMovimiento,
+  NuevoMovimientoCaja,
+  Rol,
+} from './types';
 
 const ACCESS_KEY_STORAGE = 'comprobantes.accessKey';
 const USER_NAME_STORAGE = 'comprobantes.userName';
@@ -196,6 +206,36 @@ export async function crearAviso(data: NuevoAviso): Promise<Aviso> {
 
 export async function eliminarAviso(id: string): Promise<void> {
   await request(`/avisos/${id}`, { method: 'DELETE' });
+}
+
+function cajaForm(data: NuevoMovimientoCaja): FormData {
+  const form = new FormData();
+  form.set('fecha', data.fecha);
+  form.set('tipo', data.tipo);
+  form.set('monto', String(data.monto));
+  form.set('concepto', data.concepto);
+  if (data.aportante) form.set('aportante', data.aportante);
+  if (data.notas) form.set('notas', data.notas);
+  return form;
+}
+
+export async function listCaja(caja: CajaId): Promise<MovimientoCaja[]> {
+  const response = await request(`/${caja}`);
+  return response.json();
+}
+
+export async function crearEnCaja(caja: CajaId, data: NuevoMovimientoCaja): Promise<MovimientoCaja> {
+  const response = await request(`/${caja}`, { method: 'POST', body: cajaForm(data) });
+  return response.json();
+}
+
+export async function editarEnCaja(caja: CajaId, id: string, data: NuevoMovimientoCaja): Promise<MovimientoCaja> {
+  const response = await request(`/${caja}/${id}`, { method: 'PUT', body: cajaForm(data) });
+  return response.json();
+}
+
+export async function eliminarEnCaja(caja: CajaId, id: string): Promise<void> {
+  await request(`/${caja}/${id}`, { method: 'DELETE' });
 }
 
 /** Manda todo el historial del chat (el último mensaje es la pregunta nueva) — el backend no guarda la conversación. */

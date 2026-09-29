@@ -5,20 +5,21 @@ export const currency = new Intl.NumberFormat('es-AR', {
   maximumFractionDigits: 2,
 });
 
-const currencySiempreConCentavos = new Intl.NumberFormat('es-AR', {
-  style: 'currency',
-  currency: 'ARS',
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2,
-});
+export type Moneda = 'ARS' | 'USD';
+
+const conCentavosPorMoneda: Record<Moneda, Intl.NumberFormat> = {
+  ARS: new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+  // es-AR muestra "US$", así no se confunde con un monto en pesos.
+  USD: new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+};
 
 /** Separa el monto formateado en la parte principal y ", XX" de centavos (siempre 2 decimales, incluso $0), para poder mostrar los centavos en un tamaño menor. */
-export function formatMontoPartes(monto: number): { principal: string; centavos: string } {
+export function formatMontoPartes(monto: number, moneda: Moneda = 'ARS'): { principal: string; centavos: string } {
   let principal = '';
   let centavos = '';
   let enDecimales = false;
 
-  for (const part of currencySiempreConCentavos.formatToParts(monto)) {
+  for (const part of conCentavosPorMoneda[moneda].formatToParts(monto)) {
     if (part.type === 'decimal') {
       enDecimales = true;
     }

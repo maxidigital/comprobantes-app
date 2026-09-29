@@ -1,6 +1,8 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import AccessGate from './AccessGate';
 import AvisoForm from './AvisoForm';
+import { CAJAS } from './cajas';
+import CajaView from './CajaView';
 import ConfirmDialog from './ConfirmDialog';
 import FilterBar from './FilterBar';
 import HeaderMenu from './HeaderMenu';
@@ -22,7 +24,7 @@ import {
   listMovimientos,
   setLastSeenNovedades,
 } from './api';
-import type { Aviso, FiltroTipo, Movimiento } from './types';
+import type { Aviso, CajaId, FiltroTipo, Movimiento } from './types';
 import { useEscapeKey } from './useEscapeKey';
 import { useVersionCheck } from './useVersionCheck';
 
@@ -54,7 +56,10 @@ export default function App() {
   const [showForm, setShowForm] = useState(false);
   const [editTarget, setEditTarget] = useState<Movimiento | null>(null);
   const [detailTarget, setDetailTarget] = useState<Movimiento | null>(null);
-  const [viewingReceipt, setViewingReceipt] = useState<{ movimientoId: string; comprobanteId: string } | null>(null);
+  const [viewingReceipt, setViewingReceipt] = useState<{
+    movimientoId: string;
+    comprobanteId: string;
+  } | null>(null);
   const [showInformes, setShowInformes] = useState(false);
   const [showPreguntaIA, setShowPreguntaIA] = useState(false);
   const [confirmDeleteTarget, setConfirmDeleteTarget] = useState<Movimiento | null>(null);
@@ -63,6 +68,11 @@ export default function App() {
   const [confirmDeleteAvisoTarget, setConfirmDeleteAvisoTarget] = useState<Aviso | null>(null);
   const fabMenuRef = useRef<HTMLDivElement>(null);
   const puedeEditar = getUserRole() !== 'VIEWER';
+  // Las cajas Remodelación Iriondo / Aportes personales solo las ve ADMIN
+  // (puro UX, igual que ocultar el "+" a un VIEWER).
+  const esAdmin = getUserRole() === 'ADMIN';
+  const [vista, setVista] = useState<'sucesion' | CajaId>('sucesion');
+  const [cajaRefreshKey, setCajaRefreshKey] = useState(0);
 
   const pendientesCount = useMemo(
     () => (movimientos ?? []).filter((m) => m.comprobantePendiente).length,
@@ -142,6 +152,7 @@ export default function App() {
 
   function handleUnauthorized() {
     clearAccessKey();
+    setVista('sucesion');
     setShowForm(false);
     setEditTarget(null);
     setDetailTarget(null);
@@ -191,11 +202,26 @@ export default function App() {
   return (
     <div className="app-shell">
       <div className="sticky-header">
-        <header className="top-bar">
+        <header className={`top-bar ${esAdmin ? 'top-bar--con-selector' : ''}`}>
           <div>
             <h1>Administración</h1>
             <div className="subtitle">Sucesión Bottazzi</div>
           </div>
+          {esAdmin && (
+            <select
+              className="vista-select"
+              value={vista}
+              onChange={(e) => setVista(e.target.value as 'sucesion' | CajaId)}
+              aria-label="Caja"
+            >
+              <option value="sucesion">Sucesión</option>
+              {Object.values(CAJAS).map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.titulo}
+                </option>
+              ))}
+            </select>
+          )}
           <div className="top-bar-actions">
             <button
               type="button"
@@ -210,7 +236,10 @@ export default function App() {
             <HeaderMenu
               isDark={theme === 'dark'}
               onToggleTheme={() => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))}
-              onRefresh={refreshList}
+              onRefresh={() => {
+                refreshList();
+                setCajaRefreshKey((k) => k + 1);
+              }}
               onInformes={() => setShowInformes(true)}
               onPreguntarIA={() => setShowPreguntaIA(true)}
               onLogout={handleUnauthorized}
@@ -218,7 +247,7 @@ export default function App() {
           </div>
         </header>
 
-        {movimientos !== null && (
+        {vista === 'sucesion' && movimientos !== null && (
           <FilterBar
             filtroTipo={filtroTipo}
             onFiltroTipoChange={setFiltroTipo}
@@ -240,62 +269,68 @@ export default function App() {
         )}
       </div>
 
-      <main className="content">
-        {movimientos === null && !loadError && <p className="empty-state">Cargando…</p>}
-        {loadError && <p className="error-text">{loadError}</p>}
+      {vista !== 'sucesion' ? (
+        <CajaView key={`${vista}-${cajaRefreshKey}`} caja={CAJAS[vista]} onUnauthorized={handleUnauthorized} />
+      ) : (
+        <>
+          <main className="content">
+            {movimientos === null && !loadError && <p className="empty-state">Cargando…</p>}
+            {loadError && <p className="error-text">{loadError}</p>}
 
-        {movimientos !== null && (
-          <MovimientosList
-            movimientos={movimientos}
-            avisos={avisos}
-            filtroTipo={filtroTipo}
-            soloPendientes={soloPendientes}
-            bienesSeleccionados={bienesSeleccionados}
-            fechaDesde={fechaDesde}
-            fechaHasta={fechaHasta}
-            mostrarAvisos={mostrarAvisos}
-            puedeEditar={puedeEditar}
-            onOpenDetail={(m) => setDetailTarget(m)}
-            onEdit={(m) => setEditTarget(m)}
-            onDelete={(m) => setConfirmDeleteTarget(m)}
-            onDeleteAviso={(a) => setConfirmDeleteAvisoTarget(a)}
-          />
-        )}
-      </main>
+            {movimientos !== null && (
+              <MovimientosList
+                movimientos={movimientos}
+                avisos={avisos}
+                filtroTipo={filtroTipo}
+                soloPendientes={soloPendientes}
+                bienesSeleccionados={bienesSeleccionados}
+                fechaDesde={fechaDesde}
+                fechaHasta={fechaHasta}
+                mostrarAvisos={mostrarAvisos}
+                puedeEditar={puedeEditar}
+                onOpenDetail={(m) => setDetailTarget(m)}
+                onEdit={(m) => setEditTarget(m)}
+                onDelete={(m) => setConfirmDeleteTarget(m)}
+                onDeleteAviso={(a) => setConfirmDeleteAvisoTarget(a)}
+              />
+            )}
+          </main>
 
-      {puedeEditar && (
-        <div ref={fabMenuRef}>
-          <button
-            className="fab"
-            onClick={() => setShowCrearMenu((v) => !v)}
-            aria-label="Nuevo"
-            aria-expanded={showCrearMenu}
-          >
-            +
-          </button>
-          {showCrearMenu && (
-            <div className="dropdown-panel fab-menu">
+          {puedeEditar && (
+            <div ref={fabMenuRef}>
               <button
-                type="button"
-                onClick={() => {
-                  setShowCrearMenu(false);
-                  setShowForm(true);
-                }}
+                className="fab"
+                onClick={() => setShowCrearMenu((v) => !v)}
+                aria-label="Nuevo"
+                aria-expanded={showCrearMenu}
               >
-                Nuevo movimiento
+                +
               </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowCrearMenu(false);
-                  setShowAvisoForm(true);
-                }}
-              >
-                Nuevo aviso
-              </button>
+              {showCrearMenu && (
+                <div className="dropdown-panel fab-menu">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowCrearMenu(false);
+                      setShowForm(true);
+                    }}
+                  >
+                    Nuevo movimiento
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowCrearMenu(false);
+                      setShowAvisoForm(true);
+                    }}
+                  >
+                    Nuevo aviso
+                  </button>
+                </div>
+              )}
             </div>
           )}
-        </div>
+        </>
       )}
 
       {(showForm || editTarget) && (

@@ -57,3 +57,27 @@ export interface MensajeChat {
   autor: AutorMensaje;
   texto: string;
 }
+
+/** Las cajas que solo ve ADMIN (Remodelación Iriondo en ARS, Aportes personales en USD) — ver cajas.ts. */
+export type CajaId = 'remodelacion' | 'aportes';
+
+export interface MovimientoCaja {
+  id: string;
+  fecha: string;
+  tipo: TipoMovimiento;
+  monto: number;
+  concepto: string;
+  /** Solo en la caja de aportes. */
+  aportante?: string;
+  notas: string;
+  creadoEn: string;
+}
+
+export interface NuevoMovimientoCaja {
+  fecha: string;
+  tipo: TipoMovimiento;
+  monto: number;
+  concepto: string;
+  aportante?: string;
+  notas: string;
+}

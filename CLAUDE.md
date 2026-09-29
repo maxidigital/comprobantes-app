@@ -170,6 +170,43 @@ id | fecha | texto | bien | autor | creadoEn | estado
 - El FAB "+" ahora abre un mini menú ("Nuevo movimiento" / "Nuevo aviso")
   en vez de ir directo al formulario de movimiento.
 
+## Cajas de ADMIN: Remodelación Iriondo y Aportes personales
+
+Dos pestañas más, independientes de Movimientos (la caja de los
+alquileres) y entre sí, para que la plata de la obra de Iriondo no se
+mezcle con la de la sucesión:
+
+```
+Remodelación Iriondo:  id | fecha | tipo | monto | concepto | notas | creadoEn | estado
+Aportes Personales:    id | fecha | tipo | montoUSD | concepto | aportante | notas | creadoEn | estado
+```
+
+- **Remodelación Iriondo**: gastos reales de la obra, en pesos. Sin `bien`
+  (es toda de Iriondo) y sin comprobantes por ahora.
+- **Aportes personales**: lo que un heredero pone de su bolsillo para la
+  obra, **en dólares** (convertido a mano al cargarlo) para que la
+  inflación no licúe la deuda. INGRESO = aporta, GASTO = se le devuelve;
+  el saldo es lo que la sucesión le debe (la vista lo desglosa por
+  aportante). Un aportante por fila: un aporte conjunto va en dos filas.
+  Aportantes fijos en `frontend/src/cajas.ts` (`APORTANTES`).
+- No cuadran entre sí ni tienen por qué: una mide el gasto, la otra el
+  financiamiento. No afectan `Totals` de la sucesión ni el chat IA.
+- **Solo las ve ADMIN**, y es puro frontend (un desplegable
+  "Sucesión / Remodelación Iriondo / Aportes personales" centrado en la
+  barra de arriba, a la altura del título "Administración"): el interceptor las trata igual
+  que a Movimientos (VIEWER lee, EDITOR escribe). Decisión consciente, es
+  una app familiar.
+- Crear, editar (tocando la fila) y eliminar (desde el formulario), con
+  baja lógica. `GET/POST /api/remodelacion`, `PUT/DELETE .../{id}`; ídem
+  `/api/aportes`.
+- La plomería común (crear la pestaña si no existe, header, id
+  secuencial, baja lógica, fechas dd/MM/yyyy) vive en `service/SheetTab`.
+  Avisos y Comprobantes todavía tienen su propia copia; pasarlos a
+  `SheetTab` es una mejora pendiente, no urgente.
+- Fuera de alcance por ahora: cargar los ~40 gastos históricos de la
+  Refacción Iriondo (2021-2026) que se excluyeron al importar,
+  comprobantes en estas cajas y cotización automática.
+
 ## Preguntale a la IA
 
 Chat (entrada en el menú, junto a "Informes") para preguntar en lenguaje
@@ -329,12 +366,18 @@ src/main/java/com/maxidigital/comprobantes/
 │   ├── AuthController.java          # GET /api/auth/whoami -> {nombre, rol}
 │   ├── AvisoController.java         # GET/POST /api/avisos, DELETE .../{id}
 │   ├── PreguntaController.java      # POST /api/preguntas (chat IA, solo lectura)
+│   ├── RemodelacionIriondoController.java  # /api/remodelacion (caja de ADMIN)
+│   ├── AportesPersonalesController.java    # /api/aportes (caja de ADMIN, USD)
 │   └── ApiExceptionHandler.java
-├── dto/MovimientoResponse.java, ComprobanteResponse.java, AvisoResponse.java, PreguntaRequest.java, PreguntaResponse.java
+├── dto/MovimientoResponse.java, ComprobanteResponse.java, AvisoResponse.java, PreguntaRequest.java, PreguntaResponse.java,
+│       RemodelacionResponse.java, AporteResponse.java
 ├── service/
 │   ├── MovimientoSheetService.java   # append/readAll/softDelete/update — no sabe de comprobantes
 │   ├── ComprobanteSheetService.java  # pestaña "Comprobantes": append/readAllActive/findActiveByMovimiento/softDelete(All)
 │   ├── AvisoSheetService.java        # pestaña "Avisos": append/readAllActive/softDelete, ajena a Movimientos
+│   ├── SheetTab.java                 # plomería común de una pestaña con id secuencial + baja lógica (no es bean)
+│   ├── RemodelacionIriondoSheetService.java  # pestaña "Remodelación Iriondo", usa SheetTab
+│   ├── AportesPersonalesSheetService.java    # pestaña "Aportes Personales", usa SheetTab
 │   ├── ReceiptDriveService.java      # sube/borra/sirve el archivo en Drive
 │   └── AsistenteIAService.java       # chat IA: loop de function calling + el filtro/cálculo real en Java
 └── exception/UnauthorizedException.java, ForbiddenException.java, NotFoundException.java
@@ -353,6 +396,9 @@ frontend/src/
 ├── ReceiptViewerDialog.tsx          # visor propio adentro de la app (nunca navega a la URL del archivo)
 ├── ConfirmDialog.tsx                # confirmación de borrado
 ├── PreguntaIADialog.tsx             # chat "Preguntale a la IA" (historial en localStorage)
+├── cajas.ts                         # config de las cajas de ADMIN (título, moneda, etiquetas) + APORTANTES
+├── CajaView.tsx, CajaForm.tsx       # listado + totales + alta/edición de una caja de ADMIN
+├── monto.ts                         # sanitizado del campo monto, compartido por MovimientoForm y CajaForm
 └── index.css                        # tokens de estética/PALETTE (ver ../estetica-react/ESTETICA-REACT.md)
 
 ```
