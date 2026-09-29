@@ -4,10 +4,13 @@ import com.maxidigital.comprobantes.dto.ComprobanteResponse;
 import com.maxidigital.comprobantes.dto.MovimientoResponse;
 import com.maxidigital.comprobantes.exception.NotFoundException;
 import com.maxidigital.comprobantes.service.ComprobanteSheetService;
+import com.maxidigital.comprobantes.service.ComprobanteStore;
 import com.maxidigital.comprobantes.service.MovimientoSheetService;
+import com.maxidigital.comprobantes.service.MovimientoStore;
 import com.maxidigital.comprobantes.service.ReceiptDriveService;
 import com.maxidigital.comprobantes.service.ReceiptDriveService.UploadedReceipt;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -17,17 +20,30 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * Movimientos de la sucesión. Trabaja contra MovimientoStore/ComprobanteStore
+ * y no contra las clases concretas porque la caja Remodelación Iriondo usa
+ * exactamente los mismos endpoints con sus propias pestañas: ver
+ * RemodelacionMovimientoController, que hereda de esta clase.
+ */
 @RestController
 @RequestMapping("/api/movimientos")
 public class MovimientoController {
 
-    private final MovimientoSheetService movimientoSheetService;
-    private final ComprobanteSheetService comprobanteSheetService;
+    private final MovimientoStore movimientoSheetService;
+    private final ComprobanteStore comprobanteSheetService;
     private final ReceiptDriveService receiptDriveService;
 
+    @Autowired
     public MovimientoController(MovimientoSheetService movimientoSheetService,
                                  ComprobanteSheetService comprobanteSheetService,
                                  ReceiptDriveService receiptDriveService) {
+        this((MovimientoStore) movimientoSheetService, comprobanteSheetService, receiptDriveService);
+    }
+
+    protected MovimientoController(MovimientoStore movimientoSheetService,
+                                    ComprobanteStore comprobanteSheetService,
+                                    ReceiptDriveService receiptDriveService) {
         this.movimientoSheetService = movimientoSheetService;
         this.comprobanteSheetService = comprobanteSheetService;
         this.receiptDriveService = receiptDriveService;

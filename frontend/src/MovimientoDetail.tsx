@@ -5,6 +5,8 @@ import { useEscapeKey } from './useEscapeKey';
 
 interface Props {
   movimiento: Movimiento;
+  /** false en la caja Remodelación Iriondo, que no distingue bienes. */
+  conBien: boolean;
   puedeEditar: boolean;
   onClose: () => void;
   onVerComprobante: (comprobanteId: string) => void;
@@ -14,6 +16,7 @@ interface Props {
 
 export default function MovimientoDetail({
   movimiento: m,
+  conBien,
   puedeEditar,
   onClose,
   onVerComprobante,
@@ -47,12 +50,14 @@ export default function MovimientoDetail({
           <p className="detail-value">{m.concepto}</p>
         </div>
 
-        <div className="field">
-          <label>Bien relacionado</label>
-          <p className="detail-value" style={m.bien ? { color: bienColor(m.bien) } : undefined}>
-            {m.bien || '—'}
-          </p>
-        </div>
+        {conBien && (
+          <div className="field">
+            <label>Bien relacionado</label>
+            <p className="detail-value" style={m.bien ? { color: bienColor(m.bien) } : undefined}>
+              {m.bien || '—'}
+            </p>
+          </div>
+        )}
 
         <div className="field">
           <label>Monto</label>

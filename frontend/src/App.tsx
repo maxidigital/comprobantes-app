@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import AccessGate from './AccessGate';
 import AvisoForm from './AvisoForm';
-import { CAJAS } from './cajas';
+import { CAJAS, esCajaMovimientos, tieneBien, VISTAS, type Vista } from './cajas';
 import CajaView from './CajaView';
 import ConfirmDialog from './ConfirmDialog';
 import FilterBar from './FilterBar';
@@ -24,7 +24,7 @@ import {
   listMovimientos,
   setLastSeenNovedades,
 } from './api';
-import type { Aviso, CajaId, FiltroTipo, Movimiento } from './types';
+import type { Aviso, CajaMovimientos, FiltroTipo, Movimiento } from './types';
 import { useEscapeKey } from './useEscapeKey';
 import { useVersionCheck } from './useVersionCheck';
 
@@ -68,11 +68,14 @@ export default function App() {
   const [confirmDeleteAvisoTarget, setConfirmDeleteAvisoTarget] = useState<Aviso | null>(null);
   const fabMenuRef = useRef<HTMLDivElement>(null);
   const puedeEditar = getUserRole() !== 'VIEWER';
-  // Las cajas Remodelación Iriondo / Aportes personales solo las ve ADMIN
-  // (puro UX, igual que ocultar el "+" a un VIEWER).
+  // Aportes personales solo la ve ADMIN (puro UX, igual que ocultar el "+" a un VIEWER).
   const esAdmin = getUserRole() === 'ADMIN';
-  const [vista, setVista] = useState<'sucesion' | CajaId>('sucesion');
+  const [vista, setVista] = useState<Vista>('sucesion');
   const [cajaRefreshKey, setCajaRefreshKey] = useState(0);
+  // Sucesión y Remodelación Iriondo comparten toda esta pantalla (lista,
+  // filtros, formularios); solo cambia contra qué pestañas habla la API.
+  const caja: CajaMovimientos = esCajaMovimientos(vista) ? vista : 'sucesion';
+  const cajaCargadaRef = useRef<CajaMovimientos>(caja);
 
   const pendientesCount = useMemo(
     () => (movimientos ?? []).filter((m) => m.comprobantePendiente).length,
@@ -104,10 +107,14 @@ export default function App() {
   useVersionCheck();
 
   useEffect(() => {
-    if (unlocked) {
-      refreshList();
+    if (unlocked && esCajaMovimientos(vista)) {
+      cajaCargadaRef.current = vista;
+      setMovimientos(null);
+      setAvisos([]);
+      setBienesSeleccionados(new Set());
+      refreshList(vista);
     }
-  }, [unlocked]);
+  }, [unlocked, vista]);
 
   useEffect(() => {
     if (!showCrearMenu) return;
@@ -125,10 +132,12 @@ export default function App() {
     localStorage.setItem('comprobantes.theme', theme);
   }, [theme]);
 
-  async function refreshList() {
+  async function refreshList(cajaPedida: CajaMovimientos = caja) {
     setLoadError(null);
     try {
-      const [movimientosData, avisosData] = await Promise.all([listMovimientos(), listAvisos()]);
+      const [movimientosData, avisosData] = await Promise.all([listMovimientos(cajaPedida), listAvisos(cajaPedida)]);
+      // Si se cambió de caja mientras cargaba, esta respuesta ya no corresponde.
+      if (cajaCargadaRef.current !== cajaPedida) return;
       const lastSeen = getLastSeenNovedades();
       const nuevos = lastSeen
         ? [...movimientosData, ...avisosData].filter((item) => item.creadoEn > lastSeen).length
@@ -168,7 +177,7 @@ export default function App() {
   async function handleConfirmDelete() {
     if (!confirmDeleteTarget) return;
     try {
-      await eliminarMovimiento(confirmDeleteTarget.id);
+      await eliminarMovimiento(caja, confirmDeleteTarget.id);
       setMovimientos((prev) => (prev ? prev.filter((m) => m.id !== confirmDeleteTarget.id) : prev));
       setConfirmDeleteTarget(null);
     } catch (err) {
@@ -183,7 +192,7 @@ export default function App() {
   async function handleConfirmDeleteAviso() {
     if (!confirmDeleteAvisoTarget) return;
     try {
-      await eliminarAviso(confirmDeleteAvisoTarget.id);
+      await eliminarAviso(caja, confirmDeleteAvisoTarget.id);
       setAvisos((prev) => prev.filter((a) => a.id !== confirmDeleteAvisoTarget.id));
       setConfirmDeleteAvisoTarget(null);
     } catch (err) {
@@ -202,26 +211,23 @@ export default function App() {
   return (
     <div className="app-shell">
       <div className="sticky-header">
-        <header className={`top-bar ${esAdmin ? 'top-bar--con-selector' : ''}`}>
+        <header className="top-bar top-bar--con-selector">
           <div>
             <h1>Administración</h1>
             <div className="subtitle">Sucesión Bottazzi</div>
           </div>
-          {esAdmin && (
-            <select
-              className="vista-select"
-              value={vista}
-              onChange={(e) => setVista(e.target.value as 'sucesion' | CajaId)}
-              aria-label="Caja"
-            >
-              <option value="sucesion">Sucesión</option>
-              {Object.values(CAJAS).map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.titulo}
-                </option>
-              ))}
-            </select>
-          )}
+          <select
+            className="vista-select"
+            value={vista}
+            onChange={(e) => setVista(e.target.value as Vista)}
+            aria-label="Caja"
+          >
+            {VISTAS.filter((v) => esAdmin || !v.soloAdmin).map((v) => (
+              <option key={v.id} value={v.id}>
+                {v.titulo}
+              </option>
+            ))}
+          </select>
           <div className="top-bar-actions">
             <button
               type="button"
@@ -237,8 +243,11 @@ export default function App() {
               isDark={theme === 'dark'}
               onToggleTheme={() => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))}
               onRefresh={() => {
-                refreshList();
-                setCajaRefreshKey((k) => k + 1);
+                if (esCajaMovimientos(vista)) {
+                  refreshList();
+                } else {
+                  setCajaRefreshKey((k) => k + 1);
+                }
               }}
               onInformes={() => setShowInformes(true)}
               onPreguntarIA={() => setShowPreguntaIA(true)}
@@ -247,7 +256,7 @@ export default function App() {
           </div>
         </header>
 
-        {vista === 'sucesion' && movimientos !== null && (
+        {esCajaMovimientos(vista) && movimientos !== null && (
           <FilterBar
             filtroTipo={filtroTipo}
             onFiltroTipoChange={setFiltroTipo}
@@ -255,6 +264,7 @@ export default function App() {
             onSoloPendientesChange={setSoloPendientes}
             bienesSeleccionados={bienesSeleccionados}
             onToggleBien={toggleBien}
+            mostrarBienes={tieneBien(caja)}
             fechaDesde={fechaDesde}
             fechaHasta={fechaHasta}
             onFechaRangeChange={(desde, hasta) => {
@@ -269,7 +279,7 @@ export default function App() {
         )}
       </div>
 
-      {vista !== 'sucesion' ? (
+      {!esCajaMovimientos(vista) ? (
         <CajaView key={`${vista}-${cajaRefreshKey}`} caja={CAJAS[vista]} onUnauthorized={handleUnauthorized} />
       ) : (
         <>
@@ -335,6 +345,7 @@ export default function App() {
 
       {(showForm || editTarget) && (
         <MovimientoForm
+          caja={caja}
           editing={editTarget ?? undefined}
           onClose={() => {
             setShowForm(false);
@@ -354,6 +365,7 @@ export default function App() {
 
       {showAvisoForm && (
         <AvisoForm
+          caja={caja}
           onClose={() => setShowAvisoForm(false)}
           onSaved={(a) => {
             setAvisos((prev) => [a, ...prev]);
@@ -365,6 +377,7 @@ export default function App() {
 
       {detailTarget && (
         <MovimientoDetail
+          conBien={tieneBien(caja)}
           movimiento={detailTarget}
           puedeEditar={puedeEditar}
           onClose={() => setDetailTarget(null)}
@@ -382,6 +395,7 @@ export default function App() {
 
       {viewingReceipt && (
         <ReceiptViewerDialog
+          caja={caja}
           movimientoId={viewingReceipt.movimientoId}
           comprobanteId={viewingReceipt.comprobanteId}
           onClose={() => setViewingReceipt(null)}

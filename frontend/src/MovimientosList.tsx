@@ -192,7 +192,9 @@ export default function MovimientosList({
                   <div
                     className="card movement-card"
                     style={{
-                      boxShadow: `0 0 0 1px color-mix(in srgb, ${bienColor(a.bien)} 55%, transparent)`,
+                      boxShadow: a.bien
+                        ? `0 0 0 1px color-mix(in srgb, ${bienColor(a.bien)} 55%, transparent)`
+                        : undefined,
                       transform: `translateX(${rowTransform(item.id)}px)`,
                       transition: dragRef.current?.id === item.id ? 'none' : undefined,
                     }}
@@ -214,9 +216,11 @@ export default function MovimientosList({
                         {formatFecha(a.fecha)}
                         {a.autor ? ` · ${a.autor}` : ''}
                       </span>
-                      <span className="bien-label" style={{ color: bienColor(a.bien) }}>
-                        {a.bien}
-                      </span>
+                      {a.bien && (
+                        <span className="bien-label" style={{ color: bienColor(a.bien) }}>
+                          {a.bien}
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>

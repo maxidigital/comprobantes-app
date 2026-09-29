@@ -686,7 +686,7 @@ input[type='file'] {
   color: white;
 }
 
-/* Selector de caja centrado en la barra — solo ADMIN. Grilla 1fr/auto/1fr
+/* Selector de caja centrado en la barra. Grilla 1fr/auto/1fr
  * (y no position: absolute) para que quede centrado en la página sin
  * pisarse con el título en pantallas angostas. */
 .top-bar--con-selector {

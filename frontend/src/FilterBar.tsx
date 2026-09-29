@@ -24,6 +24,8 @@ interface Props {
   onSoloPendientesChange: (value: boolean) => void;
   bienesSeleccionados: Set<string>;
   onToggleBien: (bien: string) => void;
+  /** false en la caja Remodelación Iriondo, que no distingue bienes. */
+  mostrarBienes: boolean;
   fechaDesde: string | null;
   fechaHasta: string | null;
   onFechaRangeChange: (desde: string | null, hasta: string | null) => void;
@@ -40,6 +42,7 @@ export default function FilterBar({
   onSoloPendientesChange,
   bienesSeleccionados,
   onToggleBien,
+  mostrarBienes,
   fechaDesde,
   fechaHasta,
   onFechaRangeChange,
@@ -190,16 +193,24 @@ export default function FilterBar({
               Con comprobante pendiente{pendientesCount > 0 ? ` (${pendientesCount})` : ''}
             </label>
 
-            <div className="dropdown-panel-separator" />
+            {mostrarBienes && (
+              <>
+                <div className="dropdown-panel-separator" />
 
-            {BIENES.map((bien) => (
-              <label className="checkbox-row" key={bien}>
-                <input type="checkbox" checked={bienesSeleccionados.has(bien)} onChange={() => onToggleBien(bien)} />
-                <span className="bien-label" style={{ color: bienColor(bien) }}>
-                  {bien}
-                </span>
-              </label>
-            ))}
+                {BIENES.map((bien) => (
+                  <label className="checkbox-row" key={bien}>
+                    <input
+                      type="checkbox"
+                      checked={bienesSeleccionados.has(bien)}
+                      onChange={() => onToggleBien(bien)}
+                    />
+                    <span className="bien-label" style={{ color: bienColor(bien) }}>
+                      {bien}
+                    </span>
+                  </label>
+                ))}
+              </>
+            )}
           </div>
         )}
       </div>

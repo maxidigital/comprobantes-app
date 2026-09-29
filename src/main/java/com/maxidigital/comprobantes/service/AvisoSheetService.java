@@ -31,7 +31,7 @@ import java.util.List;
  * para mostrarlos juntos.
  */
 @Service
-public class AvisoSheetService {
+public class AvisoSheetService implements AvisoStore {
 
     private static final String SHEET_NAME = "Avisos";
     private static final String RANGE_ALL = SHEET_NAME + "!A:G";

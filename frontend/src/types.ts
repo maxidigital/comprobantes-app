@@ -58,8 +58,15 @@ export interface MensajeChat {
   texto: string;
 }
 
-/** Las cajas que solo ve ADMIN (Remodelación Iriondo en ARS, Aportes personales en USD) — ver cajas.ts. */
-export type CajaId = 'remodelacion' | 'aportes';
+/**
+ * Cajas con el sistema completo de movimientos (comprobantes, avisos,
+ * filtros): la sucesión y la Remodelación Iriondo. Cada una con sus propias
+ * pestañas en la planilla; la de la sucesión es la única con "bien".
+ */
+export type CajaMovimientos = 'sucesion' | 'remodelacion';
+
+/** Cajas simples (solo ADMIN, sin comprobantes ni avisos) — ver cajas.ts. */
+export type CajaId = 'aportes';
 
 export interface MovimientoCaja {
   id: string;

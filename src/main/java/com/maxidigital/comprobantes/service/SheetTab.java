@@ -24,6 +24,9 @@ import java.util.List;
  * acá en vez de sumar una tercera y cuarta copia. Pasar Avisos/Comprobantes
  * a esta clase queda como mejora aparte.
  *
+ * Además de las cajas, la usan las pestañas propias de la caja
+ * Remodelación Iriondo (movimientos, comprobantes y avisos).
+ *
  * Layout fijo de cada fila: {@code id | ...datos... | creadoEn | estado}.
  * Quien la usa solo arma y lee la parte de "datos"; el id, creadoEn y
  * estado los maneja esta clase. No es un bean: cada servicio crea la suya
@@ -106,6 +109,19 @@ public class SheetTab {
         String rango = ref("B" + sheetRow + ":" + columnLetter(datos.size()) + sheetRow);
         write(rango, new ArrayList<>(datos));
         return new Fila(id, datos, cell(rows.get(rowIndex), estadoIndex - 1));
+    }
+
+    /** Una fila puntual por id (activa o no); NotFoundException si no existe. */
+    public Fila find(String id) throws IOException {
+        List<List<Object>> rows = readRawRows();
+        return toFila(rows.get(locateRowIndex(rows, id)));
+    }
+
+    /** Reescribe una sola columna de datos (índice dentro de "datos", no de la fila). */
+    public void updateDato(String id, int index, String value) throws IOException {
+        List<List<Object>> rows = readRawRows();
+        int sheetRow = locateRowIndex(rows, id) + 1;
+        write(ref(columnLetter(index + 1) + sheetRow), List.of(value));
     }
 
     public void softDelete(String id) throws IOException {

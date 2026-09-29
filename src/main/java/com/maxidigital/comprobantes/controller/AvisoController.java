@@ -2,18 +2,26 @@ package com.maxidigital.comprobantes.controller;
 
 import com.maxidigital.comprobantes.dto.AvisoResponse;
 import com.maxidigital.comprobantes.service.AvisoSheetService;
+import com.maxidigital.comprobantes.service.AvisoStore;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 import java.util.List;
 
+/** Avisos de la sucesión; RemodelacionAvisoController hereda los mismos endpoints para su caja (ver MovimientoController). */
 @RestController
 @RequestMapping("/api/avisos")
 public class AvisoController {
 
-    private final AvisoSheetService avisoSheetService;
+    private final AvisoStore avisoSheetService;
 
+    @Autowired
     public AvisoController(AvisoSheetService avisoSheetService) {
+        this((AvisoStore) avisoSheetService);
+    }
+
+    protected AvisoController(AvisoStore avisoSheetService) {
         this.avisoSheetService = avisoSheetService;
     }
 
@@ -25,7 +33,7 @@ public class AvisoController {
     @PostMapping(consumes = "multipart/form-data")
     public AvisoResponse crear(@RequestParam String fecha,
                                 @RequestParam String texto,
-                                @RequestParam String bien,
+                                @RequestParam(required = false) String bien,
                                 @RequestParam(required = false) String autor) throws IOException {
         return avisoSheetService.append(fecha, texto, bien, autor);
     }

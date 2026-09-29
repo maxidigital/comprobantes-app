@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 import { ApiError, fetchComprobanteArchivo } from './api';
+import type { CajaMovimientos } from './types';
 import { useEscapeKey } from './useEscapeKey';
 
 interface Props {
+  caja: CajaMovimientos;
   movimientoId: string;
   comprobanteId: string;
   onClose: () => void;
@@ -14,7 +16,7 @@ interface Props {
  * PWA instalada no tiene barra de navegación ni botón "atrás", así que un
  * <a target="_blank"> deja al usuario sin forma de volver al listado.
  */
-export default function ReceiptViewerDialog({ movimientoId, comprobanteId, onClose, onUnauthorized }: Props) {
+export default function ReceiptViewerDialog({ caja, movimientoId, comprobanteId, onClose, onUnauthorized }: Props) {
   useEscapeKey(onClose);
 
   const [objectUrl, setObjectUrl] = useState<string | null>(null);
@@ -25,7 +27,7 @@ export default function ReceiptViewerDialog({ movimientoId, comprobanteId, onClo
     let url: string | null = null;
     let cancelled = false;
 
-    fetchComprobanteArchivo(movimientoId, comprobanteId)
+    fetchComprobanteArchivo(caja, movimientoId, comprobanteId)
       .then(({ blob, contentType }) => {
         if (cancelled) return;
         url = URL.createObjectURL(blob);

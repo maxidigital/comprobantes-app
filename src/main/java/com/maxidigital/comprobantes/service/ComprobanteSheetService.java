@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
  * movimiento es por movimientoId, no por posición de fila.
  */
 @Service
-public class ComprobanteSheetService {
+public class ComprobanteSheetService implements ComprobanteStore {
 
     private static final String SHEET_NAME = "Comprobantes";
     private static final String RANGE_ALL = SHEET_NAME + "!A:F";

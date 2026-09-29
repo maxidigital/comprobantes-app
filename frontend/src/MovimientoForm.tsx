@@ -1,20 +1,23 @@
 import { ChangeEvent, FormEvent, useRef, useState } from 'react';
 import { agregarComprobantes, ApiError, borrarComprobante, crearMovimiento, editarMovimiento } from './api';
 import { BIENES } from './bienes';
+import { tieneBien } from './cajas';
 import { dateToDisplay, fechaToIso, formatFechaInput, isoToDisplay, todayDisplay } from './fecha';
 import { formatMontoInput, parseMonto } from './monto';
-import type { Comprobante, Movimiento, TipoMovimiento } from './types';
+import type { CajaMovimientos, Comprobante, Movimiento, TipoMovimiento } from './types';
 import { useEscapeKey } from './useEscapeKey';
 
 interface Props {
+  caja: CajaMovimientos;
   onClose: () => void;
   onSaved: (movimiento: Movimiento) => void;
   onUnauthorized: () => void;
   editing?: Movimiento;
 }
 
-export default function MovimientoForm({ onClose, onSaved, onUnauthorized, editing }: Props) {
+export default function MovimientoForm({ caja, onClose, onSaved, onUnauthorized, editing }: Props) {
   useEscapeKey(onClose);
+  const conBien = tieneBien(caja);
 
   const [tipo, setTipo] = useState<TipoMovimiento>(editing?.tipo ?? 'GASTO');
   const [fechaTexto, setFechaTexto] = useState(editing ? isoToDisplay(editing.fecha) : todayDisplay());
@@ -53,7 +56,7 @@ export default function MovimientoForm({ onClose, onSaved, onUnauthorized, editi
     setBorrandoId(comprobanteId);
     setError(null);
     try {
-      const actualizado = await borrarComprobante(editing.id, comprobanteId);
+      const actualizado = await borrarComprobante(caja, editing.id, comprobanteId);
       setComprobantesActuales(actualizado.comprobantes);
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {
@@ -82,7 +85,7 @@ export default function MovimientoForm({ onClose, onSaved, onUnauthorized, editi
     if (!fechaIso) nuevosErrores.fecha = 'Fecha inválida (dd/mm/aaaa)';
     if (!concepto.trim()) nuevosErrores.concepto = 'Completá el concepto';
     if (!montoNumero || montoNumero <= 0) nuevosErrores.monto = 'Ingresá un monto válido';
-    if (!bien) nuevosErrores.bien = 'Elegí un bien';
+    if (conBien && !bien) nuevosErrores.bien = 'Elegí un bien';
 
     if (Object.keys(nuevosErrores).length > 0 || !fechaIso) {
       setFieldErrors(nuevosErrores);
@@ -98,13 +101,13 @@ export default function MovimientoForm({ onClose, onSaved, onUnauthorized, editi
         tipo,
         monto: montoNumero,
         concepto: concepto.trim(),
-        bien: bien.trim(),
+        bien: conBien ? bien.trim() : '',
         notas: notas.trim(),
         comprobantes: comprobantesNuevos,
       };
-      let guardado = editing ? await editarMovimiento(editing.id, datos) : await crearMovimiento(datos);
+      let guardado = editing ? await editarMovimiento(caja, editing.id, datos) : await crearMovimiento(caja, datos);
       if (editing && comprobantesNuevos.length > 0) {
-        guardado = await agregarComprobantes(editing.id, comprobantesNuevos);
+        guardado = await agregarComprobantes(caja, editing.id, comprobantesNuevos);
       }
       onSaved(guardado);
     } catch (err) {
@@ -183,20 +186,22 @@ export default function MovimientoForm({ onClose, onSaved, onUnauthorized, editi
           {fieldErrors.concepto && <p className="error-text">{fieldErrors.concepto}</p>}
         </div>
 
-        <div className="field">
-          <label htmlFor="bien">Bien relacionado</label>
-          <select id="bien" className="input" value={bien} onChange={(e) => setBien(e.target.value)}>
-            <option value="" disabled>
-              Elegir bien
-            </option>
-            {BIENES.map((b) => (
-              <option key={b} value={b}>
-                {b}
+        {conBien && (
+          <div className="field">
+            <label htmlFor="bien">Bien relacionado</label>
+            <select id="bien" className="input" value={bien} onChange={(e) => setBien(e.target.value)}>
+              <option value="" disabled>
+                Elegir bien
               </option>
-            ))}
-          </select>
-          {fieldErrors.bien && <p className="error-text">{fieldErrors.bien}</p>}
-        </div>
+              {BIENES.map((b) => (
+                <option key={b} value={b}>
+                  {b}
+                </option>
+              ))}
+            </select>
+            {fieldErrors.bien && <p className="error-text">{fieldErrors.bien}</p>}
+          </div>
+        )}
 
         <div className="field">
           <label htmlFor="monto">Monto</label>

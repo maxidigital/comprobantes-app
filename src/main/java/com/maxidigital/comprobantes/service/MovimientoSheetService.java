@@ -37,7 +37,7 @@ import java.util.List;
  * después de consultar ComprobanteSheetService.
  */
 @Service
-public class MovimientoSheetService {
+public class MovimientoSheetService implements MovimientoStore {
 
     private static final String RANGE_ALL = "A:K";
     private static final List<Object> HEADER = List.of(

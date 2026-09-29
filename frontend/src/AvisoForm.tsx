@@ -1,19 +1,22 @@
 import { FormEvent, useState } from 'react';
 import { ApiError, crearAviso } from './api';
 import { BIENES } from './bienes';
+import { tieneBien } from './cajas';
 import { fechaToIso, formatFechaInput, todayDisplay } from './fecha';
-import type { Aviso } from './types';
+import type { Aviso, CajaMovimientos } from './types';
 import { useEscapeKey } from './useEscapeKey';
 
 interface Props {
+  caja: CajaMovimientos;
   onClose: () => void;
   onSaved: (aviso: Aviso) => void;
   onUnauthorized: () => void;
 }
 
-export default function AvisoForm({ onClose, onSaved, onUnauthorized }: Props) {
+export default function AvisoForm({ caja, onClose, onSaved, onUnauthorized }: Props) {
   useEscapeKey(onClose);
 
+  const conBien = tieneBien(caja);
   const [fechaTexto, setFechaTexto] = useState(todayDisplay());
   const [bien, setBien] = useState('');
   const [texto, setTexto] = useState('');
@@ -27,7 +30,7 @@ export default function AvisoForm({ onClose, onSaved, onUnauthorized }: Props) {
 
     const nuevosErrores: typeof fieldErrors = {};
     if (!fechaIso) nuevosErrores.fecha = 'Fecha inválida (dd/mm/aaaa)';
-    if (!bien) nuevosErrores.bien = 'Elegí un bien';
+    if (conBien && !bien) nuevosErrores.bien = 'Elegí un bien';
     if (!texto.trim()) nuevosErrores.texto = 'Escribí el aviso';
 
     if (Object.keys(nuevosErrores).length > 0 || !fechaIso) {
@@ -39,7 +42,7 @@ export default function AvisoForm({ onClose, onSaved, onUnauthorized }: Props) {
     setSubmitting(true);
     setError(null);
     try {
-      const guardado = await crearAviso({ fecha: fechaIso, bien, texto: texto.trim() });
+      const guardado = await crearAviso(caja, { fecha: fechaIso, bien: conBien ? bien : '', texto: texto.trim() });
       onSaved(guardado);
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {
@@ -78,20 +81,22 @@ export default function AvisoForm({ onClose, onSaved, onUnauthorized }: Props) {
             {fieldErrors.fecha && <p className="error-text">{fieldErrors.fecha}</p>}
           </div>
 
-          <div className="field">
-            <label htmlFor="aviso-bien">Bien relacionado</label>
-            <select id="aviso-bien" className="input" value={bien} onChange={(e) => setBien(e.target.value)}>
-              <option value="" disabled>
-                Elegir bien
-              </option>
-              {BIENES.map((b) => (
-                <option key={b} value={b}>
-                  {b}
+          {conBien && (
+            <div className="field">
+              <label htmlFor="aviso-bien">Bien relacionado</label>
+              <select id="aviso-bien" className="input" value={bien} onChange={(e) => setBien(e.target.value)}>
+                <option value="" disabled>
+                  Elegir bien
                 </option>
-              ))}
-            </select>
-            {fieldErrors.bien && <p className="error-text">{fieldErrors.bien}</p>}
-          </div>
+                {BIENES.map((b) => (
+                  <option key={b} value={b}>
+                    {b}
+                  </option>
+                ))}
+              </select>
+              {fieldErrors.bien && <p className="error-text">{fieldErrors.bien}</p>}
+            </div>
+          )}
 
           <div className="field">
             <label htmlFor="aviso-texto">Aviso</label>

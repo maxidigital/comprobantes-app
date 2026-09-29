@@ -1,6 +1,7 @@
 import type {
   Aviso,
   CajaId,
+  CajaMovimientos,
   MensajeChat,
   Movimiento,
   MovimientoCaja,
@@ -122,12 +123,17 @@ export async function login(nombre: string, key: string): Promise<{ nombre: stri
   return response.json();
 }
 
-export async function listMovimientos(): Promise<Movimiento[]> {
-  const response = await request('/movimientos');
+/** Prefijo de la API de cada caja con el sistema de movimientos: la sucesión va sin prefijo (las rutas de siempre). */
+function base(caja: CajaMovimientos): string {
+  return caja === 'sucesion' ? '' : `/${caja}`;
+}
+
+export async function listMovimientos(caja: CajaMovimientos): Promise<Movimiento[]> {
+  const response = await request(`${base(caja)}/movimientos`);
   return response.json();
 }
 
-export async function crearMovimiento(data: NuevoMovimiento): Promise<Movimiento> {
+export async function crearMovimiento(caja: CajaMovimientos, data: NuevoMovimiento): Promise<Movimiento> {
   const form = new FormData();
   form.set('fecha', data.fecha);
   form.set('tipo', data.tipo);
@@ -139,11 +145,11 @@ export async function crearMovimiento(data: NuevoMovimiento): Promise<Movimiento
   const userName = getUserName();
   if (userName) form.set('cargadoPor', userName);
 
-  const response = await request('/movimientos', { method: 'POST', body: form });
+  const response = await request(`${base(caja)}/movimientos`, { method: 'POST', body: form });
   return response.json();
 }
 
-export async function editarMovimiento(id: string, data: NuevoMovimiento): Promise<Movimiento> {
+export async function editarMovimiento(caja: CajaMovimientos, id: string, data: NuevoMovimiento): Promise<Movimiento> {
   const form = new FormData();
   form.set('fecha', data.fecha);
   form.set('tipo', data.tipo);
@@ -152,21 +158,23 @@ export async function editarMovimiento(id: string, data: NuevoMovimiento): Promi
   if (data.bien) form.set('bien', data.bien);
   if (data.notas) form.set('notas', data.notas);
 
-  const response = await request(`/movimientos/${id}`, { method: 'PUT', body: form });
+  const response = await request(`${base(caja)}/movimientos/${id}`, { method: 'PUT', body: form });
   return response.json();
 }
 
 /** Agrega uno o más comprobantes a un movimiento que ya existe — no reemplaza los que ya tenía. */
-export async function agregarComprobantes(movimientoId: string, files: File[]): Promise<Movimiento> {
+export async function agregarComprobantes(caja: CajaMovimientos, movimientoId: string, files: File[]): Promise<Movimiento> {
   const form = new FormData();
   files.forEach((file) => form.append('comprobantes', file));
 
-  const response = await request(`/movimientos/${movimientoId}/comprobantes`, { method: 'POST', body: form });
+  const response = await request(`${base(caja)}/movimientos/${movimientoId}/comprobantes`, { method: 'POST', body: form });
   return response.json();
 }
 
-export async function borrarComprobante(movimientoId: string, comprobanteId: string): Promise<Movimiento> {
-  const response = await request(`/movimientos/${movimientoId}/comprobantes/${comprobanteId}`, { method: 'DELETE' });
+export async function borrarComprobante(caja: CajaMovimientos, movimientoId: string, comprobanteId: string): Promise<Movimiento> {
+  const response = await request(`${base(caja)}/movimientos/${movimientoId}/comprobantes/${comprobanteId}`, {
+    method: 'DELETE',
+  });
   return response.json();
 }
 
@@ -174,38 +182,39 @@ export async function borrarComprobante(movimientoId: string, comprobanteId: str
  * query param) para mostrarlo dentro de un visor propio de la app — así no
  * hace falta navegar afuera (una PWA instalada no tiene botón "atrás"). */
 export async function fetchComprobanteArchivo(
+  caja: CajaMovimientos,
   movimientoId: string,
   comprobanteId: string,
 ): Promise<{ blob: Blob; contentType: string }> {
-  const response = await request(`/movimientos/${movimientoId}/comprobantes/${comprobanteId}/archivo`);
+  const response = await request(`${base(caja)}/movimientos/${movimientoId}/comprobantes/${comprobanteId}/archivo`);
   const contentType = response.headers.get('Content-Type') ?? 'application/octet-stream';
   const blob = await response.blob();
   return { blob, contentType };
 }
 
-export async function eliminarMovimiento(id: string): Promise<void> {
-  await request(`/movimientos/${id}`, { method: 'DELETE' });
+export async function eliminarMovimiento(caja: CajaMovimientos, id: string): Promise<void> {
+  await request(`${base(caja)}/movimientos/${id}`, { method: 'DELETE' });
 }
 
-export async function listAvisos(): Promise<Aviso[]> {
-  const response = await request('/avisos');
+export async function listAvisos(caja: CajaMovimientos): Promise<Aviso[]> {
+  const response = await request(`${base(caja)}/avisos`);
   return response.json();
 }
 
-export async function crearAviso(data: NuevoAviso): Promise<Aviso> {
+export async function crearAviso(caja: CajaMovimientos, data: NuevoAviso): Promise<Aviso> {
   const form = new FormData();
   form.set('fecha', data.fecha);
-  form.set('bien', data.bien);
+  if (data.bien) form.set('bien', data.bien);
   form.set('texto', data.texto);
   const userName = getUserName();
   if (userName) form.set('autor', userName);
 
-  const response = await request('/avisos', { method: 'POST', body: form });
+  const response = await request(`${base(caja)}/avisos`, { method: 'POST', body: form });
   return response.json();
 }
 
-export async function eliminarAviso(id: string): Promise<void> {
-  await request(`/avisos/${id}`, { method: 'DELETE' });
+export async function eliminarAviso(caja: CajaMovimientos, id: string): Promise<void> {
+  await request(`${base(caja)}/avisos/${id}`, { method: 'DELETE' });
 }
 
 function cajaForm(data: NuevoMovimientoCaja): FormData {
