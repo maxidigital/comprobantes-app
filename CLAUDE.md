@@ -260,15 +260,14 @@ solo permite desde ahí (creación de credenciales OAuth):
    la carpeta de Drive para los comprobantes (`secrets/drive-folder.json`),
    porque con scope `drive.file` la app solo puede escribir en carpetas que
    ella misma creó, no en una preexistente.
-   - **Importante**: la pantalla de consentimiento quedó en estado
-     **"Testing"** (no se pudo publicar a producción — la consola pedía
-     completar "Branding" y el botón de publicar seguía sin habilitarse
-     tras varios intentos). En Testing, el refresh token **vence a los 7
-     días**. Cuando deje de funcionar la subida de comprobantes, hay que
-     volver a agregar la cuenta como test user si se sacó, y correr de
-     nuevo `python3 scripts/oauth_exchange.py` para renovarlo. Pendiente:
-     resolver el publish a producción con más calma para que esto no haga
-     falta nunca más.
+   - **Estado de publicación**: al principio la pantalla de consentimiento
+     quedó en **"Testing"**, donde el refresh token vence a los 7 días. El
+     2026-09-29 se confirmó que ya está **publicada en producción** (no se
+     sabe desde cuándo), así que un token emitido estando publicada ya no
+     vence a los 7 días. Igual puede invalidarse (6 meses sin uso, cambio de
+     contraseña de la cuenta, acceso revocado a mano): si deja de funcionar
+     la subida de comprobantes, correr de nuevo
+     `python3 scripts/oauth_exchange.py` para renovarlo.
    - **⚠️ Después de renovarlo, actualizar también `GOOGLE_OAUTH_REFRESH_TOKEN`
      en Railway** (`railway variables --set "GOOGLE_OAUTH_REFRESH_TOKEN=$(python3 -c
      "import json; print(json.load(open('secrets/oauth-tokens.json'))['refresh_token'])")"`)
@@ -360,11 +359,5 @@ frontend/src/
 
 ## Pendiente / próximas versiones
 
-- **Publicar la app OAuth a producción** para que el refresh token no venza
-  a los 7 días (ver nota en "Puesta en marcha"). Mientras tanto, renovarlo a
-  mano con `scripts/oauth_exchange.py` cuando falle una subida — y no
-  olvidar el paso siguiente de actualizar `GOOGLE_OAUTH_REFRESH_TOKEN` en
-  Railway (ver nota ⚠️ junto al paso 5 de "Puesta en marcha"), sin eso el
-  redeploy nunca se entera del token nuevo.
 - Panel de análisis para escritorio (gráficos, totales por categoría/bien y por período).
 - Íconos PWA reales — los actuales (`frontend/public/icons/`) son placeholders generados, no arte final.
