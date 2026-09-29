@@ -12,7 +12,7 @@ import {
   rangoMesPasado,
   todayDisplay,
 } from './fecha';
-import { MegaphoneIcon } from './icons';
+import { ChartIcon, MegaphoneIcon, SparkleIcon } from './icons';
 import type { FiltroTipo } from './types';
 
 const MESES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
@@ -32,6 +32,10 @@ interface Props {
   aniosConDatos: number[];
   mostrarAvisos: boolean;
   onToggleAvisos: () => void;
+  /** Informes y la IA van acá (y no en el menú) porque son de la caja que se está viendo. */
+  onInformes: () => void;
+  /** Solo en la sucesión: la IA todavía no lee Remodelación. */
+  onPreguntarIA?: () => void;
   pendientesCount: number;
 }
 
@@ -49,6 +53,8 @@ export default function FilterBar({
   aniosConDatos,
   mostrarAvisos,
   onToggleAvisos,
+  onInformes,
+  onPreguntarIA,
   pendientesCount,
 }: Props) {
   const [showFiltros, setShowFiltros] = useState(false);
@@ -332,6 +338,20 @@ export default function FilterBar({
       >
         <MegaphoneIcon />
       </button>
+      <button type="button" className="chip chip-icon" onClick={onInformes} aria-label="Informes" title="Informes">
+        <ChartIcon />
+      </button>
+      {onPreguntarIA && (
+        <button
+          type="button"
+          className="chip chip-icon"
+          onClick={onPreguntarIA}
+          aria-label="Preguntale a la IA"
+          title="Preguntale a la IA"
+        >
+          <SparkleIcon />
+        </button>
+      )}
     </div>
   );
 }

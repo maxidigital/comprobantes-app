@@ -221,6 +221,12 @@ Aportes Personales:  id | fecha | tipo | montoUSD | concepto | aportante | notas
   interceptor la trata igual que a Movimientos. Decisión consciente, es
   una app familiar. Su diseño todavía está por revisarse.
 
+El menú ☰ solo tiene lo que es de toda la app (actualizar, tema, salir).
+Lo que es de una caja va en su barra de filtros: 📊 Informes (totales de
+esa caja) y ✨ la IA (solo en Sucesión por ahora; extenderla a
+Remodelación implica que `AsistenteIAService` lea otro `MovimientoStore`
+y conozca el contexto de la obra).
+
 La plomería común de estas pestañas (crearla si no existe, header, id
 secuencial, baja lógica, fechas dd/MM/yyyy) vive en `service/SheetTab`.
 Las pestañas originales de la sucesión (Movimientos, Comprobantes,
@@ -231,7 +237,7 @@ al importar, y cotización automática del dólar.
 
 ## Preguntale a la IA
 
-Chat (entrada en el menú, junto a "Informes") para preguntar en lenguaje
+Chat (chip ✨ en la barra de filtros, solo en la caja Sucesión) para preguntar en lenguaje
 natural sobre los movimientos — ej. "promedio de alquileres de Iriondo en
 2026". **La IA interpreta, Java calcula**: nunca se le pasa la tabla al
 modelo ni se le pide que haga cuentas. OpenAI (`gpt-4o-mini`, cuenta de

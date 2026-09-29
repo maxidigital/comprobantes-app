@@ -249,8 +249,6 @@ export default function App() {
                   setCajaRefreshKey((k) => k + 1);
                 }
               }}
-              onInformes={() => setShowInformes(true)}
-              onPreguntarIA={() => setShowPreguntaIA(true)}
               onLogout={handleUnauthorized}
             />
           </div>
@@ -274,6 +272,8 @@ export default function App() {
             aniosConDatos={aniosConDatos}
             mostrarAvisos={mostrarAvisos}
             onToggleAvisos={() => setMostrarAvisos((v) => !v)}
+            onInformes={() => setShowInformes(true)}
+            onPreguntarIA={caja === 'sucesion' ? () => setShowPreguntaIA(true) : undefined}
             pendientesCount={pendientesCount}
           />
         )}
@@ -432,7 +432,7 @@ export default function App() {
       {showInformes && movimientos !== null && (
         <div className="dialog-overlay" onClick={() => setShowInformes(false)}>
           <div className="dialog" onClick={(e) => e.stopPropagation()}>
-            <h2>Informes</h2>
+            <h2>Informes · {VISTAS.find((v) => v.id === caja)?.titulo}</h2>
             <Totals movimientos={movimientos} />
             <div className="dialog-actions">
               <button type="button" className="btn-plain" onClick={() => setShowInformes(false)}>

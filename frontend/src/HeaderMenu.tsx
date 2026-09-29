@@ -1,17 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
-import { ChartIcon, MenuIcon, MoonIcon, RefreshIcon, SparkleIcon, SunIcon } from './icons';
+import { MenuIcon, MoonIcon, RefreshIcon, SunIcon } from './icons';
 import { useEscapeKey } from './useEscapeKey';
 
 interface Props {
   isDark: boolean;
   onToggleTheme: () => void;
   onRefresh: () => void;
-  onInformes: () => void;
-  onPreguntarIA: () => void;
   onLogout: () => void;
 }
 
-export default function HeaderMenu({ isDark, onToggleTheme, onRefresh, onInformes, onPreguntarIA, onLogout }: Props) {
+/** Solo lo que es de toda la app — Informes y la IA son de cada caja y están en su FilterBar. */
+export default function HeaderMenu({ isDark, onToggleTheme, onRefresh, onLogout }: Props) {
   const [open, setOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
@@ -52,24 +51,6 @@ export default function HeaderMenu({ isDark, onToggleTheme, onRefresh, onInforme
             }}
           >
             <RefreshIcon /> Actualizar desde planilla
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              onInformes();
-              setOpen(false);
-            }}
-          >
-            <ChartIcon /> Informes
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              onPreguntarIA();
-              setOpen(false);
-            }}
-          >
-            <SparkleIcon /> Preguntale a la IA
           </button>
           <button
             type="button"
