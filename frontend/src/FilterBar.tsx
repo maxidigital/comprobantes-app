@@ -338,13 +338,19 @@ export default function FilterBar({
       >
         <MegaphoneIcon />
       </button>
-      <button type="button" className="chip chip-icon" onClick={onInformes} aria-label="Informes" title="Informes">
+      <button
+        type="button"
+        className="chip chip-toggle chip-icon"
+        onClick={onInformes}
+        aria-label="Informes"
+        title="Informes"
+      >
         <ChartIcon />
       </button>
       {onPreguntarIA && (
         <button
           type="button"
-          className="chip chip-icon"
+          className="chip chip-toggle chip-icon"
           onClick={onPreguntarIA}
           aria-label="Preguntale a la IA"
           title="Preguntale a la IA"
