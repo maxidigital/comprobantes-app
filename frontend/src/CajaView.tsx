@@ -24,16 +24,15 @@ interface Props {
 
 /**
  * Vista completa de una caja simple (hoy solo Aportes personales): misma
- * pantalla que la sucesión — barra de filtros, lista con swipe, detalle al
- * tocar, totales en el chip de Informes — sin comprobantes ni avisos.
+ * pantalla que Alquileres — barra de filtros, lista con swipe, detalle al
+ * tocar, totales en el chip de Informes — sin comprobantes, avisos ni rangos
+ * de fechas.
  * Maneja su propio estado; App.tsx solo elige qué caja mostrar.
  */
 export default function CajaView({ caja, puedeEditar, filtroTipo, filterSlot, onUnauthorized }: Props) {
   const [items, setItems] = useState<MovimientoCaja[] | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [aportantesSeleccionados, setAportantesSeleccionados] = useState<Set<string>>(new Set());
-  const [fechaDesde, setFechaDesde] = useState<string | null>(null);
-  const [fechaHasta, setFechaHasta] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [editTarget, setEditTarget] = useState<MovimientoCaja | null>(null);
   const [detailTarget, setDetailTarget] = useState<MovimientoCaja | null>(null);
@@ -70,22 +69,14 @@ export default function CajaView({ caja, puedeEditar, filtroTipo, filterSlot, on
         .filter((m) => {
           if (filtroTipo !== 'TODOS' && m.tipo !== filtroTipo) return false;
           if (aportantesSeleccionados.size > 0 && !aportantesSeleccionados.has(m.aportante ?? '')) return false;
-          if (fechaDesde && m.fecha < fechaDesde) return false;
-          if (fechaHasta && m.fecha > fechaHasta) return false;
           return true;
         })
         .sort((x, y) => {
           if (x.fecha !== y.fecha) return x.fecha < y.fecha ? 1 : -1;
           return x.creadoEn < y.creadoEn ? 1 : x.creadoEn > y.creadoEn ? -1 : 0;
         }),
-    [items, filtroTipo, aportantesSeleccionados, fechaDesde, fechaHasta],
+    [items, filtroTipo, aportantesSeleccionados],
   );
-
-  const aniosConDatos = useMemo(() => {
-    const anios = new Set<number>([new Date().getFullYear()]);
-    for (const m of items ?? []) anios.add(Number(m.fecha.slice(0, 4)));
-    return [...anios].sort((a, b) => a - b);
-  }, [items]);
 
   /** Por aportante: aportado, devuelto y saldo (lo que la sucesión le debe). Sobre todo, no sobre lo filtrado. */
   const resumenPorAportante = useMemo(() => {
@@ -144,13 +135,6 @@ export default function CajaView({ caja, puedeEditar, filtroTipo, filterSlot, on
                 ? { opciones: APORTANTES, seleccionadas: aportantesSeleccionados, onToggle: toggleAportante }
                 : undefined
             }
-            fechaDesde={fechaDesde}
-            fechaHasta={fechaHasta}
-            onFechaRangeChange={(desde, hasta) => {
-              setFechaDesde(desde);
-              setFechaHasta(hasta);
-            }}
-            aniosConDatos={aniosConDatos}
             onInformes={() => setShowInformes(true)}
           />,
           filterSlot,

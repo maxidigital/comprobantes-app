@@ -120,6 +120,8 @@ input[type='file'] {
    * significado en la app (verde = ingreso, naranja = egreso, amarillo =
    * pendiente y rojo = peligro quedan afuera). */
   --app-bg: var(--bg);
+  /* Color de la caja (desplegable de cajas); Alquileres usa el violeta de la marca. */
+  --caja-color: var(--brand-primary);
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
@@ -128,15 +130,18 @@ input[type='file'] {
 }
 
 .app-shell[data-caja='remodelacion'] {
-  --app-bg: color-mix(in srgb, var(--teal) 10%, var(--bg));
+  --caja-color: var(--teal);
+  --app-bg: color-mix(in srgb, var(--caja-color) 10%, var(--bg));
 }
 
 .app-shell[data-caja='varios'] {
-  --app-bg: color-mix(in srgb, var(--expense) 10%, var(--bg));
+  --caja-color: var(--expense);
+  --app-bg: color-mix(in srgb, var(--caja-color) 10%, var(--bg));
 }
 
 .app-shell[data-caja='aportes'] {
-  --app-bg: color-mix(in srgb, var(--brand-accent) 10%, var(--bg));
+  --caja-color: var(--brand-accent);
+  --app-bg: color-mix(in srgb, var(--caja-color) 10%, var(--bg));
 }
 
 /* top-bar y filter-bar viven juntos adentro de .sticky-header para
@@ -709,7 +714,8 @@ input[type='file'] {
 /* Segundo renglón del encabezado: desplegable de cajas + Ingresos/Egresos */
 .caja-bar {
   display: flex;
-  flex-wrap: wrap;
+  /* Siempre en un renglón: si no entra, el desplegable se achica (con "…") */
+  flex-wrap: nowrap;
   align-items: center;
   justify-content: center;
   gap: 0.6rem;
@@ -720,15 +726,21 @@ input[type='file'] {
 
 .vista-select {
   max-width: 11rem;
+  min-width: 0;
+  flex-shrink: 1;
   padding: 0.25rem 0.5rem;
-  border: 1px solid color-mix(in srgb, var(--brand-primary) 55%, transparent);
+  border: 1px solid color-mix(in srgb, var(--caja-color) 55%, transparent);
   border-radius: var(--radius-pill);
-  background: color-mix(in srgb, var(--brand-primary) 14%, var(--card-bg));
-  color: var(--brand-primary);
+  background: color-mix(in srgb, var(--caja-color) 14%, var(--card-bg));
+  color: var(--caja-color);
   font: inherit;
   font-size: 0.8rem;
   font-weight: 600;
   text-overflow: ellipsis;
+}
+
+.caja-bar .segmented {
+  flex-shrink: 0;
 }
 
 /* Informes de Aportes: aportado / devuelto / saldo por aportante */

@@ -28,10 +28,11 @@ interface Props {
   /** Solo en las cajas con comprobantes. */
   pendientes?: { solo: boolean; onChange: (value: boolean) => void; count: number };
   categorias?: FiltroCategorias;
-  fechaDesde: string | null;
-  fechaHasta: string | null;
-  onFechaRangeChange: (desde: string | null, hasta: string | null) => void;
-  aniosConDatos: number[];
+  /** Sin onFechaRangeChange no se muestra el chip Rangos (Aportes no lo tiene). */
+  fechaDesde?: string | null;
+  fechaHasta?: string | null;
+  onFechaRangeChange?: (desde: string | null, hasta: string | null) => void;
+  aniosConDatos?: number[];
   /** Solo en las cajas con avisos. */
   avisos?: { mostrar: boolean; onToggle: () => void };
   /** Informes y la IA van acá (y no en el menú) porque son de la caja que se está viendo. */
@@ -43,14 +44,15 @@ interface Props {
 export default function FilterBar({
   pendientes,
   categorias,
-  fechaDesde,
-  fechaHasta,
+  fechaDesde = null,
+  fechaHasta = null,
   onFechaRangeChange,
-  aniosConDatos,
+  aniosConDatos = [],
   avisos,
   onInformes,
   onPreguntarIA,
 }: Props) {
+  const cambiarRango = onFechaRangeChange ?? (() => {});
   const [showFiltros, setShowFiltros] = useState(false);
   const [showRangos, setShowRangos] = useState(false);
   const [showRangoPersonalizado, setShowRangoPersonalizado] = useState(false);
@@ -109,9 +111,9 @@ export default function FilterBar({
 
   function togglePreset(rango: [string, string]) {
     if (esPresetActivo(rango)) {
-      onFechaRangeChange(null, null);
+      cambiarRango(null, null);
     } else {
-      onFechaRangeChange(rango[0], rango[1]);
+      cambiarRango(rango[0], rango[1]);
     }
   }
 
@@ -130,27 +132,27 @@ export default function FilterBar({
     const formatted = formatFechaInput(raw);
     setDesdeTexto(formatted);
     if (formatted === '') {
-      onFechaRangeChange(null, fechaHasta);
+      cambiarRango(null, fechaHasta);
       return;
     }
     const iso = fechaToIso(formatted);
-    if (iso) onFechaRangeChange(iso, fechaHasta);
+    if (iso) cambiarRango(iso, fechaHasta);
   }
 
   function handleHastaTextoChange(raw: string) {
     const formatted = formatFechaInput(raw);
     setHastaTexto(formatted);
     if (formatted === '') {
-      onFechaRangeChange(fechaDesde, null);
+      cambiarRango(fechaDesde, null);
       return;
     }
     const iso = fechaToIso(formatted);
-    if (iso) onFechaRangeChange(fechaDesde, iso);
+    if (iso) cambiarRango(fechaDesde, iso);
   }
 
   function handleHastaHoy() {
     setHastaTexto(todayDisplay());
-    onFechaRangeChange(fechaDesde, dateToIso(new Date()));
+    cambiarRango(fechaDesde, dateToIso(new Date()));
   }
 
   return (
@@ -199,114 +201,116 @@ export default function FilterBar({
           )}
         </div>
       )}
-      <div className="dropdown-wrapper" ref={rangosRef}>
-        <button
-          type="button"
-          className={`chip chip-toggle ${fechaDesde || fechaHasta ? 'active' : ''}`}
-          onClick={() => setShowRangos((v) => !v)}
-          aria-expanded={showRangos}
-        >
-          Rangos
-        </button>
-        {showRangos && (
-          <div className="dropdown-panel dropdown-panel--centered dropdown-panel--ancho">
-            <div className="chip-list filtro-fechas-presets">
-              <button
-                type="button"
-                className={`chip chip-toggle ${esPresetActivo(rangoEsteMes()) ? 'active' : ''}`}
-                onClick={() => togglePreset(rangoEsteMes())}
-              >
-                Este mes
-              </button>
-              <button
-                type="button"
-                className={`chip chip-toggle ${esPresetActivo(rangoMesPasado()) ? 'active' : ''}`}
-                onClick={() => togglePreset(rangoMesPasado())}
-              >
-                Mes pasado
-              </button>
-              <button
-                type="button"
-                className={`chip chip-toggle ${esPresetActivo(rangoEsteAnio()) ? 'active' : ''}`}
-                onClick={() => togglePreset(rangoEsteAnio())}
-              >
-                Este año
-              </button>
-            </div>
-
-            <div className="dropdown-panel-separator" />
-
-            <div className="chip-list filtro-fechas-presets">
-              {aniosConDatos.map((anio) => (
+      {onFechaRangeChange && (
+        <div className="dropdown-wrapper" ref={rangosRef}>
+          <button
+            type="button"
+            className={`chip chip-toggle ${fechaDesde || fechaHasta ? 'active' : ''}`}
+            onClick={() => setShowRangos((v) => !v)}
+            aria-expanded={showRangos}
+          >
+            Rangos
+          </button>
+          {showRangos && (
+            <div className="dropdown-panel dropdown-panel--centered dropdown-panel--ancho">
+              <div className="chip-list filtro-fechas-presets">
                 <button
-                  key={anio}
                   type="button"
-                  className={`chip chip-toggle ${esPresetActivo(rangoAnio(anio)) ? 'active' : ''}`}
-                  onClick={() => togglePreset(rangoAnio(anio))}
+                  className={`chip chip-toggle ${esPresetActivo(rangoEsteMes()) ? 'active' : ''}`}
+                  onClick={() => togglePreset(rangoEsteMes())}
                 >
-                  {anio}
+                  Este mes
                 </button>
-              ))}
-            </div>
-
-            <div className="chip-list filtro-fechas-presets">
-              {MESES.map((mes) => (
                 <button
-                  key={mes}
                   type="button"
-                  className={`chip chip-toggle ${esPresetActivo(rangoMes(anioActivoParaMeses(), mes)) ? 'active' : ''}`}
-                  onClick={() => togglePreset(rangoMes(anioActivoParaMeses(), mes))}
+                  className={`chip chip-toggle ${esPresetActivo(rangoMesPasado()) ? 'active' : ''}`}
+                  onClick={() => togglePreset(rangoMesPasado())}
                 >
-                  {mes}
+                  Mes pasado
                 </button>
-              ))}
-            </div>
+                <button
+                  type="button"
+                  className={`chip chip-toggle ${esPresetActivo(rangoEsteAnio()) ? 'active' : ''}`}
+                  onClick={() => togglePreset(rangoEsteAnio())}
+                >
+                  Este año
+                </button>
+              </div>
 
-            <button
-              type="button"
-              className="dropdown-panel-toggle"
-              onClick={() => setShowRangoPersonalizado((v) => !v)}
-              aria-expanded={showRangoPersonalizado}
-            >
-              Rango personalizado {showRangoPersonalizado ? '▾' : '▸'}
-            </button>
+              <div className="dropdown-panel-separator" />
 
-            {showRangoPersonalizado && (
-              <div className="filtro-fechas-custom">
-                <label>
-                  Desde
-                  <input
-                    type="text"
-                    className="input"
-                    inputMode="numeric"
-                    placeholder="dd/mm/aaaa"
-                    maxLength={10}
-                    value={desdeTexto}
-                    onChange={(e) => handleDesdeTextoChange(e.target.value)}
-                  />
-                </label>
-                <label>
-                  Hasta
-                  <div className="filtro-fecha-hasta-row">
+              <div className="chip-list filtro-fechas-presets">
+                {aniosConDatos.map((anio) => (
+                  <button
+                    key={anio}
+                    type="button"
+                    className={`chip chip-toggle ${esPresetActivo(rangoAnio(anio)) ? 'active' : ''}`}
+                    onClick={() => togglePreset(rangoAnio(anio))}
+                  >
+                    {anio}
+                  </button>
+                ))}
+              </div>
+
+              <div className="chip-list filtro-fechas-presets">
+                {MESES.map((mes) => (
+                  <button
+                    key={mes}
+                    type="button"
+                    className={`chip chip-toggle ${esPresetActivo(rangoMes(anioActivoParaMeses(), mes)) ? 'active' : ''}`}
+                    onClick={() => togglePreset(rangoMes(anioActivoParaMeses(), mes))}
+                  >
+                    {mes}
+                  </button>
+                ))}
+              </div>
+
+              <button
+                type="button"
+                className="dropdown-panel-toggle"
+                onClick={() => setShowRangoPersonalizado((v) => !v)}
+                aria-expanded={showRangoPersonalizado}
+              >
+                Rango personalizado {showRangoPersonalizado ? '▾' : '▸'}
+              </button>
+
+              {showRangoPersonalizado && (
+                <div className="filtro-fechas-custom">
+                  <label>
+                    Desde
                     <input
                       type="text"
                       className="input"
                       inputMode="numeric"
                       placeholder="dd/mm/aaaa"
                       maxLength={10}
-                      value={hastaTexto}
-                      onChange={(e) => handleHastaTextoChange(e.target.value)}
+                      value={desdeTexto}
+                      onChange={(e) => handleDesdeTextoChange(e.target.value)}
                     />
-                    <button type="button" className="chip chip-toggle" onClick={handleHastaHoy}>
-                      Hoy
-                    </button>
-                  </div>
-                </label>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
+                  </label>
+                  <label>
+                    Hasta
+                    <div className="filtro-fecha-hasta-row">
+                      <input
+                        type="text"
+                        className="input"
+                        inputMode="numeric"
+                        placeholder="dd/mm/aaaa"
+                        maxLength={10}
+                        value={hastaTexto}
+                        onChange={(e) => handleHastaTextoChange(e.target.value)}
+                      />
+                      <button type="button" className="chip chip-toggle" onClick={handleHastaHoy}>
+                        Hoy
+                      </button>
+                    </div>
+                  </label>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
       {avisos && (
         <button
           type="button"

@@ -42,8 +42,6 @@ export interface CajaConfig {
   moneda: Moneda;
   conAportante: boolean;
   etiquetasTipo: { ingreso: string; gasto: string };
-  /** Los botones de tipo de la barra de filtros (en plural). */
-  etiquetasFiltro: { ingresos: string; gastos: string };
   etiquetasTotales: { ingresos: string; gastos: string; balance: string };
 }
 
@@ -54,7 +52,6 @@ export const CAJAS: Record<CajaId, CajaConfig> = {
     moneda: 'USD',
     conAportante: true,
     etiquetasTipo: { ingreso: 'Aporte', gasto: 'Devolución' },
-    etiquetasFiltro: { ingresos: 'Aportes', gastos: 'Devoluciones' },
     etiquetasTotales: { ingresos: 'Aportado', gastos: 'Devuelto', balance: 'Deuda' },
   },
 };

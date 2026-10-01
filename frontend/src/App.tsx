@@ -259,13 +259,7 @@ export default function App() {
               </option>
             ))}
           </select>
-          <TipoToggle
-            filtroTipo={filtroTipo}
-            onChange={setFiltroTipo}
-            etiquetas={
-              esCajaMovimientos(vista) ? { ingresos: 'Ingresos', gastos: 'Egresos' } : CAJAS[vista].etiquetasFiltro
-            }
-          />
+          <TipoToggle filtroTipo={filtroTipo} onChange={setFiltroTipo} />
         </div>
 
         <div ref={setFilterSlot} />
