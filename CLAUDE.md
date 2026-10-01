@@ -249,12 +249,17 @@ corridos a mano contra la planilla real):
 - Qué salida del libro es de qué caja se decidió cruzando contra lo que
   ya estaba en Alquileres (por fecha y monto): lo que la importación
   original había dejado afuera era obra o trámites.
-- **Control**: al 16/12/2025 (última fecha del libro), Alquileres +
-  Remodelación + Varios = $345.610 contra $294.060 del libro: las cajas
-  tienen **$51.550 de más** y no está explicado (ver Pendiente). Ojo: ese
-  número incluye un aporte de Gustavo de $24.789,28 (06/08/2025) que
-  faltaba en Alquileres y se agregó; sin él la diferencia parecía de
-  $26.760.
+- **Control (conciliado fila por fila el 2026-10-01)**: al 16/12/2025
+  (última fecha del libro), Alquileres + Remodelación + Varios = $345.610,
+  **igual al libro corregido**. El libro tiene un error: la fila 572 (API
+  cuota 3/2025, 19/06/2025) dice $5.460 en el detalle pero $57.010 en el
+  egreso — copió el total de los tres descuentos del alquiler de San
+  Martín de ese día (honorarios $27.500 + TGI $24.050 + API $5.460, que
+  figuran así en Protocolo), contando dos veces honorarios y TGI
+  ($51.550). La app tiene lo correcto. Además las filas 507-509 están
+  fechadas 16/01/2024 pero son de enero 2025 (no cambia el saldo). El resto
+  de las diferencias son la misma plata agrupada distinto. Se agregó un
+  aporte de Gustavo de $24.789,28 (06/08/2025) que faltaba en Alquileres.
 - Aportes en pesos de Gustavo (2023 y 2025) y de Nico (2025): cargados
   en Aportes al blue del día. Según Gustavo, lo único que se le devolvió
   son los $60.000 del 19/05/2023.
@@ -515,9 +520,9 @@ frontend/src/
   Oficina del 14/02/2025. Está cargada como devuelta en Aportes (con la
   nota "PENDIENTE"); si no fue real, eliminar esa devolución en Aportes y
   el GASTO id 182 en Alquileres.
-- **Conciliar Alquileres contra In/Out Pesos**: al 16/12/2025 las cajas en
-  pesos tienen $51.550 más que el libro, sin explicar. Hay que cruzar fila
-  por fila (puede tener relación con el desfasaje contra el efectivo real).
+- **Corregir In/Out Pesos** (lo hace Gustavo, la planilla es suya): fila
+  572 egreso $5.460 (no $57.010) y fechas de las filas 507-509 a
+  16/01/2025. Ver "Control" en la sección Cajas.
 - **Lo que falta de Gustavo**: la obra 2025-2026 que figura solo en
   "Protocolo" (mesada Tuttolomondo, albañil Leiva, persianas Borin, niñera:
   lo pagó con sus dólares) y su planilla de aportes en dólares. Está
