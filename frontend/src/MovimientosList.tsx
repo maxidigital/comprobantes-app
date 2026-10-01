@@ -105,16 +105,7 @@ export default function MovimientosList({
                     </div>
                   )}
 
-                  <div
-                    className="card movement-card"
-                    {...cardProps(
-                      item.id,
-                      () => {},
-                      a.bien
-                        ? { boxShadow: `0 0 0 1px color-mix(in srgb, ${bienColor(a.bien)} 55%, transparent)` }
-                        : undefined,
-                    )}
-                  >
+                  <div className="card movement-card movement-card--aviso" {...cardProps(item.id, () => {})}>
                     <div className="row-top">
                       <span className="concepto">
                         <MegaphoneIcon className="icon-inline" /> {a.texto}

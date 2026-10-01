@@ -8,6 +8,7 @@
   --brand-primary: #8B5CF6;
   --brand-accent: #EC4899;
   --status-pending: #F5D90A;
+  --aviso: #F5D90A;
   --danger: #EF4444;
   --income: #22C55E;
   --expense: #38BDF8;
@@ -38,6 +39,7 @@
   --brand-primary: #6D28D9;
   --brand-accent: #A21CAF;
   --status-pending: #A16207;
+  --aviso: #EAB308;
   --danger: #DC2626;
   --income: #15803D;
   --expense: #0369A1;
@@ -60,6 +62,7 @@
     --brand-primary: #6D28D9;
     --brand-accent: #A21CAF;
     --status-pending: #A16207;
+    --aviso: #EAB308;
     --danger: #DC2626;
     --income: #15803D;
     --expense: #0369A1;
@@ -842,6 +845,18 @@ input[type='file'] {
 
 .movement-card--gasto {
   box-shadow: 0 0 0 1px color-mix(in srgb, var(--gasto) 55%, transparent);
+}
+
+/* Avisos: glow amarillo (en todas las cajas) para que se distingan de los movimientos. */
+.movement-card--aviso {
+  background: color-mix(in srgb, var(--aviso) 10%, var(--card-bg));
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--aviso) 85%, transparent),
+    0 0 16px 2px color-mix(in srgb, var(--aviso) 40%, transparent);
+}
+
+.movement-card--aviso .concepto .icon-inline {
+  color: var(--aviso);
 }
 
 .movement-card .row-top {
