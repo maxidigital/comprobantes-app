@@ -223,7 +223,7 @@ export default function App() {
   }
 
   return (
-    <div className="app-shell">
+    <div className="app-shell" data-caja={vista}>
       <div className="sticky-header">
         <header className="top-bar">
           <div>

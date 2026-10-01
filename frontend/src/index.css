@@ -115,9 +115,28 @@ input[type='file'] {
 /* ---------- Layout ---------- */
 
 .app-shell {
+  /* Fondo según la caja: Alquileres negro (el --bg de siempre), las demás
+   * con un tinte suave de un color de la paleta que no tenga otro
+   * significado en la app (verde = ingreso, naranja = egreso, amarillo =
+   * pendiente y rojo = peligro quedan afuera). */
+  --app-bg: var(--bg);
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
+  background: var(--app-bg);
+  transition: background var(--ease-hover);
+}
+
+.app-shell[data-caja='remodelacion'] {
+  --app-bg: color-mix(in srgb, var(--teal) 10%, var(--bg));
+}
+
+.app-shell[data-caja='varios'] {
+  --app-bg: color-mix(in srgb, var(--expense) 10%, var(--bg));
+}
+
+.app-shell[data-caja='aportes'] {
+  --app-bg: color-mix(in srgb, var(--brand-accent) 10%, var(--bg));
 }
 
 /* top-bar y filter-bar viven juntos adentro de .sticky-header para
@@ -129,7 +148,7 @@ input[type='file'] {
   position: sticky;
   top: 0;
   z-index: 10;
-  background: var(--bg);
+  background: var(--app-bg);
   border-bottom: 1px solid var(--border);
 }
 
