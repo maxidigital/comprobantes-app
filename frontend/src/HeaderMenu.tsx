@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { getUserName } from './api';
 import { MenuIcon, MoonIcon, RefreshIcon, SunIcon } from './icons';
 import { useEscapeKey } from './useEscapeKey';
 
@@ -71,7 +72,7 @@ export default function HeaderMenu({ isDark, onToggleTheme, onRefresh, onLogout 
               setOpen(false);
             }}
           >
-            Salir
+            Salir {getUserName() && <span className="menu-usuario">({getUserName()})</span>}
           </button>
         </div>
       )}

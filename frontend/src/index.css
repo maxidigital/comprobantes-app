@@ -245,6 +245,12 @@ input[type='file'] {
   accent-color: var(--brand-primary);
 }
 
+/* Nombre del usuario logueado al lado de "Salir" */
+.menu-usuario {
+  color: var(--text-muted);
+  font-size: 0.85em;
+}
+
 .dropdown-panel-separator {
   height: 1px;
   margin: 0.3rem 0.2rem;
