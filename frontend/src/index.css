@@ -1304,3 +1304,61 @@ textarea.input {
 .chat-tabla-scroll td:last-child {
   text-align: right;
 }
+
+/* ---------- Notas (Markdown) ---------- */
+.detail-value.notas-md {
+  display: block;
+}
+
+.notas-md > :first-child {
+  margin-top: 0;
+}
+
+.notas-md > :last-child {
+  margin-bottom: 0;
+}
+
+/* Las notas viejas son texto plano: un salto de línea simple se respeta igual. */
+.notas-md p {
+  margin: 0.5rem 0;
+  white-space: pre-line;
+}
+
+.notas-md ul,
+.notas-md ol {
+  margin: 0.5rem 0;
+  padding-left: 1.2rem;
+}
+
+.notas-md a {
+  color: var(--brand-primary);
+}
+
+.notas-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.15rem;
+  margin-bottom: 0.3rem;
+}
+
+.notas-toolbar .btn-plain {
+  padding: 0.35rem 0.6rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.notas-toolbar .btn-plain:disabled {
+  opacity: 0.4;
+}
+
+.notas-toolbar-preview {
+  margin-left: auto;
+}
+
+.notas-toolbar-preview--activa {
+  color: var(--brand-primary) !important;
+}
+
+.notas-editor textarea {
+  min-height: 6rem;
+}

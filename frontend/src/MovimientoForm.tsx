@@ -4,6 +4,7 @@ import { BIENES } from './bienes';
 import { tieneBien } from './cajas';
 import { dateToDisplay, fechaToIso, formatFechaInput, isoToDisplay, todayDisplay } from './fecha';
 import { formatMontoInput, parseMonto } from './monto';
+import { NotasEditor } from './Notas';
 import type { CajaMovimientos, Comprobante, Movimiento, TipoMovimiento } from './types';
 import { useEscapeKey } from './useEscapeKey';
 
@@ -222,7 +223,7 @@ export default function MovimientoForm({ caja, onClose, onSaved, onUnauthorized,
 
         <div className="field">
           <label htmlFor="notas">Notas (opcional)</label>
-          <textarea id="notas" className="input" value={notas} onChange={(e) => setNotas(e.target.value)} />
+          <NotasEditor id="notas" value={notas} onChange={setNotas} />
         </div>
 
         <div className="field">

@@ -1,5 +1,6 @@
 import { bienColor } from './bienes';
 import { currency, formatFecha } from './format';
+import { NotasTexto } from './Notas';
 import type { Movimiento } from './types';
 import { useEscapeKey } from './useEscapeKey';
 
@@ -69,7 +70,7 @@ export default function MovimientoDetail({
 
         <div className="field">
           <label>Notas</label>
-          <p className="detail-value">{m.notas || '—'}</p>
+          <NotasTexto texto={m.notas} />
         </div>
 
         <div className="field">

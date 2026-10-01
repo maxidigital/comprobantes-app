@@ -1,5 +1,6 @@
 import type { CajaConfig } from './cajas';
 import { currency, formatFecha } from './format';
+import { NotasTexto } from './Notas';
 import type { MovimientoCaja } from './types';
 import { useEscapeKey } from './useEscapeKey';
 
@@ -70,7 +71,7 @@ export default function CajaDetail({ caja, item: m, puedeEditar, onClose, onEdit
 
           <div className="field">
             <label>Notas</label>
-            <p className="detail-value">{m.notas || '—'}</p>
+            <NotasTexto texto={m.notas} />
           </div>
 
           {m.cargadoPor && (

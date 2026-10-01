@@ -72,6 +72,26 @@ el frontend qué mostrar (el botón "+" de nuevo movimiento y las acciones
 de editar/eliminar quedan ocultos para `VIEWER` — puro UX, el enforcement
 real lo hace el interceptor).
 
+## Notas con formato (Markdown)
+
+Las `notas` de cada movimiento (todas las cajas, incluida Aportes) se
+guardan como **Markdown en la misma celda** de la planilla — sigue siendo
+legible si se abre el Sheet; nada de HTML (ilegible en la celda y riesgo
+de XSS). El backend no se enteró: es texto como antes.
+
+- Editor (`Notas.tsx#NotasEditor`, en `MovimientoForm` y `CajaForm`): el
+  mismo textarea con una barrita (negrita, cursiva, lista, link) que
+  inserta la sintaxis, y un botón "Vista previa".
+- Detalle (`NotasTexto`): se renderiza con `react-markdown` + `remark-gfm`
+  cargado **lazy** (`NotasMarkdown.tsx`, mismo motivo que el chat IA: casi
+  duplica el bundle); mientras carga muestra el texto crudo. Los links
+  abren en otra pestaña. Las notas viejas son texto plano y se ven igual:
+  los saltos de línea simples se respetan por CSS (`.notas-md p`,
+  `white-space: pre-line`).
+- Lista: `notasPlano` saca la sintaxis y junta las líneas con " · ", así
+  la carga inicial no depende de react-markdown.
+- Avisos no tienen formato (solo las notas de movimientos).
+
 ## Estructura de datos
 
 Tres pestañas en la misma planilla:
@@ -516,6 +536,7 @@ frontend/src/
 ├── MovimientoForm.tsx               # alta/edición — selección múltiple de archivos + lista de comprobantes existentes con borrado individual
 ├── AvisoForm.tsx                    # alta de un aviso (fecha, bien, texto) — sin modo edición
 ├── MovimientoDetail.tsx             # detalle de solo lectura, un chip "Ver" por comprobante
+├── Notas.tsx, NotasMarkdown.tsx     # notas en Markdown: editor con barrita + vista previa, render lazy en el detalle, texto plano en la lista
 ├── ReceiptViewerDialog.tsx          # visor propio adentro de la app (nunca navega a la URL del archivo)
 ├── ConfirmDialog.tsx                # confirmación de borrado
 ├── PreguntaIADialog.tsx             # chat "Preguntale a la IA" (historial en localStorage)

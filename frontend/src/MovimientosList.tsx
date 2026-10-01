@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { bienColor } from './bienes';
 import { formatFecha, formatMontoPartes } from './format';
 import { MegaphoneIcon } from './icons';
+import { notasPlano } from './Notas';
 import type { Aviso, FiltroTipo, Movimiento } from './types';
 import { useSwipeRows } from './useSwipeRows';
 
@@ -191,7 +192,7 @@ export default function MovimientosList({
                       </span>
                     )}
                   </div>
-                  {m.notas && <div className="meta">{m.notas}</div>}
+                  {m.notas && <div className="meta">{notasPlano(m.notas)}</div>}
                 </div>
               </div>
             );

@@ -7,6 +7,7 @@ import { guardarCache, leerCache } from './cache';
 import { APORTANTES, type CajaConfig } from './cajas';
 import ConfirmDialog from './ConfirmDialog';
 import FilterBar from './FilterBar';
+import { notasPlano } from './Notas';
 import { formatFecha, formatMontoPartes } from './format';
 import Totals from './Totals';
 import type { FiltroTipo, MovimientoCaja } from './types';
@@ -199,7 +200,7 @@ export default function CajaView({ caja, puedeEditar, filtroTipo, filterSlot, on
                         <span className="meta">{formatFecha(m.fecha)}</span>
                         {m.aportante && <span className="bien-label">{m.aportante}</span>}
                       </div>
-                      {m.notas && <div className="meta">{m.notas}</div>}
+                      {m.notas && <div className="meta">{notasPlano(m.notas)}</div>}
                     </div>
                   </div>
                 );

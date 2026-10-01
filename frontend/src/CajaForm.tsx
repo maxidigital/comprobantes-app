@@ -4,6 +4,7 @@ import { APORTANTES, type CajaConfig } from './cajas';
 import { dateToDisplay, fechaToIso, formatFechaInput, isoToDisplay, todayDisplay } from './fecha';
 import { currency } from './format';
 import { formatMontoInput, parseMonto } from './monto';
+import { NotasEditor } from './Notas';
 import type { MovimientoCaja, TipoMovimiento } from './types';
 import { useEscapeKey } from './useEscapeKey';
 
@@ -214,7 +215,7 @@ export default function CajaForm({ caja, editing, onClose, onSaved, onUnauthoriz
 
           <div className="field">
             <label htmlFor="caja-notas">Notas (opcional)</label>
-            <textarea id="caja-notas" className="input" value={notas} onChange={(e) => setNotas(e.target.value)} />
+            <NotasEditor id="caja-notas" value={notas} onChange={setNotas} />
           </div>
 
           {error && <p className="error-text">{error}</p>}
