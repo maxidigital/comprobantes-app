@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { ApiError, eliminarEnCaja, listCaja } from './api';
 import CajaDetail from './CajaDetail';
 import CajaForm from './CajaForm';
+import { guardarCache, leerCache } from './cache';
 import { APORTANTES, type CajaConfig } from './cajas';
 import ConfirmDialog from './ConfirmDialog';
 import FilterBar from './FilterBar';
@@ -44,7 +45,8 @@ export default function CajaView({ caja, puedeEditar, filtroTipo, filterSlot, on
 
   useEffect(() => {
     let cancelado = false;
-    setItems(null);
+    // Lo último que se vio aparece al instante; lo fresco lo reemplaza al llegar.
+    setItems(leerCache<MovimientoCaja[]>(caja.id));
     setLoadError(null);
     listCaja(caja.id)
       .then((data) => {
@@ -62,6 +64,10 @@ export default function CajaView({ caja, puedeEditar, filtroTipo, filterSlot, on
       cancelado = true;
     };
   }, [caja.id]);
+
+  useEffect(() => {
+    if (items !== null) guardarCache(caja.id, items);
+  }, [items, caja.id]);
 
   const visibles = useMemo(
     () =>

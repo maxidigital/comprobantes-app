@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import AccessGate from './AccessGate';
 import AvisoForm from './AvisoForm';
 import { BIENES, bienColor } from './bienes';
+import { borrarCaches, guardarCache, leerCache } from './cache';
 import { CAJAS, esCajaMovimientos, tieneBien, VISTAS, type Vista } from './cajas';
 import CajaView from './CajaView';
 import ConfirmDialog from './ConfirmDialog';
@@ -126,12 +127,21 @@ export default function App() {
   useEffect(() => {
     if (unlocked && esCajaMovimientos(vista)) {
       cajaCargadaRef.current = vista;
-      setMovimientos(null);
-      setAvisos([]);
+      // Lo último que se vio de esta caja aparece al instante; refreshList lo
+      // reemplaza cuando llega lo fresco de la planilla.
+      const cacheada = leerCache<{ movimientos: Movimiento[]; avisos: Aviso[] }>(vista);
+      setMovimientos(cacheada?.movimientos ?? null);
+      setAvisos(cacheada?.avisos ?? []);
       setBienesSeleccionados(new Set());
       refreshList(vista);
     }
   }, [unlocked, vista]);
+
+  // Cualquier cambio a la lista visible (carga, alta, edición, baja) queda en
+  // el caché de la caja que se está viendo.
+  useEffect(() => {
+    if (movimientos !== null) guardarCache(cajaCargadaRef.current, { movimientos, avisos });
+  }, [movimientos, avisos]);
 
   useEffect(() => {
     if (!showCrearMenu) return;
@@ -168,6 +178,7 @@ export default function App() {
 
   function handleUnauthorized() {
     clearAccessKey();
+    borrarCaches();
     setVista('sucesion');
     setShowForm(false);
     setEditTarget(null);

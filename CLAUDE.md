@@ -217,6 +217,12 @@ Avisos Remodelación / Avisos Varios:             id | fecha | texto | autor | c
   "caja") porque los ids de movimiento de cada caja arrancan de 1 y
   chocarían.
 - El chat IA sigue leyendo solo Alquileres.
+- **Caché por caja** (`cache.ts`, stale-while-revalidate): al cambiar de
+  caja o abrir la app se muestra al instante lo último que se vio
+  (memoria + localStorage, `comprobantes.cache.<caja>`) y por detrás se
+  pide lo fresco a la planilla, que lo reemplaza al llegar. Toda
+  modificación de la lista visible se guarda en el caché. Se borra al
+  salir (Salir / 401), porque el celular puede ser compartido.
 
 **Criterio entre cajas**: cada gasto va a la caja que le corresponde. Si
 lo paga la plata de otra caja (en la práctica, los alquileres), se
@@ -507,6 +513,7 @@ frontend/src/
 ├── CajaView.tsx, CajaForm.tsx, CajaDetail.tsx  # pantalla completa de una caja simple (Aportes): lista, alta/edición, detalle
 ├── useSwipeRows.ts                  # swipe para Editar/Eliminar, compartido por MovimientosList y CajaView
 ├── monto.ts                         # sanitizado del campo monto, compartido por MovimientoForm y CajaForm
+├── cache.ts                         # caché por caja (memoria + localStorage), se borra al salir
 └── index.css                        # tokens de estética/PALETTE (ver ../estetica-react/ESTETICA-REACT.md)
 
 ```
