@@ -292,7 +292,7 @@ export default function App() {
             aniosConDatos={aniosConDatos}
             avisos={{ mostrar: mostrarAvisos, onToggle: () => setMostrarAvisos((v) => !v) }}
             onInformes={() => setShowInformes(true)}
-            onPreguntarIA={caja === 'sucesion' ? () => setShowPreguntaIA(true) : undefined}
+            onPreguntarIA={() => setShowPreguntaIA(true)}
           />
         )}
       </div>
@@ -450,7 +450,11 @@ export default function App() {
 
       {showPreguntaIA && (
         <Suspense fallback={null}>
-          <PreguntaIADialog onClose={() => setShowPreguntaIA(false)} onUnauthorized={handleUnauthorized} />
+          <PreguntaIADialog
+            cajaInicial={caja}
+            onClose={() => setShowPreguntaIA(false)}
+            onUnauthorized={handleUnauthorized}
+          />
         </Suspense>
       )}
 

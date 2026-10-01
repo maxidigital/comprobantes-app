@@ -37,7 +37,7 @@ interface Props {
   avisos?: { mostrar: boolean; onToggle: () => void };
   /** Informes y la IA van acá (y no en el menú) porque son de la caja que se está viendo. */
   onInformes: () => void;
-  /** Solo en Alquileres: la IA todavía no lee las otras cajas. */
+  /** La IA lee Alquileres, Remodelación y Varios (Aportes todavía no). */
   onPreguntarIA?: () => void;
 }
 

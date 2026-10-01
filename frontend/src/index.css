@@ -1185,6 +1185,25 @@ textarea.input {
   font-size: 0.85rem;
 }
 
+/* Selector de caja del chat IA y la etiqueta de caja en cada pregunta */
+.chat-caja-selector {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.chat-caja {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  opacity: 0.75;
+  margin-bottom: 0.15rem;
+}
+
 .chat-mensajes {
   display: flex;
   flex-direction: column;

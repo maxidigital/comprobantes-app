@@ -216,7 +216,8 @@ Avisos Remodelación / Avisos Varios:             id | fecha | texto | autor | c
 - Comprobantes y avisos tienen pestaña propia por caja (no una columna
   "caja") porque los ids de movimiento de cada caja arrancan de 1 y
   chocarían.
-- El chat IA sigue leyendo solo Alquileres.
+- El chat IA puede consultar Alquileres, Remodelación o Varios (ver
+  "Preguntale a la IA"); Aportes todavía no.
 - **Caché por caja** (`cache.ts`, stale-while-revalidate): al cambiar de
   caja o abrir la app se muestra al instante lo último que se vio
   (memoria + localStorage, `comprobantes.cache.<caja>`) y por detrás se
@@ -307,9 +308,7 @@ Aportes Personales:  id | fecha | tipo | montoUSD | cotizacion | montoARS | conc
 
 El menú ☰ solo tiene lo que es de toda la app (actualizar, tema, salir).
 Lo que es de una caja va en su barra de filtros: 📊 Informes (totales de
-esa caja) y ✨ la IA (solo en Alquileres por ahora; extenderla a otra caja
-implica que `AsistenteIAService` lea otro `MovimientoStore` y conozca su
-contexto).
+esa caja) y ✨ la IA (en Alquileres, Remodelación y Varios).
 
 La plomería común de estas pestañas (crearla si no existe, header, id
 secuencial, baja lógica, fechas dd/MM/yyyy) vive en `service/SheetTab`.
@@ -319,7 +318,7 @@ pendiente, no urgente.
 
 ## Preguntale a la IA
 
-Chat (chip ✨ en la barra de filtros, solo en la caja Alquileres) para preguntar en lenguaje
+Chat (chip ✨ en la barra de filtros de Alquileres, Remodelación y Varios) para preguntar en lenguaje
 natural sobre los movimientos — ej. "promedio de alquileres de Iriondo en
 2026". **La IA interpreta, Java calcula**: nunca se le pasa la tabla al
 modelo ni se le pide que haga cuentas. OpenAI (`gpt-4o-mini`, cuenta de
@@ -366,6 +365,17 @@ movimientos. La última ronda se fuerza sin función.
   las notas. A un VIEWER nunca le sugiere corregir la planilla.
 - El prompt le prohíbe concluir "no falta nada" a partir de un total (antes
   lo hacía).
+- **Una caja a la vez** (2026-10-02): el chat tiene un selector Alquileres /
+  Remodelación / Varios (arranca en la caja que se está viendo).
+  `POST /api/preguntas` lleva `caja` y `AsistenteIAService` lee el
+  `MovimientoStore` de esa caja (mapa `cajas`, con un texto de contexto por
+  caja como `BIENES_CONOCIDOS`); en Remodelación y Varios la función no
+  tiene filtro ni agrupado por bien. La conversación es una sola aunque se
+  cambie de caja: cada pregunta guarda su caja y se le pasa al modelo como
+  "[Pregunta sobre la caja X]" para que no mezcle números. **Pendiente**:
+  Aportes (USD, con aportante en vez de bien, necesita otra función) y una
+  opción "todas las cajas" (ojo: excluir los traspasos entre cajas, que
+  contarían la misma plata dos veces).
 - Solo Movimientos (no Avisos ni comprobantes); las notas se leen solo
   como parte del detalle de un movimiento, no se pueden buscar. Listar
   movimientos sigue fuera de alcance; "total por bien" se resuelve con una

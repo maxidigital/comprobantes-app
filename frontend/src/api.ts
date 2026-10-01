@@ -242,12 +242,12 @@ export async function eliminarEnCaja(caja: CajaId, id: string): Promise<void> {
   await request(`/${caja}/${id}`, { method: 'DELETE' });
 }
 
-/** Manda todo el historial del chat (el último mensaje es la pregunta nueva) — el backend no guarda la conversación. */
-export async function preguntarIA(mensajes: MensajeChat[]): Promise<string> {
+/** Manda todo el historial del chat (el último mensaje es la pregunta nueva) y la caja sobre la que se pregunta — el backend no guarda la conversación. */
+export async function preguntarIA(mensajes: MensajeChat[], caja: CajaMovimientos): Promise<string> {
   const response = await request('/preguntas', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ mensajes }),
+    body: JSON.stringify({ mensajes, caja }),
   });
   const body: { respuesta: string } = await response.json();
   return body.respuesta;

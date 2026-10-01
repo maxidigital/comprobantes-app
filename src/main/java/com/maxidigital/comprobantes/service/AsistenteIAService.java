@@ -15,6 +15,7 @@ import com.theokanning.openai.completion.chat.ChatMessageRole;
 import com.theokanning.openai.service.OpenAiService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -66,6 +67,7 @@ public class AsistenteIAService {
     private static final int MAX_CONCEPTOS_EN_PROMPT = 80;
     private static final Set<String> AGREGACIONES = Set.of("suma", "promedio", "conteo", "maximo", "minimo");
     private static final Set<String> AGRUPACIONES = Set.of("mes", "anio", "bien", "anio_y_bien");
+    private static final Set<String> AGRUPACIONES_SIN_BIEN = Set.of("mes", "anio");
     // Tope para agruparPor=mes — todo el historial (desde 2022) son ~60 meses.
     private static final int MAX_MESES = 120;
 
@@ -97,20 +99,43 @@ public class AsistenteIAService {
                 + "(todavía no se usó).");
     }
 
+    /**
+     * Las cajas sobre las que se puede preguntar (Aportes no: está en dólares
+     * y tiene aportante en vez de bien — haría falta otra función). La
+     * descripción va al system prompt, igual que BIENES_CONOCIDOS para
+     * Alquileres: lo que no sale de los datos.
+     */
+    private record Caja(String titulo, MovimientoStore store, boolean conBien, String descripcion) { }
+
     private final OpenAiService openAi;
-    private final MovimientoSheetService movimientoSheetService;
+    private final Map<String, Caja> cajas = new LinkedHashMap<>();
     private final boolean configurado;
 
     public AsistenteIAService(OpenAiService openAi,
-                               MovimientoSheetService movimientoSheetService,
+                               MovimientoSheetService alquileres,
+                               @Qualifier("remodelacionMovimientos") CajaMovimientoSheetService remodelacion,
+                               @Qualifier("variosMovimientos") CajaMovimientoSheetService varios,
                                @Value("${OPENAI_API_KEY:}") String apiKey) {
         this.openAi = openAi;
-        this.movimientoSheetService = movimientoSheetService;
+        cajas.put("sucesion", new Caja("Alquileres", alquileres, true,
+                "Alquileres y gastos corrientes de los inmuebles de la sucesión (los \"bienes\")."));
+        cajas.put("remodelacion", new Caja("Remodelación Iriondo", remodelacion, false,
+                "Los gastos de la obra de refacción del departamento de Iriondo (mano de obra, materiales, "
+                        + "muebles, volquetes, etc.), separados de la caja de Alquileres. No tiene bienes: es toda "
+                        + "de Iriondo. Los INGRESOS son la plata que financió la obra: \"Aporte de Maxi\" / "
+                        + "\"Aporte de Gustavo\" (herederos que pusieron de su bolsillo) y \"Aporte de "
+                        + "Alquileres\" (lo que puso la caja de Alquileres). Por eso el balance de esta caja "
+                        + "tiende a 0: lo que importa son los gastos."));
+        cajas.put("varios", new Caja("Varios", varios, false,
+                "Trámites de la sucesión que no son de ningún inmueble: abogados, sellados, calígrafa, "
+                        + "traducciones, declaratorias, informes y contador del campo, traslados para retirar "
+                        + "aportes. No tiene bienes. Los INGRESOS son la plata que los pagó: \"Aporte de Maxi\" "
+                        + "o \"Aporte de Alquileres\". Por eso el balance tiende a 0: lo que importa son los gastos."));
         this.configurado = !apiKey.isBlank();
     }
 
     /** puedeEditar: si quien pregunta puede cargar movimientos (ADMIN/EDITOR) — solo a esos se les sugiere corregir la planilla. */
-    public String responder(List<MensajeChat> historial, boolean puedeEditar) throws IOException {
+    public String responder(List<MensajeChat> historial, boolean puedeEditar, String cajaId) throws IOException {
         if (!configurado) {
             throw new IllegalStateException("Falta configurar OPENAI_API_KEY en el servidor");
         }
@@ -118,17 +143,27 @@ public class AsistenteIAService {
             throw new IllegalArgumentException("No hay ninguna pregunta");
         }
 
-        List<MovimientoResponse> movimientos = movimientoSheetService.readAll();
+        Caja caja = cajas.get(cajaId == null ? "sucesion" : cajaId);
+        if (caja == null) {
+            throw new IllegalArgumentException("La IA no puede consultar la caja " + cajaId);
+        }
+        List<MovimientoResponse> movimientos = caja.store().readAll();
 
         List<ChatMessage> mensajes = new ArrayList<>();
-        mensajes.add(new ChatMessage(ChatMessageRole.SYSTEM.value(), systemPrompt(movimientos, puedeEditar)));
+        mensajes.add(new ChatMessage(ChatMessageRole.SYSTEM.value(), systemPrompt(caja, movimientos, puedeEditar)));
         List<MensajeChat> recientes = historial.subList(Math.max(0, historial.size() - MAX_MENSAJES_HISTORIAL), historial.size());
         for (MensajeChat m : recientes) {
-            String rol = MensajeChat.AUTOR_IA.equals(m.autor()) ? ChatMessageRole.ASSISTANT.value() : ChatMessageRole.USER.value();
-            mensajes.add(new ChatMessage(rol, m.texto()));
+            boolean esIa = MensajeChat.AUTOR_IA.equals(m.autor());
+            String rol = esIa ? ChatMessageRole.ASSISTANT.value() : ChatMessageRole.USER.value();
+            // La conversación es una sola aunque se cambie de caja: cada
+            // pregunta lleva sobre qué caja se hizo, para que el modelo no
+            // mezcle números de una respuesta anterior con la caja actual.
+            Caja deEsa = m.caja() != null ? cajas.get(m.caja()) : null;
+            String texto = !esIa && deEsa != null ? "[Pregunta sobre la caja " + deEsa.titulo() + "] " + m.texto() : m.texto();
+            mensajes.add(new ChatMessage(rol, texto));
         }
 
-        ChatFunctionDynamic funcion = definirFuncion(movimientos);
+        ChatFunctionDynamic funcion = definirFuncion(caja, movimientos);
 
         for (int ronda = 1; ronda <= MAX_RONDAS; ronda++) {
             // En la primera ronda la consulta es obligatoria: dejándolo
@@ -167,7 +202,7 @@ public class AsistenteIAService {
         return "No pude armar una respuesta, probá reformular la pregunta.";
     }
 
-    private String systemPrompt(List<MovimientoResponse> movimientos, boolean puedeEditar) {
+    private String systemPrompt(Caja caja, List<MovimientoResponse> movimientos, boolean puedeEditar) {
         String conceptos = movimientos.stream()
                 .collect(Collectors.groupingBy(m -> m.concepto().trim(), Collectors.counting()))
                 .entrySet().stream()
@@ -182,10 +217,12 @@ public class AsistenteIAService {
                 de la sucesión de Ricardo Bottazzi: sus herederos administran en conjunto unos inmuebles \
                 (los "bienes"). Hoy es %s. Los montos están en pesos argentinos (ARS).
 
-                Los bienes:
+                La plata de la sucesión está separada en cajas. Ahora estás consultando la caja \
+                "%s": %s La función consultar_movimientos solo ve los movimientos de esta caja. \
+                Las preguntas anteriores de la conversación pueden haber sido sobre otra caja (vienen \
+                marcadas con [Pregunta sobre la caja ...]): no mezcles sus números con los de esta.
+
                 %s
-                Los conceptos "Aguas/EPE - deuda, plan de pagos" y "Deuda API, cuota N" son deudas viejas \
-                que se van pagando en cuotas.
 
                 Reglas:
                 - SOLO respondés sobre la sucesión: sus movimientos de dinero, sus bienes y cómo se \
@@ -241,7 +278,8 @@ public class AsistenteIAService {
                 - No tenés acceso a los avisos ni a los comprobantes, solo a los movimientos.
 
                 Conceptos más frecuentes en la planilla: %s
-                """.formatted(LocalDate.now(), describirBienes(), sugerenciaDeCorreccion(puedeEditar), conceptos);
+                """.formatted(LocalDate.now(), caja.titulo(), caja.descripcion(), contextoBienes(caja),
+                sugerenciaDeCorreccion(puedeEditar), conceptos);
     }
 
     /**
@@ -261,20 +299,26 @@ public class AsistenteIAService {
                 consulta ya no los cuente como faltantes. Si cobrosAgrupadosSinMesEnNotas está vacío, no sugieras nada. No hagas esta sugerencia en otras preguntas.""";
     }
 
-    private static String describirBienes() {
-        return BIENES_CONOCIDOS.entrySet().stream()
+    /** Los bienes solo existen en Alquileres; en las otras cajas se avisa que no hay filtro por bien. */
+    private static String contextoBienes(Caja caja) {
+        if (!caja.conBien()) {
+            return "Esta caja no distingue bienes: no hay filtro por bien.";
+        }
+        return "Los bienes:\n" + BIENES_CONOCIDOS.entrySet().stream()
                 .map(e -> "- " + e.getKey() + ": " + e.getValue() + "\n")
-                .collect(Collectors.joining());
+                .collect(Collectors.joining())
+                + "Los conceptos \"Aguas/EPE - deuda, plan de pagos\" y \"Deuda API, cuota N\" son deudas viejas "
+                + "que se van pagando en cuotas.";
     }
 
-    private ChatFunctionDynamic definirFuncion(List<MovimientoResponse> movimientos) {
+    private ChatFunctionDynamic definirFuncion(Caja caja, List<MovimientoResponse> movimientos) {
         Set<String> bienes = new TreeSet<>(BIENES_CONOCIDOS.keySet());
         movimientos.stream()
                 .map(MovimientoResponse::bien)
                 .filter(b -> b != null && !b.isBlank())
                 .forEach(bienes::add);
 
-        return ChatFunctionDynamic.builder()
+        var builder = ChatFunctionDynamic.builder()
                 .name(FUNCION)
                 .description("Filtra los movimientos de la sucesión y calcula una agregación sobre el monto, en total o por mes. "
                         + "Todos los filtros son opcionales y se combinan con AND.")
@@ -285,7 +329,7 @@ public class AsistenteIAService {
                         .build())
                 .addProperty(ChatFunctionProperty.builder()
                         .name("agruparPor").type("string")
-                        .enumValues(AGRUPACIONES)
+                        .enumValues(caja.conBien() ? AGRUPACIONES : AGRUPACIONES_SIN_BIEN)
                         .description("Opcional. Calcula la agregación por separado para cada grupo. \"mes\" incluye los meses "
                                 + "del período sin movimientos (con cantidad 0). Omitir para un único resultado total")
                         .build())
@@ -293,11 +337,6 @@ public class AsistenteIAService {
                         .name("tipo").type("string")
                         .enumValues(Set.of("INGRESO", "GASTO"))
                         .description("Solo ingresos o solo gastos. Omitir para ambos (ojo: sumar ingresos y gastos juntos rara vez tiene sentido)")
-                        .build())
-                .addProperty(ChatFunctionProperty.builder()
-                        .name("bien").type("string")
-                        .enumValues(bienes)
-                        .description("Inmueble al que corresponde el movimiento")
                         .build())
                 .addProperty(ChatFunctionProperty.builder()
                         .name("conceptoContiene").type("string")
@@ -310,8 +349,15 @@ public class AsistenteIAService {
                 .addProperty(ChatFunctionProperty.builder()
                         .name("fechaHasta").type("string")
                         .description("Fecha máxima inclusive, yyyy-MM-dd")
-                        .build())
-                .build();
+                        .build());
+        if (caja.conBien()) {
+            builder.addProperty(ChatFunctionProperty.builder()
+                    .name("bien").type("string")
+                    .enumValues(bienes)
+                    .description("Inmueble al que corresponde el movimiento")
+                    .build());
+        }
+        return builder.build();
     }
 
     /** La librería a veces deja los argumentos como un string JSON sin parsear (TextNode) — se normaliza acá. */

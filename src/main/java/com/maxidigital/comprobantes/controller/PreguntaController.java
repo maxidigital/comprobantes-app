@@ -31,6 +31,6 @@ public class PreguntaController {
     @PostMapping
     public PreguntaResponse preguntar(@RequestBody PreguntaRequest request,
                                        @RequestAttribute(AccessKeyInterceptor.ROL_ATTR) Rol rol) throws IOException {
-        return new PreguntaResponse(asistenteIAService.responder(request.mensajes(), rol != Rol.VIEWER));
+        return new PreguntaResponse(asistenteIAService.responder(request.mensajes(), rol != Rol.VIEWER, request.caja()));
     }
 }

@@ -56,6 +56,8 @@ export type AutorMensaje = 'USUARIO' | 'IA';
 export interface MensajeChat {
   autor: AutorMensaje;
   texto: string;
+  /** En las preguntas: sobre qué caja se hizo (la conversación es una sola aunque se cambie de caja). */
+  caja?: CajaMovimientos;
 }
 
 /**
