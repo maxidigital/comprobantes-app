@@ -225,8 +225,8 @@ Aportes Personales:  id | fecha | tipo | montoUSD | cotizacion | montoARS | conc
 
 - Lo que un heredero pone de su bolsillo para la obra, **en dólares**
   para que la inflación no licúe la deuda. INGRESO = aporta, GASTO = se
-  le devuelve; el saldo es lo que la sucesión le debe (Informes lo
-  desglosa por aportante). Un aportante por fila: un aporte conjunto va
+  le devuelve; el saldo es lo que la sucesión le debe (Informes muestra
+  un cuadro Nombre / Aporte / Devuelto / Saldo por aportante). Un aportante por fila: un aporte conjunto va
   en dos filas. Aportantes fijos en `frontend/src/cajas.ts`
   (`APORTANTES`). `GET/POST /api/aportes`, `PUT/DELETE .../{id}`.
 - `cotizacion` (pesos por dólar) es opcional; `montoARS` lo calcula el

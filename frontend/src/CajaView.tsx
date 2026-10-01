@@ -86,15 +86,20 @@ export default function CajaView({ caja, puedeEditar, filterSlot, onUnauthorized
     return [...anios].sort((a, b) => a - b);
   }, [items]);
 
-  /** Saldo por aportante (aportado - devuelto) = lo que la sucesión le debe a cada uno. Sobre todo, no sobre lo filtrado. */
-  const saldosPorAportante = useMemo(() => {
+  /** Por aportante: aportado, devuelto y saldo (lo que la sucesión le debe). Sobre todo, no sobre lo filtrado. */
+  const resumenPorAportante = useMemo(() => {
     if (!caja.conAportante) return [];
-    const saldos = new Map<string, number>();
+    const resumen = new Map<string, { aportado: number; devuelto: number }>();
     for (const m of items ?? []) {
       const nombre = m.aportante || 'Sin aportante';
-      saldos.set(nombre, (saldos.get(nombre) ?? 0) + (m.tipo === 'INGRESO' ? m.monto : -m.monto));
+      const r = resumen.get(nombre) ?? { aportado: 0, devuelto: 0 };
+      if (m.tipo === 'INGRESO') r.aportado += m.monto;
+      else r.devuelto += m.monto;
+      resumen.set(nombre, r);
     }
-    return [...saldos.entries()].sort((a, b) => b[1] - a[1]);
+    return [...resumen.entries()]
+      .map(([nombre, r]) => ({ nombre, ...r, saldo: r.aportado - r.devuelto }))
+      .sort((a, b) => b.saldo - a.saldo);
   }, [items, caja.conAportante]);
 
   function toggleAportante(nombre: string) {
@@ -273,17 +278,27 @@ export default function CajaView({ caja, puedeEditar, filterSlot, onUnauthorized
           <div className="dialog" onClick={(e) => e.stopPropagation()}>
             <h2>Informes · {caja.titulo}</h2>
             <Totals movimientos={items} moneda={caja.moneda} etiquetas={caja.etiquetasTotales} />
-            {saldosPorAportante.length > 0 && (
-              <>
-                <p className="field-hint">Se le debe a:</p>
-                <div className="aportantes-saldos">
-                  {saldosPorAportante.map(([nombre, saldo]) => (
-                    <span key={nombre} className="chip">
-                      {nombre}: {currency.format(saldo)}
-                    </span>
+            {resumenPorAportante.length > 0 && (
+              <table className="informe-tabla">
+                <thead>
+                  <tr>
+                    <th>Nombre</th>
+                    <th>Aporte</th>
+                    <th>Devuelto</th>
+                    <th>Saldo</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {resumenPorAportante.map((r) => (
+                    <tr key={r.nombre}>
+                      <td>{r.nombre}</td>
+                      <td>{currency.format(r.aportado)}</td>
+                      <td>{currency.format(r.devuelto)}</td>
+                      <td className={r.saldo < 0 ? 'negative' : ''}>{currency.format(r.saldo)}</td>
+                    </tr>
                   ))}
-                </div>
-              </>
+                </tbody>
+              </table>
             )}
             <div className="dialog-actions">
               <button type="button" className="btn-plain" onClick={() => setShowInformes(false)}>

@@ -717,16 +717,40 @@ input[type='file'] {
   text-overflow: ellipsis;
 }
 
-/* Informes de Aportes: lo que se le debe a cada aportante */
-.aportantes-saldos {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-top: 0.4rem;
+/* Informes de Aportes: aportado / devuelto / saldo por aportante */
+.informe-tabla {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
 }
 
-.aportantes-saldos .chip {
-  cursor: default;
+.informe-tabla th,
+.informe-tabla td {
+  padding: 0.45rem 0.4rem;
+  border-bottom: 1px solid var(--border);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.informe-tabla th:first-child,
+.informe-tabla td:first-child {
+  text-align: left;
+}
+
+.informe-tabla th {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.informe-tabla td:last-child {
+  font-weight: 700;
+}
+
+.informe-tabla td.negative {
+  color: var(--danger);
 }
 
 /* ---------- Movement list ---------- */
