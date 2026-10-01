@@ -12,7 +12,6 @@ import {
   todayDisplay,
 } from './fecha';
 import { ChartIcon, MegaphoneIcon, SparkleIcon } from './icons';
-import type { FiltroTipo } from './types';
 
 const MESES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 
@@ -24,11 +23,8 @@ export interface FiltroCategorias {
   color?: (opcion: string) => string;
 }
 
-/** Barra de filtros de cada caja. Lo que una caja no tiene (comprobantes pendientes, avisos, bienes, IA) no se pasa y no se muestra. */
+/** Barra de filtros de cada caja (el de Ingresos/Egresos es aparte, TipoToggle). Lo que una caja no tiene (comprobantes pendientes, avisos, bienes, IA) no se pasa y no se muestra. */
 interface Props {
-  filtroTipo: FiltroTipo;
-  onFiltroTipoChange: (tipo: FiltroTipo) => void;
-  etiquetasTipo?: { ingresos: string; gastos: string };
   /** Solo en las cajas con comprobantes. */
   pendientes?: { solo: boolean; onChange: (value: boolean) => void; count: number };
   categorias?: FiltroCategorias;
@@ -45,9 +41,6 @@ interface Props {
 }
 
 export default function FilterBar({
-  filtroTipo,
-  onFiltroTipoChange,
-  etiquetasTipo = { ingresos: 'Ingresos', gastos: 'Egresos' },
   pendientes,
   categorias,
   fechaDesde,
@@ -162,24 +155,6 @@ export default function FilterBar({
 
   return (
     <div className="filter-bar">
-      <div className="segmented">
-        <button
-          type="button"
-          className={filtroTipo === 'INGRESO' ? 'active' : ''}
-          onClick={() => onFiltroTipoChange(filtroTipo === 'INGRESO' ? 'TODOS' : 'INGRESO')}
-          aria-pressed={filtroTipo === 'INGRESO'}
-        >
-          {etiquetasTipo.ingresos}
-        </button>
-        <button
-          type="button"
-          className={filtroTipo === 'GASTO' ? 'active' : ''}
-          onClick={() => onFiltroTipoChange(filtroTipo === 'GASTO' ? 'TODOS' : 'GASTO')}
-          aria-pressed={filtroTipo === 'GASTO'}
-        >
-          {etiquetasTipo.gastos}
-        </button>
-      </div>
       {(pendientes || categorias) && (
         <div className="dropdown-wrapper" ref={filtrosRef}>
           <button

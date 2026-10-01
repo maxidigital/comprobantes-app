@@ -15,6 +15,8 @@ import { useSwipeRows } from './useSwipeRows';
 interface Props {
   caja: CajaConfig;
   puedeEditar: boolean;
+  /** Filtro Ingresos/Egresos compartido por todas las cajas (vive en App). */
+  filtroTipo: FiltroTipo;
   /** Lugar dentro del encabezado fijo de App donde va la barra de filtros (para que quede pegada igual que en la sucesión). */
   filterSlot: HTMLElement | null;
   onUnauthorized: () => void;
@@ -26,10 +28,9 @@ interface Props {
  * tocar, totales en el chip de Informes — sin comprobantes ni avisos.
  * Maneja su propio estado; App.tsx solo elige qué caja mostrar.
  */
-export default function CajaView({ caja, puedeEditar, filterSlot, onUnauthorized }: Props) {
+export default function CajaView({ caja, puedeEditar, filtroTipo, filterSlot, onUnauthorized }: Props) {
   const [items, setItems] = useState<MovimientoCaja[] | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [filtroTipo, setFiltroTipo] = useState<FiltroTipo>('TODOS');
   const [aportantesSeleccionados, setAportantesSeleccionados] = useState<Set<string>>(new Set());
   const [fechaDesde, setFechaDesde] = useState<string | null>(null);
   const [fechaHasta, setFechaHasta] = useState<string | null>(null);
@@ -138,9 +139,6 @@ export default function CajaView({ caja, puedeEditar, filterSlot, onUnauthorized
         filterSlot &&
         createPortal(
           <FilterBar
-            filtroTipo={filtroTipo}
-            onFiltroTipoChange={setFiltroTipo}
-            etiquetasTipo={caja.etiquetasFiltro}
             categorias={
               caja.conAportante
                 ? { opciones: APORTANTES, seleccionadas: aportantesSeleccionados, onToggle: toggleAportante }

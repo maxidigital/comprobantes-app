@@ -7,11 +7,11 @@ import CajaView from './CajaView';
 import ConfirmDialog from './ConfirmDialog';
 import FilterBar from './FilterBar';
 import HeaderMenu from './HeaderMenu';
-import { BellIcon } from './icons';
 import MovimientoDetail from './MovimientoDetail';
 import MovimientoForm from './MovimientoForm';
 import MovimientosList from './MovimientosList';
 import ReceiptViewerDialog from './ReceiptViewerDialog';
+import TipoToggle from './TipoToggle';
 import Totals from './Totals';
 import {
   ApiError,
@@ -19,13 +19,11 @@ import {
   eliminarAviso,
   eliminarMovimiento,
   getAccessKey,
-  getLastSeenNovedades,
   getUserName,
   getUserRole,
   listAvisos,
   listMovimientos,
   login,
-  setLastSeenNovedades,
   setUserRole,
 } from './api';
 import type { Aviso, CajaMovimientos, FiltroTipo, Movimiento, Rol } from './types';
@@ -48,7 +46,6 @@ export default function App() {
   const [movimientos, setMovimientos] = useState<Movimiento[] | null>(null);
   const [avisos, setAvisos] = useState<Aviso[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [novedadesCount, setNovedadesCount] = useState(0);
   const [theme, setTheme] = useState<Theme>(getInitialTheme());
   const [filtroTipo, setFiltroTipo] = useState<FiltroTipo>('TODOS');
   const [soloPendientes, setSoloPendientes] = useState(false);
@@ -158,11 +155,6 @@ export default function App() {
       const [movimientosData, avisosData] = await Promise.all([listMovimientos(cajaPedida), listAvisos(cajaPedida)]);
       // Si se cambió de caja mientras cargaba, esta respuesta ya no corresponde.
       if (cajaCargadaRef.current !== cajaPedida) return;
-      const lastSeen = getLastSeenNovedades();
-      const nuevos = lastSeen
-        ? [...movimientosData, ...avisosData].filter((item) => item.creadoEn > lastSeen).length
-        : 0;
-      setNovedadesCount(nuevos);
       setMovimientos(movimientosData);
       setAvisos(avisosData);
     } catch (err) {
@@ -172,11 +164,6 @@ export default function App() {
       }
       setLoadError(err instanceof Error ? err.message : 'No se pudo cargar el listado');
     }
-  }
-
-  function handleDismissNovedades() {
-    setLastSeenNovedades(new Date().toISOString());
-    setNovedadesCount(0);
   }
 
   function handleUnauthorized() {
@@ -238,34 +225,12 @@ export default function App() {
   return (
     <div className="app-shell">
       <div className="sticky-header">
-        <header className="top-bar top-bar--con-selector">
+        <header className="top-bar">
           <div>
             <h1>Administración</h1>
             <div className="subtitle">Sucesión Bottazzi</div>
           </div>
-          <select
-            className="vista-select"
-            value={vista}
-            onChange={(e) => setVista(e.target.value as Vista)}
-            aria-label="Caja"
-          >
-            {VISTAS.filter((v) => !v.roles || (rol !== null && v.roles.includes(rol))).map((v) => (
-              <option key={v.id} value={v.id}>
-                {v.titulo}
-              </option>
-            ))}
-          </select>
           <div className="top-bar-actions">
-            <button
-              type="button"
-              className="btn-plain menu-icon-btn bell-btn"
-              onClick={handleDismissNovedades}
-              aria-label="Novedades"
-              title={novedadesCount > 0 ? `${novedadesCount} novedades desde tu última visita` : 'Sin novedades'}
-            >
-              <BellIcon />
-              {novedadesCount > 0 && <span className="badge-pending badge-novedades">{novedadesCount}</span>}
-            </button>
             <HeaderMenu
               isDark={theme === 'dark'}
               onToggleTheme={() => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))}
@@ -281,12 +246,32 @@ export default function App() {
           </div>
         </header>
 
+        <div className="caja-bar">
+          <select
+            className="vista-select"
+            value={vista}
+            onChange={(e) => setVista(e.target.value as Vista)}
+            aria-label="Caja"
+          >
+            {VISTAS.filter((v) => !v.roles || (rol !== null && v.roles.includes(rol))).map((v) => (
+              <option key={v.id} value={v.id}>
+                {v.titulo}
+              </option>
+            ))}
+          </select>
+          <TipoToggle
+            filtroTipo={filtroTipo}
+            onChange={setFiltroTipo}
+            etiquetas={
+              esCajaMovimientos(vista) ? { ingresos: 'Ingresos', gastos: 'Egresos' } : CAJAS[vista].etiquetasFiltro
+            }
+          />
+        </div>
+
         <div ref={setFilterSlot} />
 
         {esCajaMovimientos(vista) && movimientos !== null && (
           <FilterBar
-            filtroTipo={filtroTipo}
-            onFiltroTipoChange={setFiltroTipo}
             pendientes={{ solo: soloPendientes, onChange: setSoloPendientes, count: pendientesCount }}
             categorias={
               tieneBien(caja)
@@ -312,6 +297,7 @@ export default function App() {
           key={`${vista}-${cajaRefreshKey}`}
           caja={CAJAS[vista]}
           puedeEditar={puedeEditar}
+          filtroTipo={filtroTipo}
           filterSlot={filterSlot}
           onUnauthorized={handleUnauthorized}
         />

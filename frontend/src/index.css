@@ -299,10 +299,6 @@ input[type='file'] {
   padding: 0.5rem 0.65rem;
 }
 
-.menu-icon-btn.bell-btn {
-  font-size: 1.3rem;
-}
-
 /* 2. Sólido, sin glow */
 .btn-solid {
   background: var(--brand-primary);
@@ -374,14 +370,6 @@ input[type='file'] {
   padding: 0.35rem 0.75rem;
   height: auto;
   font-size: 0.85rem;
-}
-
-.badge-novedades {
-  background: color-mix(in srgb, var(--brand-primary) 16%, transparent);
-  box-shadow:
-    0 0 0 1px color-mix(in srgb, var(--brand-primary) 50%, transparent),
-    0 0 16px 2px color-mix(in srgb, var(--brand-primary) 22%, transparent);
-  color: var(--brand-primary);
 }
 
 .chip-toggle {
@@ -670,6 +658,7 @@ input[type='file'] {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+  justify-content: center;
   gap: 0.5rem;
   max-width: 720px;
   margin: 0 auto;
@@ -698,16 +687,16 @@ input[type='file'] {
   color: white;
 }
 
-/* Selector de caja centrado en la barra. Grilla 1fr/auto/1fr
- * (y no position: absolute) para que quede centrado en la página sin
- * pisarse con el título en pantallas angostas. */
-.top-bar--con-selector {
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
-}
-
-.top-bar--con-selector .top-bar-actions {
-  justify-self: end;
+/* Segundo renglón del encabezado: desplegable de cajas + Ingresos/Egresos */
+.caja-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 0 1rem 0.6rem;
 }
 
 .vista-select {
