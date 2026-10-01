@@ -6,10 +6,11 @@ import java.io.IOException;
 import java.util.List;
 
 /**
- * Lo que MovimientoController necesita de una pestaña de movimientos. Hay
- * dos: la de la sucesión (MovimientoSheetService, con bien) y la de la
- * caja Remodelación Iriondo (RemodelacionMovimientoSheetService, sin bien)
- * — mismo sistema, planillas separadas para que la plata no se mezcle.
+ * Lo que MovimientoController necesita de una pestaña de movimientos: la de
+ * Alquileres (MovimientoSheetService, con bien) o la de una caja sin bien
+ * como Remodelación Iriondo o Varios (CajaMovimientoSheetService, ver
+ * CajasConfig) — mismo sistema, planillas separadas para que la plata no se
+ * mezcle.
  */
 public interface MovimientoStore {
 

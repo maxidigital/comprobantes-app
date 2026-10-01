@@ -5,12 +5,12 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-/** Caja Remodelación Iriondo: los mismos endpoints que AvisoController, contra su propia pestaña (ver CajasConfig). */
+/** Caja Varios (trámites de la sucesión): los mismos endpoints que AvisoController, contra su propia pestaña (ver CajasConfig). */
 @RestController
-@RequestMapping("/api/remodelacion/avisos")
-public class RemodelacionAvisoController extends AvisoController {
+@RequestMapping("/api/varios/avisos")
+public class VariosAvisoController extends AvisoController {
 
-    public RemodelacionAvisoController(@Qualifier("remodelacionAvisos") CajaAvisoSheetService avisos) {
+    public VariosAvisoController(@Qualifier("variosAvisos") CajaAvisoSheetService avisos) {
         super(avisos);
     }
 }

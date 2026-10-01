@@ -170,51 +170,93 @@ id | fecha | texto | bien | autor | creadoEn | estado
 - El FAB "+" ahora abre un mini menú ("Nuevo movimiento" / "Nuevo aviso")
   en vez de ir directo al formulario de movimiento.
 
-## Cajas: Sucesión, Remodelación Iriondo y Aportes personales
+## Cajas: Alquileres, Remodelación Iriondo, Varios y Aportes personales
 
-Tres cajas independientes, cada una con sus propias pestañas, para que la
-plata de la obra de Iriondo no se mezcle con la de los alquileres. Se
-elige con un desplegable centrado en la barra de arriba, a la altura del
-título "Administración".
+Cuatro cajas independientes, cada una con sus propias pestañas, para que
+la plata de la obra de Iriondo y la de los trámites no se mezcle con la de
+los alquileres. Se elige con un desplegable centrado en la barra de
+arriba, a la altura del título "Administración".
 
-**Remodelación Iriondo** (gastos de la obra, en pesos, la ven todos):
-**el mismo sistema que la sucesión** — lista con swipe, detalle,
-filtros, comprobantes (y "comprobante pendiente"), avisos, `cargadoPor`,
-totales en "Informes", mismos permisos por rol — **salvo el bien** (es
-toda de Iriondo: sin campo, sin filtro). Tres pestañas propias:
+- **Alquileres** (antes "Sucesión"; en el código sigue siendo el id
+  `sucesion`, para no tocar rutas ni datos): alquileres y gastos
+  corrientes de los inmuebles. Es la pestaña original de la planilla y la
+  única con "bien".
+- **Remodelación Iriondo**: gastos de la obra, en pesos.
+- **Varios**: trámites de la sucesión que no son de ningún inmueble —
+  abogados, sellados, calígrafa, traducciones, declaratorias, informes y
+  contador del campo, y los traslados para retirar aportes.
+- **Aportes personales**: lo que cada heredero puso de su bolsillo, en
+  dólares (ver abajo).
+
+**Remodelación Iriondo y Varios** usan **el mismo sistema que
+Alquileres** — lista con swipe, detalle, filtros, comprobantes (y
+"comprobante pendiente"), avisos, `cargadoPor`, totales en "Informes",
+mismos permisos por rol, las ven todos — **salvo el bien** (sin campo, sin
+filtro). Tres pestañas propias cada una:
 
 ```
-Remodelación Iriondo:       id | fecha | tipo | monto | concepto | comprobantesCount | notas | cargadoPor | creadoEn | estado
-Comprobantes Remodelación:  id | movimientoId | url | nombre | creadoEn | estado
-Avisos Remodelación:        id | fecha | texto | autor | creadoEn | estado
+Remodelación Iriondo / Varios:                   id | fecha | tipo | monto | concepto | comprobantesCount | notas | cargadoPor | creadoEn | estado
+Comprobantes Remodelación / Comprobantes Varios: id | movimientoId | url | nombre | creadoEn | estado
+Avisos Remodelación / Avisos Varios:             id | fecha | texto | autor | creadoEn | estado
 ```
 
 - Backend: `MovimientoController`/`AvisoController` trabajan contra las
-  interfaces `MovimientoStore`/`ComprobanteStore`/`AvisoStore`;
-  `RemodelacionMovimientoController`/`RemodelacionAvisoController` heredan
-  de ellos (mismos endpoints bajo `/api/remodelacion/movimientos` y
-  `/api/remodelacion/avisos`) inyectando los servicios `Remodelacion*`,
-  que usan `SheetTab`. Las respuestas son los mismos DTOs con `bien` vacío.
+  interfaces `MovimientoStore`/`ComprobanteStore`/`AvisoStore`. Para cada
+  caja sin bien, `CajasConfig` arma un trío de servicios genéricos
+  (`CajaMovimientoSheetService`, `CajaComprobanteSheetService`,
+  `CajaAvisoSheetService`, sobre `SheetTab`) apuntando a sus pestañas, y
+  dos controllers heredan los mismos endpoints bajo `/api/<caja>/movimientos`
+  y `/api/<caja>/avisos` (`Remodelacion*Controller`, `Varios*Controller`).
+  Las respuestas son los mismos DTOs con `bien` vacío. **Otra caja así** =
+  otro trío en `CajasConfig`, dos controllers, su path en `WebConfig` y su
+  entrada en `frontend/src/cajas.ts` (`VISTAS`, `CajaMovimientos`).
 - Frontend: la misma pantalla de `App.tsx`; cada llamada de `api.ts`
   recibe la caja (`CajaMovimientos`) y `tieneBien(caja)` oculta lo del
   bien. Los comprobantes van a la misma carpeta de Drive.
-- Comprobantes y avisos tienen pestaña propia (no una columna "caja" en
-  las de la sucesión) porque los ids de movimiento de cada caja arrancan
-  de 1 y chocarían.
-- El chat IA sigue leyendo solo la sucesión.
-- **Migración (2026-10-01)**: los 14 movimientos "Refacción Iriondo" que
-  Gustavo había cargado en la sucesión (mayo-septiembre 2026, con sus 38
-  comprobantes) se movieron a esta caja con un script puntual (no
-  versionado): baja lógica en la sucesión con una nota "[Movido a la caja
+- Comprobantes y avisos tienen pestaña propia por caja (no una columna
+  "caja") porque los ids de movimiento de cada caja arrancan de 1 y
+  chocarían.
+- El chat IA sigue leyendo solo Alquileres.
+
+**Criterio entre cajas**: cada gasto va a la caja que le corresponde. Si
+lo paga la plata de otra caja (en la práctica, los alquileres), se
+registra un **traspaso** explícito: GASTO "Aporte a <caja>" en la que
+pone la plata e INGRESO "Aporte de <caja>" en la que la recibe. Y cada
+aporte personal entra como INGRESO ("Aporte de Maxi", ...) **en la caja de
+las salidas que pagó** — además de figurar, en dólares, en Aportes.
+
+**Importaciones del 2026-10-01** (scripts puntuales, no versionados,
+corridos a mano contra la planilla real):
+
+- Los 14 movimientos "Refacción Iriondo" que Gustavo había cargado en
+  Alquileres (mayo-septiembre 2026, con sus 38 comprobantes) se movieron a
+  Remodelación: baja lógica en Alquileres con una nota "[Movido a la caja
   Remodelación Iriondo (id N)...]", conservando fecha/notas/cargadoPor/
-  creadoEn. Como esa plata sí había salido de la caja de alquileres (neto
-  $48.379), quedó un traspaso explícito: GASTO "Aporte a Remodelación
-  Iriondo" en la sucesión e INGRESO "Aporte de la Sucesión" en
-  Remodelación, así el balance de la sucesión no cambió. Las reposiciones
-  en dólares de Gustavo (US$40 + 118 + 393,50) se cargaron además como
-  aportes en Aportes personales. **Criterio para lo que venga**: gastos de
-  la obra van a Remodelación; si los paga la caja de alquileres, se
-  registra como traspaso, no mezclado.
+  creadoEn, más un traspaso de $48.379.
+- **Historia 2021-2023 desde "In/Out Pesos"** (el libro de caja en pesos
+  de la planilla "Admin inmuebles", que mezcla todo): la importación
+  original de Alquileres había dejado afuera los gastos de la obra, los
+  trámites y **todos los aportes**. Se cargaron: 97 gastos de obra en
+  Remodelación; los aportes de Maxi (cambios de euros/dólares y
+  transferencias en pesos) y de Gustavo como ingresos, repartidos según
+  las salidas que pagó cada uno (si el libro no dice el destino, se
+  siguen las salidas siguientes hasta cubrir el monto); traspasos de
+  Alquileres para lo que pagó la plata de los alquileres ($209.818,11 a
+  Remodelación; $7.455,70 y $54.600 a Varios); los trámites a Varios; y
+  los gastos de 2021 que Maxi pagó directamente (planilla "Pagos Varios
+  Maxi"), cada uno con su aporte. Cada fila importada dice en las notas
+  de dónde sale (`[In/Out Pesos fila N]`, `[Pagos Varios Maxi fila N]`).
+- Qué salida del libro es de qué caja se decidió cruzando contra lo que
+  ya estaba en Alquileres (por fecha y monto): lo que la importación
+  original había dejado afuera era obra o trámites.
+- **Control**: al 16/12/2025 (última fecha del libro), Alquileres +
+  Remodelación + Varios = $320.820,72 contra $294.060 del libro. Los
+  $26.760,72 de diferencia ya existían antes (montos corregidos o
+  agrupados distinto en Alquileres) y no se tocaron.
+- Pendiente: lo de 2025-2026 de la obra que figura solo en "Protocolo"
+  (mesada, albañil, persianas: lo pagó Gustavo en dólares) y los aportes
+  de Gustavo y de Nico, hasta que Gustavo complete IN OUT PESOS y su
+  planilla de aportes en dólares y confirme qué se le devolvió.
 
 **Aportes personales** (la ven Maxi y Gustavo — ADMIN/EDITOR —, Nico no;
 sin comprobantes ni avisos):
@@ -223,17 +265,21 @@ sin comprobantes ni avisos):
 Aportes Personales:  id | fecha | tipo | montoUSD | cotizacion | montoARS | concepto | aportante | notas | cargadoPor | creadoEn | estado
 ```
 
-- Lo que un heredero pone de su bolsillo para la obra, **en dólares**
-  para que la inflación no licúe la deuda. INGRESO = aporta, GASTO = se
-  le devuelve; el saldo es lo que la sucesión le debe (Informes muestra
-  un cuadro Nombre / Aporte / Devuelto / Saldo por aportante). Un aportante por fila: un aporte conjunto va
+- Lo que un heredero pone de su bolsillo para la sucesión (la obra o
+  cualquier otra cosa), **todo en dólares** para que la inflación no licúe
+  la deuda; **la moneda original va en las notas** (decisión de Maxi:
+  "Original: €2.450,00 (EUR/USD 1.1578 BCE 03/11/2021)..."). Euros a
+  dólares con la cotización del BCE del día; pesos a dólares con el blue
+  venta del día (Bluelytics). INGRESO = aporta, GASTO = se le devuelve; el
+  saldo es lo que la sucesión le debe (Informes muestra un cuadro Nombre /
+  Aporte / Devuelto / Saldo). Un aportante por fila: un aporte conjunto va
   en dos filas. Aportantes fijos en `frontend/src/cajas.ts`
   (`APORTANTES`). `GET/POST /api/aportes`, `PUT/DELETE .../{id}`.
 - `cotizacion` (pesos por dólar) es opcional; `montoARS` lo calcula el
   backend (`montoUSD * cotizacion`). **Nada se vincula solo entre
   cajas** (decisión de Maxi): un aporte se carga a mano acá y, en pesos,
-  en Remodelación; una devolución, acá y como gasto en la sucesión. Por
-  eso los pesos calculados pueden no coincidir exacto con lo que entró.
+  en la caja que corresponda; una devolución, acá y como gasto en su caja.
+  Por eso los pesos calculados pueden no coincidir exacto con lo que entró.
 - Misma pantalla que las otras cajas (barra de filtros con Aportes/
   Devoluciones, aportante y rangos; swipe; detalle; 📊 Informes), pero
   es `CajaView` y no la de `App.tsx`: su barra de filtros se monta con un
@@ -243,27 +289,25 @@ Aportes Personales:  id | fecha | tipo | montoUSD | cotizacion | montoARS | conc
 - "Quién la ve" es puro frontend (`VISTAS[].roles` en `cajas.ts`): el
   interceptor la trata igual que a Movimientos. Decisión consciente, es
   una app familiar.
-- Layout migrado el 2026-10-01 (se agregaron cotizacion/montoARS/
-  cargadoPor) con script puntual; las 3 reposiciones de Gustavo tomaron
-  la cotización de sus notas.
+- Fuentes de los aportes de Maxi (2026-10-01): "In/Out Euros", "Pagos en
+  Pesos convertibles a Euros", "Pagos Varios Maxi" e "In/Out dólares" de
+  la planilla "Admin inmuebles" (según Gustavo, completas).
 
 El menú ☰ solo tiene lo que es de toda la app (actualizar, tema, salir).
 Lo que es de una caja va en su barra de filtros: 📊 Informes (totales de
-esa caja) y ✨ la IA (solo en Sucesión por ahora; extenderla a
-Remodelación implica que `AsistenteIAService` lea otro `MovimientoStore`
-y conozca el contexto de la obra).
+esa caja) y ✨ la IA (solo en Alquileres por ahora; extenderla a otra caja
+implica que `AsistenteIAService` lea otro `MovimientoStore` y conozca su
+contexto).
 
 La plomería común de estas pestañas (crearla si no existe, header, id
 secuencial, baja lógica, fechas dd/MM/yyyy) vive en `service/SheetTab`.
-Las pestañas originales de la sucesión (Movimientos, Comprobantes,
-Avisos) todavía tienen su propia copia; pasarlas a `SheetTab` es una
-mejora pendiente, no urgente. Fuera de alcance por ahora: cargar los ~40
-gastos históricos de la Refacción Iriondo (2021-2026) que se excluyeron
-al importar, y cotización automática del dólar.
+Las pestañas originales de Alquileres (Movimientos, Comprobantes, Avisos)
+todavía tienen su propia copia; pasarlas a `SheetTab` es una mejora
+pendiente, no urgente.
 
 ## Preguntale a la IA
 
-Chat (chip ✨ en la barra de filtros, solo en la caja Sucesión) para preguntar en lenguaje
+Chat (chip ✨ en la barra de filtros, solo en la caja Alquileres) para preguntar en lenguaje
 natural sobre los movimientos — ej. "promedio de alquileres de Iriondo en
 2026". **La IA interpreta, Java calcula**: nunca se le pasa la tabla al
 modelo ni se le pide que haga cuentas. OpenAI (`gpt-4o-mini`, cuenta de
@@ -412,6 +456,7 @@ src/main/java/com/maxidigital/comprobantes/
 │   ├── WebConfig.java               # CORS + registro del interceptor de acceso
 │   ├── GoogleClientsConfig.java     # Bean Sheets (cuenta de servicio) + Bean Drive (OAuth refresh token)
 │   ├── UsuariosConfig.java          # lista fija hardcodeada de usuarios -> rol
+│   ├── CajasConfig.java             # un trío de servicios por caja sin bien (Remodelación, Varios)
 │   └── OpenAiConfig.java            # bean OpenAiService (OPENAI_API_KEY)
 ├── security/AccessKeyInterceptor.java, Rol.java
 ├── controller/
@@ -420,7 +465,7 @@ src/main/java/com/maxidigital/comprobantes/
 │   ├── AuthController.java          # GET /api/auth/whoami -> {nombre, rol}
 │   ├── AvisoController.java         # GET/POST /api/avisos, DELETE .../{id}
 │   ├── PreguntaController.java      # POST /api/preguntas (chat IA, solo lectura)
-│   ├── RemodelacionMovimientoController.java, RemodelacionAvisoController.java  # heredan los de arriba, bajo /api/remodelacion
+│   ├── Remodelacion*Controller.java, Varios*Controller.java  # heredan los de arriba, bajo /api/remodelacion y /api/varios
 │   ├── AportesPersonalesController.java    # /api/aportes (caja de ADMIN, USD)
 │   └── ApiExceptionHandler.java
 ├── dto/MovimientoResponse.java, ComprobanteResponse.java, AvisoResponse.java, PreguntaRequest.java, PreguntaResponse.java,
@@ -431,8 +476,8 @@ src/main/java/com/maxidigital/comprobantes/
 │   ├── AvisoSheetService.java        # pestaña "Avisos": append/readAllActive/softDelete, ajena a Movimientos
 │   ├── MovimientoStore.java, ComprobanteStore.java, AvisoStore.java  # lo que usan los controllers, implementado por cada caja
 │   ├── SheetTab.java                 # plomería común de una pestaña con id secuencial + baja lógica (no es bean)
-│   ├── RemodelacionMovimientoSheetService.java, RemodelacionComprobanteSheetService.java,
-│   │   RemodelacionAvisoSheetService.java    # pestañas de la caja Remodelación Iriondo, usan SheetTab
+│   ├── CajaMovimientoSheetService.java, CajaComprobanteSheetService.java,
+│   │   CajaAvisoSheetService.java    # pestañas de una caja sin bien (Remodelación, Varios), usan SheetTab
 │   ├── AportesPersonalesSheetService.java    # pestaña "Aportes Personales", usa SheetTab
 │   ├── ReceiptDriveService.java      # sube/borra/sirve el archivo en Drive
 │   └── AsistenteIAService.java       # chat IA: loop de function calling + el filtro/cálculo real en Java
@@ -452,7 +497,7 @@ frontend/src/
 ├── ReceiptViewerDialog.tsx          # visor propio adentro de la app (nunca navega a la URL del archivo)
 ├── ConfirmDialog.tsx                # confirmación de borrado
 ├── PreguntaIADialog.tsx             # chat "Preguntale a la IA" (historial en localStorage)
-├── cajas.ts                         # las 3 cajas del desplegable, tieneBien(), config de Aportes + APORTANTES
+├── cajas.ts                         # las 4 cajas del desplegable, tieneBien(), config de Aportes + APORTANTES
 ├── CajaView.tsx, CajaForm.tsx, CajaDetail.tsx  # pantalla completa de una caja simple (Aportes): lista, alta/edición, detalle
 ├── useSwipeRows.ts                  # swipe para Editar/Eliminar, compartido por MovimientosList y CajaView
 ├── monto.ts                         # sanitizado del campo monto, compartido por MovimientoForm y CajaForm

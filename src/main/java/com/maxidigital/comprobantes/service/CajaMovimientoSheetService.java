@@ -3,8 +3,6 @@ package com.maxidigital.comprobantes.service;
 import com.google.api.services.sheets.v4.Sheets;
 import com.maxidigital.comprobantes.dto.MovimientoResponse;
 import com.maxidigital.comprobantes.service.SheetTab.Fila;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -14,14 +12,13 @@ import java.util.List;
 import static com.maxidigital.comprobantes.service.SheetTab.*;
 
 /**
- * Movimientos de la caja "Remodelación Iriondo": los gastos de la obra, en
- * pesos, separados de la caja de los alquileres (MovimientoSheetService)
- * para que la plata no se mezcle. Mismo sistema que la sucesión
- * (comprobantes, avisos, cargadoPor) salvo el bien: es toda de Iriondo, así
- * que no hay columna y la respuesta lleva bien vacío.
+ * Movimientos de una caja con el mismo sistema que Alquileres
+ * (comprobantes, avisos, cargadoPor) pero sin "bien": Remodelación Iriondo
+ * (toda de Iriondo) y Varios (trámites de la sucesión, de ningún bien en
+ * particular). La respuesta lleva bien vacío. No es un bean por sí misma:
+ * CajasConfig crea una por caja, cada una con su pestaña.
  */
-@Service
-public class RemodelacionMovimientoSheetService implements MovimientoStore {
+public class CajaMovimientoSheetService implements MovimientoStore {
 
     // Índices dentro de "datos" (SheetTab maneja id, creadoEn y estado)
     private static final int FECHA = 0, TIPO = 1, MONTO = 2, CONCEPTO = 3, COMPROBANTES_COUNT = 4, NOTAS = 5,
@@ -29,9 +26,8 @@ public class RemodelacionMovimientoSheetService implements MovimientoStore {
 
     private final SheetTab tab;
 
-    public RemodelacionMovimientoSheetService(Sheets sheets,
-                                               @Value("${google.spreadsheet-id}") String spreadsheetId) {
-        this.tab = new SheetTab(sheets, spreadsheetId, "Remodelación Iriondo", List.of(
+    public CajaMovimientoSheetService(Sheets sheets, String spreadsheetId, String sheetName) {
+        this.tab = new SheetTab(sheets, spreadsheetId, sheetName, List.of(
                 "id", "fecha", "tipo", "monto", "concepto", "comprobantesCount", "notas", "cargadoPor",
                 "creadoEn", "estado"));
     }
@@ -45,7 +41,7 @@ public class RemodelacionMovimientoSheetService implements MovimientoStore {
     @Override
     public List<MovimientoResponse> readAll() throws IOException {
         List<MovimientoResponse> result = new ArrayList<>(
-                tab.readActive().stream().map(RemodelacionMovimientoSheetService::toResponse).toList());
+                tab.readActive().stream().map(CajaMovimientoSheetService::toResponse).toList());
         Collections.reverse(result);
         return result;
     }

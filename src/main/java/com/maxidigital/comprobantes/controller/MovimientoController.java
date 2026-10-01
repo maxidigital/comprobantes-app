@@ -21,10 +21,11 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * Movimientos de la sucesión. Trabaja contra MovimientoStore/ComprobanteStore
- * y no contra las clases concretas porque la caja Remodelación Iriondo usa
- * exactamente los mismos endpoints con sus propias pestañas: ver
- * RemodelacionMovimientoController, que hereda de esta clase.
+ * Movimientos de la caja Alquileres. Trabaja contra MovimientoStore/
+ * ComprobanteStore y no contra las clases concretas porque las cajas
+ * Remodelación Iriondo y Varios usan exactamente los mismos endpoints con sus
+ * propias pestañas: ver RemodelacionMovimientoController y
+ * VariosMovimientoController, que heredan de esta clase.
  */
 @RestController
 @RequestMapping("/api/movimientos")

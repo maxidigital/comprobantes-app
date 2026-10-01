@@ -60,10 +60,11 @@ export interface MensajeChat {
 
 /**
  * Cajas con el sistema completo de movimientos (comprobantes, avisos,
- * filtros): la sucesión y la Remodelación Iriondo. Cada una con sus propias
- * pestañas en la planilla; la de la sucesión es la única con "bien".
+ * filtros): Alquileres (id 'sucesion', el nombre viejo, para no tocar
+ * rutas ni datos guardados), Remodelación Iriondo y Varios. Cada una con sus
+ * propias pestañas en la planilla; Alquileres es la única con "bien".
  */
-export type CajaMovimientos = 'sucesion' | 'remodelacion';
+export type CajaMovimientos = 'sucesion' | 'remodelacion' | 'varios';
 
 /** Cajas simples (solo ADMIN, sin comprobantes ni avisos) — ver cajas.ts. */
 export type CajaId = 'aportes';

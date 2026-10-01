@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import java.io.IOException;
 import java.util.List;
 
-/** Avisos de la sucesión; RemodelacionAvisoController hereda los mismos endpoints para su caja (ver MovimientoController). */
+/** Avisos de la caja Alquileres; RemodelacionAvisoController y VariosAvisoController heredan los mismos endpoints para su caja (ver MovimientoController). */
 @RestController
 @RequestMapping("/api/avisos")
 public class AvisoController {

@@ -74,7 +74,7 @@ export default function App() {
   const [cajaRefreshKey, setCajaRefreshKey] = useState(0);
   // Las cajas simples (CajaView) ponen su barra de filtros acá, adentro del encabezado fijo.
   const [filterSlot, setFilterSlot] = useState<HTMLDivElement | null>(null);
-  // Sucesión y Remodelación Iriondo comparten toda esta pantalla (lista,
+  // Alquileres, Remodelación Iriondo y Varios comparten toda esta pantalla (lista,
   // filtros, formularios); solo cambia contra qué pestañas habla la API.
   const caja: CajaMovimientos = esCajaMovimientos(vista) ? vista : 'sucesion';
   const cajaCargadaRef = useRef<CajaMovimientos>(caja);

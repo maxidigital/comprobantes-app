@@ -3,27 +3,23 @@ package com.maxidigital.comprobantes.service;
 import com.google.api.services.sheets.v4.Sheets;
 import com.maxidigital.comprobantes.dto.ComprobanteResponse;
 import com.maxidigital.comprobantes.service.SheetTab.Fila;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.util.Comparator;
 import java.util.List;
 
 /**
- * Comprobantes de la caja Remodelación Iriondo, en su propia pestaña: los
- * ids de movimiento de esta caja arrancan de 1 igual que los de la
- * sucesión, así que no pueden compartir la pestaña "Comprobantes". Los
- * archivos van a la misma carpeta de Drive.
+ * Comprobantes de una caja sin bien (ver CajaMovimientoSheetService), en su
+ * propia pestaña: los ids de movimiento de cada caja arrancan de 1, así que
+ * no pueden compartir la pestaña "Comprobantes" de Alquileres. Los archivos
+ * van a la misma carpeta de Drive.
  */
-@Service
-public class RemodelacionComprobanteSheetService implements ComprobanteStore {
+public class CajaComprobanteSheetService implements ComprobanteStore {
 
     private final SheetTab tab;
 
-    public RemodelacionComprobanteSheetService(Sheets sheets,
-                                                @Value("${google.spreadsheet-id}") String spreadsheetId) {
-        this.tab = new SheetTab(sheets, spreadsheetId, "Comprobantes Remodelación", List.of(
+    public CajaComprobanteSheetService(Sheets sheets, String spreadsheetId, String sheetName) {
+        this.tab = new SheetTab(sheets, spreadsheetId, sheetName, List.of(
                 "id", "movimientoId", "url", "nombre", "creadoEn", "estado"));
     }
 
@@ -34,7 +30,7 @@ public class RemodelacionComprobanteSheetService implements ComprobanteStore {
 
     @Override
     public List<ComprobanteResponse> readAllActive() throws IOException {
-        return tab.readActive().stream().map(RemodelacionComprobanteSheetService::toResponse).toList();
+        return tab.readActive().stream().map(CajaComprobanteSheetService::toResponse).toList();
     }
 
     @Override
@@ -52,7 +48,7 @@ public class RemodelacionComprobanteSheetService implements ComprobanteStore {
         return borrado;
     }
 
-    /** Cascada al eliminar el movimiento — no borra los archivos de Drive, igual que en la sucesión. */
+    /** Cascada al eliminar el movimiento — no borra los archivos de Drive, igual que en Alquileres. */
     @Override
     public void softDeleteAllForMovimiento(String movimientoId) throws IOException {
         for (ComprobanteResponse c : findActiveByMovimiento(movimientoId)) {

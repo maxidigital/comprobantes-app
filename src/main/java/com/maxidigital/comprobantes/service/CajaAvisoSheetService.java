@@ -3,8 +3,6 @@ package com.maxidigital.comprobantes.service;
 import com.google.api.services.sheets.v4.Sheets;
 import com.maxidigital.comprobantes.dto.AvisoResponse;
 import com.maxidigital.comprobantes.service.SheetTab.Fila;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -13,14 +11,13 @@ import java.util.List;
 
 import static com.maxidigital.comprobantes.service.SheetTab.*;
 
-/** Avisos de la caja Remodelación Iriondo — como AvisoSheetService pero sin bien (es toda de Iriondo). */
-@Service
-public class RemodelacionAvisoSheetService implements AvisoStore {
+/** Avisos de una caja sin bien (ver CajaMovimientoSheetService) — como AvisoSheetService pero sin esa columna. */
+public class CajaAvisoSheetService implements AvisoStore {
 
     private final SheetTab tab;
 
-    public RemodelacionAvisoSheetService(Sheets sheets, @Value("${google.spreadsheet-id}") String spreadsheetId) {
-        this.tab = new SheetTab(sheets, spreadsheetId, "Avisos Remodelación", List.of(
+    public CajaAvisoSheetService(Sheets sheets, String spreadsheetId, String sheetName) {
+        this.tab = new SheetTab(sheets, spreadsheetId, sheetName, List.of(
                 "id", "fecha", "texto", "autor", "creadoEn", "estado"));
     }
 
@@ -32,7 +29,7 @@ public class RemodelacionAvisoSheetService implements AvisoStore {
     @Override
     public List<AvisoResponse> readAllActive() throws IOException {
         List<AvisoResponse> result = new ArrayList<>(
-                tab.readActive().stream().map(RemodelacionAvisoSheetService::toResponse).toList());
+                tab.readActive().stream().map(CajaAvisoSheetService::toResponse).toList());
         Collections.reverse(result);
         return result;
     }
