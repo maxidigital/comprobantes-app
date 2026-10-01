@@ -250,13 +250,14 @@ corridos a mano contra la planilla real):
   ya estaba en Alquileres (por fecha y monto): lo que la importación
   original había dejado afuera era obra o trámites.
 - **Control**: al 16/12/2025 (última fecha del libro), Alquileres +
-  Remodelación + Varios = $320.820,72 contra $294.060 del libro. Los
-  $26.760,72 de diferencia ya existían antes (montos corregidos o
-  agrupados distinto en Alquileres) y no se tocaron.
-- Pendiente: lo de 2025-2026 de la obra que figura solo en "Protocolo"
-  (mesada, albañil, persianas: lo pagó Gustavo en dólares) y los aportes
-  de Gustavo y de Nico, hasta que Gustavo complete IN OUT PESOS y su
-  planilla de aportes en dólares y confirme qué se le devolvió.
+  Remodelación + Varios = $345.610 contra $294.060 del libro: las cajas
+  tienen **$51.550 de más** y no está explicado (ver Pendiente). Ojo: ese
+  número incluye un aporte de Gustavo de $24.789,28 (06/08/2025) que
+  faltaba en Alquileres y se agregó; sin él la diferencia parecía de
+  $26.760.
+- Aportes en pesos de Gustavo (2023 y 2025) y de Nico (2025): cargados
+  en Aportes al blue del día. Según Gustavo, lo único que se le devolvió
+  son los $60.000 del 19/05/2023.
 
 **Aportes personales** (la ven Maxi y Gustavo — ADMIN/EDITOR —, Nico no;
 sin comprobantes ni avisos):
@@ -506,6 +507,22 @@ frontend/src/
 ```
 
 ## Pendiente / próximas versiones
+
+- **Contradicción de devoluciones (Gustavo la va a revisar)**: Gustavo
+  dice que lo único que se le devolvió son los $60.000 del 19/05/2023, pero
+  el libro In/Out Pesos (fila 528) y Alquileres (id 182) registran además
+  una devolución de $1.092,29 del 27/02/2025 por su aporte de Aguas
+  Oficina del 14/02/2025. Está cargada como devuelta en Aportes (con la
+  nota "PENDIENTE"); si no fue real, eliminar esa devolución en Aportes y
+  el GASTO id 182 en Alquileres.
+- **Conciliar Alquileres contra In/Out Pesos**: al 16/12/2025 las cajas en
+  pesos tienen $51.550 más que el libro, sin explicar. Hay que cruzar fila
+  por fila (puede tener relación con el desfasaje contra el efectivo real).
+- **Lo que falta de Gustavo**: la obra 2025-2026 que figura solo en
+  "Protocolo" (mesada Tuttolomondo, albañil Leiva, persianas Borin, niñera:
+  lo pagó con sus dólares) y su planilla de aportes en dólares. Está
+  completando Protocolo, después IN OUT PESOS, después esa planilla. Al
+  importarla, cruzar contra lo que ya está en Aportes para no duplicar.
 
 - Panel de análisis para escritorio (gráficos, totales por categoría/bien y por período).
 - Íconos PWA reales — los actuales (`frontend/public/icons/`) son placeholders generados, no arte final.
