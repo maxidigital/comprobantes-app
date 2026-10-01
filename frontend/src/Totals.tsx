@@ -11,7 +11,12 @@ interface Props {
 const ETIQUETAS_DEFAULT = { ingresos: 'Ingresos', gastos: 'Egresos', balance: 'Balance' };
 
 export default function Totals({ movimientos, moneda = 'ARS', etiquetas = ETIQUETAS_DEFAULT }: Props) {
-  const currency = new Intl.NumberFormat('es-AR', { style: 'currency', currency: moneda, maximumFractionDigits: 0 });
+  // En pesos alcanza con enteros; en dólares los centavos importan (es una deuda).
+  const currency = new Intl.NumberFormat('es-AR', {
+    style: 'currency',
+    currency: moneda,
+    maximumFractionDigits: moneda === 'USD' ? 2 : 0,
+  });
   const totalIngresos = movimientos.filter((m) => m.tipo === 'INGRESO').reduce((sum, m) => sum + m.monto, 0);
   const totalGastos = movimientos.filter((m) => m.tipo === 'GASTO').reduce((sum, m) => sum + m.monto, 0);
   const balance = totalIngresos - totalGastos;

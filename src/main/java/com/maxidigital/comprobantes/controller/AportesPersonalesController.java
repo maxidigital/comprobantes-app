@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.*;
 import java.io.IOException;
 import java.util.List;
 
-/** Solo la ve ADMIN en el frontend; el interceptor no la restringe más que a Movimientos (decisión del plan). */
+/** Solo la ven ADMIN y EDITOR en el frontend; el interceptor no la restringe más que a Movimientos (app familiar). */
 @RestController
 @RequestMapping("/api/aportes")
 public class AportesPersonalesController {
@@ -27,10 +27,12 @@ public class AportesPersonalesController {
     public AporteResponse crear(@RequestParam String fecha,
                                  @RequestParam String tipo,
                                  @RequestParam double monto,
+                                 @RequestParam(required = false) Double cotizacion,
                                  @RequestParam String concepto,
                                  @RequestParam String aportante,
-                                 @RequestParam(required = false) String notas) throws IOException {
-        return service.append(fecha, tipo, monto, concepto, aportante, notas);
+                                 @RequestParam(required = false) String notas,
+                                 @RequestParam(required = false) String cargadoPor) throws IOException {
+        return service.append(fecha, tipo, monto, cotizacion, concepto, aportante, notas, cargadoPor);
     }
 
     @PutMapping(value = "/{id}", consumes = "multipart/form-data")
@@ -38,10 +40,11 @@ public class AportesPersonalesController {
                                       @RequestParam String fecha,
                                       @RequestParam String tipo,
                                       @RequestParam double monto,
+                                      @RequestParam(required = false) Double cotizacion,
                                       @RequestParam String concepto,
                                       @RequestParam String aportante,
                                       @RequestParam(required = false) String notas) throws IOException {
-        return service.update(id, fecha, tipo, monto, concepto, aportante, notas);
+        return service.update(id, fecha, tipo, monto, cotizacion, concepto, aportante, notas);
     }
 
     @DeleteMapping("/{id}")

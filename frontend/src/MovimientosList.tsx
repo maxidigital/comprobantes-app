@@ -1,8 +1,9 @@
-import { useMemo, useRef, useState } from 'react';
+import { useMemo } from 'react';
 import { bienColor } from './bienes';
 import { formatFecha, formatMontoPartes } from './format';
 import { MegaphoneIcon } from './icons';
 import type { Aviso, FiltroTipo, Movimiento } from './types';
+import { useSwipeRows } from './useSwipeRows';
 
 interface Props {
   movimientos: Movimiento[];
@@ -18,19 +19,6 @@ interface Props {
   onEdit: (movimiento: Movimiento) => void;
   onDelete: (movimiento: Movimiento) => void;
   onDeleteAviso: (aviso: Aviso) => void;
-}
-
-const SWIPE_ACTIONS_WIDTH = 160;
-const SWIPE_OPEN_THRESHOLD = 50;
-const TAP_THRESHOLD = 8;
-
-interface DragState {
-  id: string;
-  startX: number;
-  startY: number;
-  deltaX: number;
-  wasOpen: boolean;
-  locked: 'horizontal' | 'vertical' | null;
 }
 
 /** Movimientos y avisos son entidades separadas (avisos no pesan en Totals ni
@@ -55,9 +43,7 @@ export default function MovimientosList({
   onDelete,
   onDeleteAviso,
 }: Props) {
-  const [openSwipeId, setOpenSwipeId] = useState<string | null>(null);
-  const dragRef = useRef<DragState | null>(null);
-  const [, forceRender] = useState(0);
+  const { cardProps, closeSwipe } = useSwipeRows(puedeEditar);
 
   const itemsCombinados = useMemo(() => {
     const items: Item[] = [
@@ -92,77 +78,6 @@ export default function MovimientosList({
     });
   }, [itemsCombinados, filtroTipo, soloPendientes, bienesSeleccionados, fechaDesde, fechaHasta]);
 
-  function handlePointerDown(e: React.PointerEvent, id: string) {
-    if (e.pointerType === 'mouse' && e.button !== 0) return;
-    dragRef.current = {
-      id,
-      startX: e.clientX,
-      startY: e.clientY,
-      deltaX: 0,
-      wasOpen: openSwipeId === id,
-      locked: null,
-    };
-  }
-
-  function handlePointerMove(e: React.PointerEvent, id: string) {
-    const drag = dragRef.current;
-    if (!drag || drag.id !== id) return;
-
-    const dx = e.clientX - drag.startX;
-    const dy = e.clientY - drag.startY;
-
-    if (!drag.locked) {
-      if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return;
-      drag.locked = Math.abs(dx) > Math.abs(dy) ? 'horizontal' : 'vertical';
-    }
-    if (drag.locked !== 'horizontal') return;
-
-    drag.deltaX = dx;
-    forceRender((n) => n + 1);
-  }
-
-  function handlePointerUp(id: string, item: Item) {
-    const drag = dragRef.current;
-    dragRef.current = null;
-    if (!drag || drag.id !== id) return;
-
-    // Nunca llegó a moverse lo suficiente como para "trabar" una dirección
-    // (locked sigue null) — eso es un tap real, no un intento de swipe.
-    if (drag.locked === null || (drag.locked === 'horizontal' && Math.abs(drag.deltaX) < TAP_THRESHOLD)) {
-      if (openSwipeId) {
-        setOpenSwipeId(null);
-      } else if (item.kind === 'movimiento') {
-        onOpenDetail(item.movimiento);
-      }
-      forceRender((n) => n + 1);
-      return;
-    }
-
-    if (drag.locked !== 'horizontal') {
-      forceRender((n) => n + 1);
-      return;
-    }
-
-    if (drag.deltaX < -SWIPE_OPEN_THRESHOLD && puedeEditar) {
-      setOpenSwipeId(id);
-    } else if (drag.deltaX > SWIPE_OPEN_THRESHOLD) {
-      setOpenSwipeId(null);
-    } else {
-      setOpenSwipeId(drag.wasOpen ? id : null);
-    }
-    forceRender((n) => n + 1);
-  }
-
-  function rowTransform(id: string): number {
-    const drag = dragRef.current;
-    const base = openSwipeId === id ? -SWIPE_ACTIONS_WIDTH : 0;
-    if (drag && drag.id === id && drag.locked === 'horizontal') {
-      const start = drag.wasOpen ? -SWIPE_ACTIONS_WIDTH : 0;
-      return Math.min(0, Math.max(-SWIPE_ACTIONS_WIDTH, start + drag.deltaX));
-    }
-    return base;
-  }
-
   return (
     <>
       {visibles.length === 0 ? (
@@ -180,7 +95,7 @@ export default function MovimientosList({
                         type="button"
                         className="swipe-action swipe-action--delete"
                         onClick={() => {
-                          setOpenSwipeId(null);
+                          closeSwipe();
                           onDeleteAviso(a);
                         }}
                       >
@@ -191,20 +106,13 @@ export default function MovimientosList({
 
                   <div
                     className="card movement-card"
-                    style={{
-                      boxShadow: a.bien
-                        ? `0 0 0 1px color-mix(in srgb, ${bienColor(a.bien)} 55%, transparent)`
+                    {...cardProps(
+                      item.id,
+                      () => {},
+                      a.bien
+                        ? { boxShadow: `0 0 0 1px color-mix(in srgb, ${bienColor(a.bien)} 55%, transparent)` }
                         : undefined,
-                      transform: `translateX(${rowTransform(item.id)}px)`,
-                      transition: dragRef.current?.id === item.id ? 'none' : undefined,
-                    }}
-                    onPointerDown={(e) => handlePointerDown(e, item.id)}
-                    onPointerMove={(e) => handlePointerMove(e, item.id)}
-                    onPointerUp={() => handlePointerUp(item.id, item)}
-                    onPointerCancel={() => {
-                      dragRef.current = null;
-                      forceRender((n) => n + 1);
-                    }}
+                    )}
                   >
                     <div className="row-top">
                       <span className="concepto">
@@ -237,7 +145,7 @@ export default function MovimientosList({
                       type="button"
                       className="swipe-action swipe-action--edit"
                       onClick={() => {
-                        setOpenSwipeId(null);
+                        closeSwipe();
                         onEdit(m);
                       }}
                     >
@@ -247,7 +155,7 @@ export default function MovimientosList({
                       type="button"
                       className="swipe-action swipe-action--delete"
                       onClick={() => {
-                        setOpenSwipeId(null);
+                        closeSwipe();
                         onDelete(m);
                       }}
                     >
@@ -258,17 +166,7 @@ export default function MovimientosList({
 
                 <div
                   className={`card movement-card ${m.comprobantePendiente ? 'movement-card--pendiente' : ''}`}
-                  style={{
-                    transform: `translateX(${rowTransform(item.id)}px)`,
-                    transition: dragRef.current?.id === item.id ? 'none' : undefined,
-                  }}
-                  onPointerDown={(e) => handlePointerDown(e, item.id)}
-                  onPointerMove={(e) => handlePointerMove(e, item.id)}
-                  onPointerUp={() => handlePointerUp(item.id, item)}
-                  onPointerCancel={() => {
-                    dragRef.current = null;
-                    forceRender((n) => n + 1);
-                  }}
+                  {...cardProps(item.id, () => onOpenDetail(m))}
                 >
                   <div className="row-top">
                     <span className="concepto">

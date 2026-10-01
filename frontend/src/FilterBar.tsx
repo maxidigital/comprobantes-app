@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react';
-import { BIENES, bienColor } from './bienes';
 import {
   dateToIso,
   formatFechaInput,
@@ -17,45 +16,47 @@ import type { FiltroTipo } from './types';
 
 const MESES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 
+/** Las opciones del panel "Filtros" con un checkbox cada una: los bienes en la sucesión, los aportantes en Aportes. */
+export interface FiltroCategorias {
+  opciones: string[];
+  seleccionadas: Set<string>;
+  onToggle: (opcion: string) => void;
+  color?: (opcion: string) => string;
+}
+
+/** Barra de filtros de cada caja. Lo que una caja no tiene (comprobantes pendientes, avisos, bienes, IA) no se pasa y no se muestra. */
 interface Props {
   filtroTipo: FiltroTipo;
   onFiltroTipoChange: (tipo: FiltroTipo) => void;
-  soloPendientes: boolean;
-  onSoloPendientesChange: (value: boolean) => void;
-  bienesSeleccionados: Set<string>;
-  onToggleBien: (bien: string) => void;
-  /** false en la caja Remodelación Iriondo, que no distingue bienes. */
-  mostrarBienes: boolean;
+  etiquetasTipo?: { ingresos: string; gastos: string };
+  /** Solo en las cajas con comprobantes. */
+  pendientes?: { solo: boolean; onChange: (value: boolean) => void; count: number };
+  categorias?: FiltroCategorias;
   fechaDesde: string | null;
   fechaHasta: string | null;
   onFechaRangeChange: (desde: string | null, hasta: string | null) => void;
   aniosConDatos: number[];
-  mostrarAvisos: boolean;
-  onToggleAvisos: () => void;
+  /** Solo en las cajas con avisos. */
+  avisos?: { mostrar: boolean; onToggle: () => void };
   /** Informes y la IA van acá (y no en el menú) porque son de la caja que se está viendo. */
   onInformes: () => void;
   /** Solo en la sucesión: la IA todavía no lee Remodelación. */
   onPreguntarIA?: () => void;
-  pendientesCount: number;
 }
 
 export default function FilterBar({
   filtroTipo,
   onFiltroTipoChange,
-  soloPendientes,
-  onSoloPendientesChange,
-  bienesSeleccionados,
-  onToggleBien,
-  mostrarBienes,
+  etiquetasTipo = { ingresos: 'Ingresos', gastos: 'Egresos' },
+  pendientes,
+  categorias,
   fechaDesde,
   fechaHasta,
   onFechaRangeChange,
   aniosConDatos,
-  mostrarAvisos,
-  onToggleAvisos,
+  avisos,
   onInformes,
   onPreguntarIA,
-  pendientesCount,
 }: Props) {
   const [showFiltros, setShowFiltros] = useState(false);
   const [showRangos, setShowRangos] = useState(false);
@@ -168,7 +169,7 @@ export default function FilterBar({
           onClick={() => onFiltroTipoChange(filtroTipo === 'INGRESO' ? 'TODOS' : 'INGRESO')}
           aria-pressed={filtroTipo === 'INGRESO'}
         >
-          Ingresos
+          {etiquetasTipo.ingresos}
         </button>
         <button
           type="button"
@@ -176,50 +177,53 @@ export default function FilterBar({
           onClick={() => onFiltroTipoChange(filtroTipo === 'GASTO' ? 'TODOS' : 'GASTO')}
           aria-pressed={filtroTipo === 'GASTO'}
         >
-          Egresos
+          {etiquetasTipo.gastos}
         </button>
       </div>
-      <div className="dropdown-wrapper" ref={filtrosRef}>
-        <button
-          type="button"
-          className={`chip chip-toggle ${soloPendientes || bienesSeleccionados.size > 0 ? 'active' : ''}`}
-          onClick={() => setShowFiltros((v) => !v)}
-          aria-expanded={showFiltros}
-        >
-          Filtros
-        </button>
-        {showFiltros && (
-          <div className="dropdown-panel dropdown-panel--centered">
-            <label className="checkbox-row">
-              <input
-                type="checkbox"
-                checked={soloPendientes}
-                onChange={(e) => onSoloPendientesChange(e.target.checked)}
-              />
-              Con comprobante pendiente{pendientesCount > 0 ? ` (${pendientesCount})` : ''}
-            </label>
+      {(pendientes || categorias) && (
+        <div className="dropdown-wrapper" ref={filtrosRef}>
+          <button
+            type="button"
+            className={`chip chip-toggle ${pendientes?.solo || (categorias?.seleccionadas.size ?? 0) > 0 ? 'active' : ''}`}
+            onClick={() => setShowFiltros((v) => !v)}
+            aria-expanded={showFiltros}
+          >
+            Filtros
+          </button>
+          {showFiltros && (
+            <div className="dropdown-panel dropdown-panel--centered">
+              {pendientes && (
+                <label className="checkbox-row">
+                  <input
+                    type="checkbox"
+                    checked={pendientes.solo}
+                    onChange={(e) => pendientes.onChange(e.target.checked)}
+                  />
+                  Con comprobante pendiente{pendientes.count > 0 ? ` (${pendientes.count})` : ''}
+                </label>
+              )}
 
-            {mostrarBienes && (
-              <>
-                <div className="dropdown-panel-separator" />
+              {pendientes && categorias && <div className="dropdown-panel-separator" />}
 
-                {BIENES.map((bien) => (
-                  <label className="checkbox-row" key={bien}>
-                    <input
-                      type="checkbox"
-                      checked={bienesSeleccionados.has(bien)}
-                      onChange={() => onToggleBien(bien)}
-                    />
-                    <span className="bien-label" style={{ color: bienColor(bien) }}>
-                      {bien}
-                    </span>
-                  </label>
-                ))}
-              </>
-            )}
-          </div>
-        )}
-      </div>
+              {categorias?.opciones.map((opcion) => (
+                <label className="checkbox-row" key={opcion}>
+                  <input
+                    type="checkbox"
+                    checked={categorias.seleccionadas.has(opcion)}
+                    onChange={() => categorias.onToggle(opcion)}
+                  />
+                  <span
+                    className="bien-label"
+                    style={categorias.color ? { color: categorias.color(opcion) } : undefined}
+                  >
+                    {opcion}
+                  </span>
+                </label>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
       <div className="dropdown-wrapper" ref={rangosRef}>
         <button
           type="button"
@@ -328,16 +332,18 @@ export default function FilterBar({
           </div>
         )}
       </div>
-      <button
-        type="button"
-        className={`chip chip-toggle chip-icon ${!mostrarAvisos ? 'active' : ''}`}
-        onClick={onToggleAvisos}
-        aria-pressed={!mostrarAvisos}
-        aria-label={mostrarAvisos ? 'Ocultar avisos' : 'Mostrar avisos'}
-        title={mostrarAvisos ? 'Ocultar avisos' : 'Mostrar avisos'}
-      >
-        <MegaphoneIcon />
-      </button>
+      {avisos && (
+        <button
+          type="button"
+          className={`chip chip-toggle chip-icon ${!avisos.mostrar ? 'active' : ''}`}
+          onClick={avisos.onToggle}
+          aria-pressed={!avisos.mostrar}
+          aria-label={avisos.mostrar ? 'Ocultar avisos' : 'Mostrar avisos'}
+          title={avisos.mostrar ? 'Ocultar avisos' : 'Mostrar avisos'}
+        >
+          <MegaphoneIcon />
+        </button>
+      )}
       <button
         type="button"
         className="chip chip-toggle chip-icon"

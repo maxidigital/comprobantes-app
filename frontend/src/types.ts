@@ -72,18 +72,24 @@ export interface MovimientoCaja {
   id: string;
   fecha: string;
   tipo: TipoMovimiento;
+  /** En la moneda de la caja (dólares en Aportes). */
   monto: number;
+  /** Pesos por dólar, opcional. */
+  cotizacion?: number | null;
+  /** monto * cotizacion, lo calcula el backend. */
+  montoArs?: number | null;
   concepto: string;
-  /** Solo en la caja de aportes. */
   aportante?: string;
   notas: string;
   creadoEn: string;
+  cargadoPor?: string;
 }
 
 export interface NuevoMovimientoCaja {
   fecha: string;
   tipo: TipoMovimiento;
   monto: number;
+  cotizacion?: number | null;
   concepto: string;
   aportante?: string;
   notas: string;

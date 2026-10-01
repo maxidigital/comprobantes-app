@@ -611,6 +611,12 @@ input[type='file'] {
   background: var(--card-bg);
 }
 
+.field-hint {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin-top: 0.3rem;
+}
+
 .error-text {
   color: var(--danger);
   font-size: 0.82rem;
@@ -711,11 +717,12 @@ input[type='file'] {
   text-overflow: ellipsis;
 }
 
+/* Informes de Aportes: lo que se le debe a cada aportante */
 .aportantes-saldos {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
-  margin: -0.5rem 0 1.25rem;
+  margin-top: 0.4rem;
 }
 
 .aportantes-saldos .chip {

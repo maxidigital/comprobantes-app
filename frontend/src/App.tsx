@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import AccessGate from './AccessGate';
 import AvisoForm from './AvisoForm';
+import { BIENES, bienColor } from './bienes';
 import { CAJAS, esCajaMovimientos, tieneBien, VISTAS, type Vista } from './cajas';
 import CajaView from './CajaView';
 import ConfirmDialog from './ConfirmDialog';
@@ -68,10 +69,11 @@ export default function App() {
   const [confirmDeleteAvisoTarget, setConfirmDeleteAvisoTarget] = useState<Aviso | null>(null);
   const fabMenuRef = useRef<HTMLDivElement>(null);
   const puedeEditar = getUserRole() !== 'VIEWER';
-  // Aportes personales solo la ve ADMIN (puro UX, igual que ocultar el "+" a un VIEWER).
-  const esAdmin = getUserRole() === 'ADMIN';
+  const rol = getUserRole();
   const [vista, setVista] = useState<Vista>('sucesion');
   const [cajaRefreshKey, setCajaRefreshKey] = useState(0);
+  // Las cajas simples (CajaView) ponen su barra de filtros acá, adentro del encabezado fijo.
+  const [filterSlot, setFilterSlot] = useState<HTMLDivElement | null>(null);
   // Sucesión y Remodelación Iriondo comparten toda esta pantalla (lista,
   // filtros, formularios); solo cambia contra qué pestañas habla la API.
   const caja: CajaMovimientos = esCajaMovimientos(vista) ? vista : 'sucesion';
@@ -222,7 +224,7 @@ export default function App() {
             onChange={(e) => setVista(e.target.value as Vista)}
             aria-label="Caja"
           >
-            {VISTAS.filter((v) => esAdmin || !v.soloAdmin).map((v) => (
+            {VISTAS.filter((v) => !v.roles || (rol !== null && v.roles.includes(rol))).map((v) => (
               <option key={v.id} value={v.id}>
                 {v.titulo}
               </option>
@@ -254,15 +256,18 @@ export default function App() {
           </div>
         </header>
 
+        <div ref={setFilterSlot} />
+
         {esCajaMovimientos(vista) && movimientos !== null && (
           <FilterBar
             filtroTipo={filtroTipo}
             onFiltroTipoChange={setFiltroTipo}
-            soloPendientes={soloPendientes}
-            onSoloPendientesChange={setSoloPendientes}
-            bienesSeleccionados={bienesSeleccionados}
-            onToggleBien={toggleBien}
-            mostrarBienes={tieneBien(caja)}
+            pendientes={{ solo: soloPendientes, onChange: setSoloPendientes, count: pendientesCount }}
+            categorias={
+              tieneBien(caja)
+                ? { opciones: BIENES, seleccionadas: bienesSeleccionados, onToggle: toggleBien, color: bienColor }
+                : undefined
+            }
             fechaDesde={fechaDesde}
             fechaHasta={fechaHasta}
             onFechaRangeChange={(desde, hasta) => {
@@ -270,17 +275,21 @@ export default function App() {
               setFechaHasta(hasta);
             }}
             aniosConDatos={aniosConDatos}
-            mostrarAvisos={mostrarAvisos}
-            onToggleAvisos={() => setMostrarAvisos((v) => !v)}
+            avisos={{ mostrar: mostrarAvisos, onToggle: () => setMostrarAvisos((v) => !v) }}
             onInformes={() => setShowInformes(true)}
             onPreguntarIA={caja === 'sucesion' ? () => setShowPreguntaIA(true) : undefined}
-            pendientesCount={pendientesCount}
           />
         )}
       </div>
 
       {!esCajaMovimientos(vista) ? (
-        <CajaView key={`${vista}-${cajaRefreshKey}`} caja={CAJAS[vista]} onUnauthorized={handleUnauthorized} />
+        <CajaView
+          key={`${vista}-${cajaRefreshKey}`}
+          caja={CAJAS[vista]}
+          puedeEditar={puedeEditar}
+          filterSlot={filterSlot}
+          onUnauthorized={handleUnauthorized}
+        />
       ) : (
         <>
           <main className="content">

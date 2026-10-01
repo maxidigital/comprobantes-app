@@ -202,24 +202,50 @@ Avisos Remodelación:        id | fecha | texto | autor | creadoEn | estado
   las de la sucesión) porque los ids de movimiento de cada caja arrancan
   de 1 y chocarían.
 - El chat IA sigue leyendo solo la sucesión.
+- **Migración (2026-10-01)**: los 14 movimientos "Refacción Iriondo" que
+  Gustavo había cargado en la sucesión (mayo-septiembre 2026, con sus 38
+  comprobantes) se movieron a esta caja con un script puntual (no
+  versionado): baja lógica en la sucesión con una nota "[Movido a la caja
+  Remodelación Iriondo (id N)...]", conservando fecha/notas/cargadoPor/
+  creadoEn. Como esa plata sí había salido de la caja de alquileres (neto
+  $48.379), quedó un traspaso explícito: GASTO "Aporte a Remodelación
+  Iriondo" en la sucesión e INGRESO "Aporte de la Sucesión" en
+  Remodelación, así el balance de la sucesión no cambió. Las reposiciones
+  en dólares de Gustavo (US$40 + 118 + 393,50) se cargaron además como
+  aportes en Aportes personales. **Criterio para lo que venga**: gastos de
+  la obra van a Remodelación; si los paga la caja de alquileres, se
+  registra como traspaso, no mezclado.
 
-**Aportes personales** (solo ADMIN, caja simple — `CajaView`/`CajaForm`,
+**Aportes personales** (la ven Maxi y Gustavo — ADMIN/EDITOR —, Nico no;
 sin comprobantes ni avisos):
 
 ```
-Aportes Personales:  id | fecha | tipo | montoUSD | concepto | aportante | notas | creadoEn | estado
+Aportes Personales:  id | fecha | tipo | montoUSD | cotizacion | montoARS | concepto | aportante | notas | cargadoPor | creadoEn | estado
 ```
 
 - Lo que un heredero pone de su bolsillo para la obra, **en dólares**
-  (convertido a mano al cargarlo) para que la inflación no licúe la
-  deuda. INGRESO = aporta, GASTO = se le devuelve; el saldo es lo que la
-  sucesión le debe (la vista lo desglosa por aportante). Un aportante por
-  fila: un aporte conjunto va en dos filas. Aportantes fijos en
-  `frontend/src/cajas.ts` (`APORTANTES`). `GET/POST /api/aportes`,
-  `PUT/DELETE .../{id}`.
-- "Solo ADMIN" es puro frontend (el desplegable no la ofrece): el
+  para que la inflación no licúe la deuda. INGRESO = aporta, GASTO = se
+  le devuelve; el saldo es lo que la sucesión le debe (Informes lo
+  desglosa por aportante). Un aportante por fila: un aporte conjunto va
+  en dos filas. Aportantes fijos en `frontend/src/cajas.ts`
+  (`APORTANTES`). `GET/POST /api/aportes`, `PUT/DELETE .../{id}`.
+- `cotizacion` (pesos por dólar) es opcional; `montoARS` lo calcula el
+  backend (`montoUSD * cotizacion`). **Nada se vincula solo entre
+  cajas** (decisión de Maxi): un aporte se carga a mano acá y, en pesos,
+  en Remodelación; una devolución, acá y como gasto en la sucesión. Por
+  eso los pesos calculados pueden no coincidir exacto con lo que entró.
+- Misma pantalla que las otras cajas (barra de filtros con Aportes/
+  Devoluciones, aportante y rangos; swipe; detalle; 📊 Informes), pero
+  es `CajaView` y no la de `App.tsx`: su barra de filtros se monta con un
+  portal en un hueco del encabezado fijo (`filterSlot`). La lógica de
+  swipe es compartida (`useSwipeRows`) y `FilterBar` muestra solo lo que
+  cada caja le pasa (pendientes, categorías, avisos, IA).
+- "Quién la ve" es puro frontend (`VISTAS[].roles` en `cajas.ts`): el
   interceptor la trata igual que a Movimientos. Decisión consciente, es
-  una app familiar. Su diseño todavía está por revisarse.
+  una app familiar.
+- Layout migrado el 2026-10-01 (se agregaron cotizacion/montoARS/
+  cargadoPor) con script puntual; las 3 reposiciones de Gustavo tomaron
+  la cotización de sus notas.
 
 El menú ☰ solo tiene lo que es de toda la app (actualizar, tema, salir).
 Lo que es de una caja va en su barra de filtros: 📊 Informes (totales de
@@ -427,7 +453,8 @@ frontend/src/
 ├── ConfirmDialog.tsx                # confirmación de borrado
 ├── PreguntaIADialog.tsx             # chat "Preguntale a la IA" (historial en localStorage)
 ├── cajas.ts                         # las 3 cajas del desplegable, tieneBien(), config de Aportes + APORTANTES
-├── CajaView.tsx, CajaForm.tsx       # listado + totales + alta/edición de una caja simple (Aportes)
+├── CajaView.tsx, CajaForm.tsx, CajaDetail.tsx  # pantalla completa de una caja simple (Aportes): lista, alta/edición, detalle
+├── useSwipeRows.ts                  # swipe para Editar/Eliminar, compartido por MovimientosList y CajaView
 ├── monto.ts                         # sanitizado del campo monto, compartido por MovimientoForm y CajaForm
 └── index.css                        # tokens de estética/PALETTE (ver ../estetica-react/ESTETICA-REACT.md)
 

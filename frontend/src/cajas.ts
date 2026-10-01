@@ -1,5 +1,5 @@
 import type { Moneda } from './format';
-import type { CajaId, CajaMovimientos } from './types';
+import type { CajaId, CajaMovimientos, Rol } from './types';
 
 /**
  * Las tres cajas, cada una en sus propias pestañas de la planilla e
@@ -8,17 +8,20 @@ import type { CajaId, CajaMovimientos } from './types';
  * - Sucesión: alquileres y gastos corrientes de los bienes.
  * - Remodelación Iriondo: los gastos de la obra, en pesos. Mismo sistema
  *   que la sucesión (comprobantes, avisos, filtros), sin "bien".
- * - Aportes personales (solo ADMIN): lo que cada heredero pone de su
+ * - Aportes personales (solo Maxi y Gustavo, ADMIN/EDITOR): lo que cada heredero pone de su
  *   bolsillo para la obra, en dólares para que la inflación no licúe la
  *   deuda. INGRESO = aporta, GASTO = se le devuelve; el saldo es lo que se
- *   le debe. Caja simple (CajaView), sin comprobantes ni avisos.
+ *   le debe. Con cotización opcional (y su equivalente en pesos). Sin
+ *   comprobantes ni avisos (CajaView). Nada se vincula solo entre cajas:
+ *   un aporte se carga a mano acá y, en pesos, en Remodelación.
  */
 export type Vista = CajaMovimientos | CajaId;
 
-export const VISTAS: { id: Vista; titulo: string; soloAdmin: boolean }[] = [
-  { id: 'sucesion', titulo: 'Sucesión', soloAdmin: false },
-  { id: 'remodelacion', titulo: 'Remodelación Iriondo', soloAdmin: false },
-  { id: 'aportes', titulo: 'Aportes personales', soloAdmin: true },
+/** roles: quiénes ven la caja en el desplegable (sin roles = todos). Puro UX, el interceptor no lo restringe. */
+export const VISTAS: { id: Vista; titulo: string; roles?: Rol[] }[] = [
+  { id: 'sucesion', titulo: 'Sucesión' },
+  { id: 'remodelacion', titulo: 'Remodelación Iriondo' },
+  { id: 'aportes', titulo: 'Aportes personales', roles: ['ADMIN', 'EDITOR'] },
 ];
 
 export function esCajaMovimientos(vista: Vista): vista is CajaMovimientos {
@@ -36,6 +39,8 @@ export interface CajaConfig {
   moneda: Moneda;
   conAportante: boolean;
   etiquetasTipo: { ingreso: string; gasto: string };
+  /** Los botones de tipo de la barra de filtros (en plural). */
+  etiquetasFiltro: { ingresos: string; gastos: string };
   etiquetasTotales: { ingresos: string; gastos: string; balance: string };
 }
 
@@ -46,6 +51,7 @@ export const CAJAS: Record<CajaId, CajaConfig> = {
     moneda: 'USD',
     conAportante: true,
     etiquetasTipo: { ingreso: 'Aporte', gasto: 'Devolución' },
+    etiquetasFiltro: { ingresos: 'Aportes', gastos: 'Devoluciones' },
     etiquetasTotales: { ingresos: 'Aportado', gastos: 'Devuelto', balance: 'Deuda' },
   },
 };

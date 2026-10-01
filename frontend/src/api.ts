@@ -222,6 +222,7 @@ function cajaForm(data: NuevoMovimientoCaja): FormData {
   form.set('fecha', data.fecha);
   form.set('tipo', data.tipo);
   form.set('monto', String(data.monto));
+  if (data.cotizacion) form.set('cotizacion', String(data.cotizacion));
   form.set('concepto', data.concepto);
   if (data.aportante) form.set('aportante', data.aportante);
   if (data.notas) form.set('notas', data.notas);
@@ -234,7 +235,10 @@ export async function listCaja(caja: CajaId): Promise<MovimientoCaja[]> {
 }
 
 export async function crearEnCaja(caja: CajaId, data: NuevoMovimientoCaja): Promise<MovimientoCaja> {
-  const response = await request(`/${caja}`, { method: 'POST', body: cajaForm(data) });
+  const form = cajaForm(data);
+  const userName = getUserName();
+  if (userName) form.set('cargadoPor', userName);
+  const response = await request(`/${caja}`, { method: 'POST', body: form });
   return response.json();
 }
 

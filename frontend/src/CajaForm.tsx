@@ -2,6 +2,7 @@ import { FormEvent, useState } from 'react';
 import { ApiError, crearEnCaja, editarEnCaja } from './api';
 import { APORTANTES, type CajaConfig } from './cajas';
 import { dateToDisplay, fechaToIso, formatFechaInput, isoToDisplay, todayDisplay } from './fecha';
+import { currency } from './format';
 import { formatMontoInput, parseMonto } from './monto';
 import type { MovimientoCaja, TipoMovimiento } from './types';
 import { useEscapeKey } from './useEscapeKey';
@@ -11,17 +12,17 @@ interface Props {
   editing?: MovimientoCaja;
   onClose: () => void;
   onSaved: (item: MovimientoCaja) => void;
-  onDelete: (item: MovimientoCaja) => void;
   onUnauthorized: () => void;
 }
 
 /** Alta/edición en una de las cajas de ADMIN — mismo formato que MovimientoForm, sin bien ni comprobantes, y con aportante si la caja lo lleva. */
-export default function CajaForm({ caja, editing, onClose, onSaved, onDelete, onUnauthorized }: Props) {
+export default function CajaForm({ caja, editing, onClose, onSaved, onUnauthorized }: Props) {
   useEscapeKey(onClose);
 
   const [tipo, setTipo] = useState<TipoMovimiento>(editing?.tipo ?? (caja.conAportante ? 'INGRESO' : 'GASTO'));
   const [fechaTexto, setFechaTexto] = useState(editing ? isoToDisplay(editing.fecha) : todayDisplay());
   const [monto, setMonto] = useState(editing ? String(editing.monto) : '');
+  const [cotizacion, setCotizacion] = useState(editing?.cotizacion ? String(editing.cotizacion) : '');
   const [concepto, setConcepto] = useState(editing?.concepto ?? '');
   const [aportante, setAportante] = useState(editing?.aportante ?? '');
   const [notas, setNotas] = useState(editing?.notas ?? '');
@@ -29,10 +30,15 @@ export default function CajaForm({ caja, editing, onClose, onSaved, onDelete, on
     fecha?: string;
     concepto?: string;
     monto?: string;
+    cotizacion?: string;
     aportante?: string;
   }>({});
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  const montoNumeroVivo = parseMonto(monto);
+  const cotizacionVivo = parseMonto(cotizacion);
+  const pesosCalculados = montoNumeroVivo > 0 && cotizacionVivo > 0 ? montoNumeroVivo * cotizacionVivo : null;
 
   function shiftFecha(dias: number) {
     const iso = fechaToIso(fechaTexto);
@@ -44,12 +50,14 @@ export default function CajaForm({ caja, editing, onClose, onSaved, onDelete, on
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     const montoNumero = parseMonto(monto);
+    const cotizacionNumero = cotizacion.trim() ? parseMonto(cotizacion) : null;
     const fechaIso = fechaToIso(fechaTexto);
 
     const nuevosErrores: typeof fieldErrors = {};
     if (!fechaIso) nuevosErrores.fecha = 'Fecha inválida (dd/mm/aaaa)';
     if (!concepto.trim()) nuevosErrores.concepto = 'Completá el concepto';
     if (!montoNumero || montoNumero <= 0) nuevosErrores.monto = 'Ingresá un monto válido';
+    if (cotizacionNumero !== null && !(cotizacionNumero > 0)) nuevosErrores.cotizacion = 'Cotización inválida';
     if (caja.conAportante && !aportante) nuevosErrores.aportante = 'Elegí quién aporta';
 
     if (Object.keys(nuevosErrores).length > 0 || !fechaIso) {
@@ -65,6 +73,7 @@ export default function CajaForm({ caja, editing, onClose, onSaved, onDelete, on
         fecha: fechaIso,
         tipo,
         monto: montoNumero,
+        cotizacion: caja.moneda === 'USD' ? cotizacionNumero : null,
         concepto: concepto.trim(),
         aportante: caja.conAportante ? aportante : undefined,
         notas: notas.trim(),
@@ -183,6 +192,26 @@ export default function CajaForm({ caja, editing, onClose, onSaved, onDelete, on
             {fieldErrors.monto && <p className="error-text">{fieldErrors.monto}</p>}
           </div>
 
+          {caja.moneda === 'USD' && (
+            <div className="field">
+              <label htmlFor="caja-cotizacion">Cotización (pesos por dólar, opcional)</label>
+              <div className="input-prefix-wrap">
+                <span className="input-prefix">$</span>
+                <input
+                  id="caja-cotizacion"
+                  className="input input-with-prefix"
+                  type="text"
+                  inputMode="decimal"
+                  placeholder="Ej 1505"
+                  value={cotizacion}
+                  onChange={(e) => setCotizacion(formatMontoInput(e.target.value))}
+                />
+              </div>
+              {pesosCalculados !== null && <p className="field-hint">= {currency.format(pesosCalculados)}</p>}
+              {fieldErrors.cotizacion && <p className="error-text">{fieldErrors.cotizacion}</p>}
+            </div>
+          )}
+
           <div className="field">
             <label htmlFor="caja-notas">Notas (opcional)</label>
             <textarea id="caja-notas" className="input" value={notas} onChange={(e) => setNotas(e.target.value)} />
@@ -192,16 +221,6 @@ export default function CajaForm({ caja, editing, onClose, onSaved, onDelete, on
         </div>
 
         <div className="dialog-actions">
-          {editing && (
-            <button
-              type="button"
-              className="btn-plain"
-              style={{ color: 'var(--danger)', marginRight: 'auto' }}
-              onClick={() => onDelete(editing)}
-            >
-              Eliminar
-            </button>
-          )}
           <button type="button" className="btn-plain" onClick={onClose}>
             Cancelar
           </button>
