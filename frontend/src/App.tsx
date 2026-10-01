@@ -20,12 +20,15 @@ import {
   eliminarMovimiento,
   getAccessKey,
   getLastSeenNovedades,
+  getUserName,
   getUserRole,
   listAvisos,
   listMovimientos,
+  login,
   setLastSeenNovedades,
+  setUserRole,
 } from './api';
-import type { Aviso, CajaMovimientos, FiltroTipo, Movimiento } from './types';
+import type { Aviso, CajaMovimientos, FiltroTipo, Movimiento, Rol } from './types';
 import { useEscapeKey } from './useEscapeKey';
 import { useVersionCheck } from './useVersionCheck';
 
@@ -68,8 +71,11 @@ export default function App() {
   const [showAvisoForm, setShowAvisoForm] = useState(false);
   const [confirmDeleteAvisoTarget, setConfirmDeleteAvisoTarget] = useState<Aviso | null>(null);
   const fabMenuRef = useRef<HTMLDivElement>(null);
-  const puedeEditar = getUserRole() !== 'VIEWER';
-  const rol = getUserRole();
+  // En estado (y no leído directo de localStorage) para poder completarlo
+  // después: una sesión iniciada antes de que existieran los roles tiene la
+  // contraseña y el nombre guardados pero no el rol (ver el useEffect de abajo).
+  const [rol, setRol] = useState<Rol | null>(getUserRole());
+  const puedeEditar = rol !== 'VIEWER';
   const [vista, setVista] = useState<Vista>('sucesion');
   const [cajaRefreshKey, setCajaRefreshKey] = useState(0);
   // Las cajas simples (CajaView) ponen su barra de filtros acá, adentro del encabezado fijo.
@@ -107,6 +113,18 @@ export default function App() {
   useEscapeKey(() => setShowInformes(false));
   useEscapeKey(() => setShowCrearMenu(false));
   useVersionCheck();
+
+  useEffect(() => {
+    if (!unlocked || getUserRole()) return;
+    login(getUserName() ?? '', getAccessKey() ?? '')
+      .then(({ rol: rolResuelto }) => {
+        setUserRole(rolResuelto);
+        setRol(rolResuelto);
+      })
+      .catch((err) => {
+        if (err instanceof ApiError && err.status === 401) handleUnauthorized();
+      });
+  }, [unlocked]);
 
   useEffect(() => {
     if (unlocked && esCajaMovimientos(vista)) {
@@ -207,7 +225,14 @@ export default function App() {
   }
 
   if (!unlocked) {
-    return <AccessGate onUnlock={() => setUnlocked(true)} />;
+    return (
+      <AccessGate
+        onUnlock={() => {
+          setRol(getUserRole());
+          setUnlocked(true);
+        }}
+      />
+    );
   }
 
   return (
