@@ -293,6 +293,16 @@ corridos a mano contra la planilla real):
   en Aportes al blue del día. Según Gustavo, lo único que se le devolvió
   son los $60.000 del 19/05/2023.
 
+**Colores en la planilla origen** ("Admin inmuebles", pestaña de leyenda
+"Colores app"): lo que ya está en la app se marca pintando **solo la celda
+de descripción** (nunca la fecha) con el color de su caja — Alquileres
+verde `#b7e1cd`, Remodelación rojo `#ea9999`, Varios celeste `#9fc5e8`,
+Aportes violeta `#b4a7d6`, aviso amarillo `#ffe599`; **sin color = todavía
+no está en la app**. Protocolo marcado el 2026-10-02 (los amarillos y
+verdes que tenía antes se reemplazaron; backup de los colores viejos y la
+clasificación fila por fila en `secrets/backups/`). Al importar algo
+nuevo, pintar su fila con el color de la caja y actualizar la leyenda.
+
 **Aportes personales** (la ven Maxi y Gustavo — ADMIN/EDITOR —, Nico no;
 sin comprobantes ni avisos):
 
