@@ -202,7 +202,13 @@ id | fecha | texto | bien | autor | creadoEn | estado
   aviso no tiene por qué llevar uno. Tocar un aviso abre su detalle
   (`AvisoDetail`) con un chip "Ver" por comprobante; en la lista muestra
   📎 y la cantidad. El campo de archivos de los formularios es
-  `ComprobantesField`, compartido con `MovimientoForm`.
+  `ComprobantesField`, compartido con `MovimientoForm`. El visor
+  (`ReceiptViewerDialog`) muestra imágenes, PDF y **videos**; otros tipos
+  (p. ej. Excel) dicen que no se pueden previsualizar.
+- 2026-10-02: se bajaron de Mega (links de la col. C de Protocolo, con la
+  clave del link) y se adjuntaron 49 archivos a 11 avisos (fotos de la
+  mesada, trabajos de Leiva, persianas con videos, presupuestos, libre
+  deuda...) y 3 recibos a sus movimientos de Alquileres (ids 486, 497, 501).
 - El FAB "+" ahora abre un mini menú ("Nuevo movimiento" / "Nuevo aviso")
   en vez de ir directo al formulario de movimiento.
 
@@ -316,6 +322,13 @@ no está en la app**. Protocolo marcado el 2026-10-02 (los amarillos y
 verdes que tenía antes se reemplazaron; backup de los colores viejos y la
 clasificación fila por fila en `secrets/backups/`). Al importar algo
 nuevo, pintar su fila con el color de la caja y actualizar la leyenda.
+**Ojo: los números de fila de Protocolo no son estables** — Gustavo
+inserta filas en el medio (el 2026-10-02 agregó 2 después de la 865 y 33
+después de la 906), así que las referencias `[Protocolo fila N]` de las
+notas/avisos se corren, y las filas insertadas heredan el color de la de
+arriba. Antes de usar una referencia o pintar, releer y comparar el texto
+de la fila (no confiar en el número); si se corrieron, actualizar las
+referencias en la app.
 
 **Aportes personales** (la ven Maxi y Gustavo — ADMIN/EDITOR —, Nico no;
 sin comprobantes, con avisos):

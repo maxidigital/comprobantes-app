@@ -71,7 +71,14 @@ export default function ReceiptViewerDialog({ caja, movimientoId, entidad = 'mov
             {!error && objectUrl && contentType === 'application/pdf' && (
               <embed src={objectUrl} type="application/pdf" className="receipt-viewer-pdf" />
             )}
-            {!error && objectUrl && !contentType.startsWith('image/') && contentType !== 'application/pdf' && (
+            {!error && objectUrl && contentType.startsWith('video/') && (
+              <video src={objectUrl} controls playsInline className="receipt-viewer-image" />
+            )}
+            {!error &&
+              objectUrl &&
+              !contentType.startsWith('image/') &&
+              !contentType.startsWith('video/') &&
+              contentType !== 'application/pdf' && (
               <p className="detail-value">No se puede previsualizar este tipo de archivo.</p>
             )}
           </div>
