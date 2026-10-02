@@ -182,8 +182,9 @@ id | fecha | texto | bien | autor | creadoEn | estado
 - Lleva `bien` obligatorio y el filtro de bien de la lista lo trata igual
   que a un movimiento; el filtro de tipo (Ingresos/Egresos) y el de
   "comprobante pendiente" no le aplican (un aviso no es ni ingreso ni
-  egreso, así que siempre pasa esos dos filtros). Hay un chip aparte
-  (📢, fuera del dropdown de "Filtros") para ocultarlos del todo.
+  egreso, así que siempre pasa esos dos filtros). Para ocultarlos del
+  todo está el checkbox "Mostrar avisos" en el panel de "Filtros". En la
+  lista se distinguen por un glow amarillo (`.movement-card--aviso`).
 - Mismos permisos que movimientos (VIEWER solo lee, EDITOR/ADMIN
   crean/eliminan). Se puede crear y eliminar, **no editar** — si hay un
   error se borra y se vuelve a cargar.

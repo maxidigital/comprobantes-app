@@ -32,16 +32,6 @@ export function BellIcon({ className }: IconProps) {
   );
 }
 
-export function MegaphoneIcon({ className }: IconProps) {
-  return (
-    <svg {...commonProps} className={className} aria-hidden="true">
-      <path d="M3 10v4a1 1 0 0 0 1 1h2l9 5V4L6 9H4a1 1 0 0 0-1 1Z" />
-      <path d="M15 8.5a4 4 0 0 1 0 7" />
-      <path d="M7 15v4a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1v-4" />
-    </svg>
-  );
-}
-
 export function RefreshIcon({ className }: IconProps) {
   return (
     <svg {...commonProps} className={className} aria-hidden="true">

@@ -11,7 +11,7 @@ import {
   rangoMesPasado,
   todayDisplay,
 } from './fecha';
-import { ChartIcon, MegaphoneIcon, SparkleIcon } from './icons';
+import { ChartIcon, SparkleIcon } from './icons';
 
 const MESES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 
@@ -33,7 +33,7 @@ interface Props {
   fechaHasta?: string | null;
   onFechaRangeChange?: (desde: string | null, hasta: string | null) => void;
   aniosConDatos?: number[];
-  /** Solo en las cajas con avisos. */
+  /** Solo en las cajas con avisos: un checkbox más en el panel "Filtros". */
   avisos?: { mostrar: boolean; onToggle: () => void };
   /** Informes y la IA van acá (y no en el menú) porque son de la caja que se está viendo. */
   onInformes: () => void;
@@ -157,11 +157,11 @@ export default function FilterBar({
 
   return (
     <div className="filter-bar">
-      {(pendientes || categorias) && (
+      {(pendientes || categorias || avisos) && (
         <div className="dropdown-wrapper" ref={filtrosRef}>
           <button
             type="button"
-            className={`chip chip-toggle ${pendientes?.solo || (categorias?.seleccionadas.size ?? 0) > 0 ? 'active' : ''}`}
+            className={`chip chip-toggle ${pendientes?.solo || (categorias?.seleccionadas.size ?? 0) > 0 || avisos?.mostrar === false ? 'active' : ''}`}
             onClick={() => setShowFiltros((v) => !v)}
             aria-expanded={showFiltros}
           >
@@ -169,6 +169,15 @@ export default function FilterBar({
           </button>
           {showFiltros && (
             <div className="dropdown-panel dropdown-panel--centered">
+              {avisos && (
+                <label className="checkbox-row">
+                  <input type="checkbox" checked={avisos.mostrar} onChange={avisos.onToggle} />
+                  Mostrar avisos
+                </label>
+              )}
+
+              {avisos && (pendientes || categorias) && <div className="dropdown-panel-separator" />}
+
               {pendientes && (
                 <label className="checkbox-row">
                   <input
@@ -310,18 +319,6 @@ export default function FilterBar({
             </div>
           )}
         </div>
-      )}
-      {avisos && (
-        <button
-          type="button"
-          className={`chip chip-toggle chip-icon ${!avisos.mostrar ? 'active' : ''}`}
-          onClick={avisos.onToggle}
-          aria-pressed={!avisos.mostrar}
-          aria-label={avisos.mostrar ? 'Ocultar avisos' : 'Mostrar avisos'}
-          title={avisos.mostrar ? 'Ocultar avisos' : 'Mostrar avisos'}
-        >
-          <MegaphoneIcon />
-        </button>
       )}
       <button
         type="button"

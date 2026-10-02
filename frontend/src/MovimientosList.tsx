@@ -1,7 +1,6 @@
 import { useMemo } from 'react';
 import { bienColor } from './bienes';
 import { formatFecha, formatMontoPartes } from './format';
-import { MegaphoneIcon } from './icons';
 import { notasPlano } from './Notas';
 import type { Aviso, FiltroTipo, Movimiento } from './types';
 import { useSwipeRows } from './useSwipeRows';
@@ -108,7 +107,7 @@ export default function MovimientosList({
                   <div className="card movement-card movement-card--aviso" {...cardProps(item.id, () => {})}>
                     <div className="row-top">
                       <span className="concepto">
-                        <MegaphoneIcon className="icon-inline" /> {a.texto}
+                        {a.texto}
                       </span>
                     </div>
                     <div className="row-bottom">
