@@ -115,7 +115,7 @@ export async function login(nombre: string, key: string): Promise<{ nombre: stri
 }
 
 /** Prefijo de la API de cada caja con el sistema de movimientos: la sucesión va sin prefijo (las rutas de siempre). */
-function base(caja: CajaMovimientos): string {
+function base(caja: CajaMovimientos | CajaId): string {
   return caja === 'sucesion' ? '' : `/${caja}`;
 }
 
@@ -187,12 +187,12 @@ export async function eliminarMovimiento(caja: CajaMovimientos, id: string): Pro
   await request(`${base(caja)}/movimientos/${id}`, { method: 'DELETE' });
 }
 
-export async function listAvisos(caja: CajaMovimientos): Promise<Aviso[]> {
+export async function listAvisos(caja: CajaMovimientos | CajaId): Promise<Aviso[]> {
   const response = await request(`${base(caja)}/avisos`);
   return response.json();
 }
 
-export async function crearAviso(caja: CajaMovimientos, data: NuevoAviso): Promise<Aviso> {
+export async function crearAviso(caja: CajaMovimientos | CajaId, data: NuevoAviso): Promise<Aviso> {
   const form = new FormData();
   form.set('fecha', data.fecha);
   if (data.bien) form.set('bien', data.bien);
@@ -204,7 +204,7 @@ export async function crearAviso(caja: CajaMovimientos, data: NuevoAviso): Promi
   return response.json();
 }
 
-export async function eliminarAviso(caja: CajaMovimientos, id: string): Promise<void> {
+export async function eliminarAviso(caja: CajaMovimientos | CajaId, id: string): Promise<void> {
   await request(`${base(caja)}/avisos/${id}`, { method: 'DELETE' });
 }
 

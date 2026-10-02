@@ -55,4 +55,10 @@ public class CajasConfig {
     public CajaAvisoSheetService variosAvisos() {
         return new CajaAvisoSheetService(sheets, spreadsheetId, "Avisos Varios");
     }
+
+    /** Aportes personales no tiene movimientos con comprobantes (eso es AportesPersonalesSheetService), pero sí avisos. */
+    @Bean
+    public CajaAvisoSheetService aportesAvisos() {
+        return new CajaAvisoSheetService(sheets, spreadsheetId, "Avisos Aportes");
+    }
 }

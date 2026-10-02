@@ -304,11 +304,23 @@ clasificación fila por fila en `secrets/backups/`). Al importar algo
 nuevo, pintar su fila con el color de la caja y actualizar la leyenda.
 
 **Aportes personales** (la ven Maxi y Gustavo — ADMIN/EDITOR —, Nico no;
-sin comprobantes ni avisos):
+sin comprobantes, con avisos):
 
 ```
 Aportes Personales:  id | fecha | tipo | montoUSD | cotizacion | montoARS | concepto | aportante | notas | cargadoPor | creadoEn | estado
+Avisos Aportes:      id | fecha | texto | autor | creadoEn | estado
 ```
+
+- **Avisos de Aportes** (2026-10-02): lo que cuenta cómo llegó o se movió
+  la plata de los herederos (contactos para traer efectivo, recibos de los
+  aportes en euros, pedidos de Maxi sobre qué moneda usar, pagos de
+  Gustavo con plata propia). Mismo `CajaAvisoSheetService` que
+  Remodelación y Varios (bean `aportesAvisos` en `CajasConfig`,
+  `AportesAvisoController` en `/api/aportes/avisos`); en el frontend
+  `CajaView` los intercala por fecha (`CajaConfig.conAvisos`), con el
+  filtro de avisos y el "+" con menú "Nuevo aporte / Nuevo aviso". La
+  tarjeta del aviso es `AvisoCard`, compartida con `MovimientosList`.
+  Como la caja no la ve Nico, estos avisos tampoco.
 
 - Lo que un heredero pone de su bolsillo para la sucesión (la obra o
   cualquier otra cosa), **todo en dólares** para que la inflación no licúe
@@ -510,7 +522,7 @@ src/main/java/com/maxidigital/comprobantes/
 │   ├── WebConfig.java               # CORS + registro del interceptor de acceso
 │   ├── GoogleClientsConfig.java     # Bean Sheets (cuenta de servicio) + Bean Drive (OAuth refresh token)
 │   ├── UsuariosConfig.java          # lista fija hardcodeada de usuarios -> rol
-│   ├── CajasConfig.java             # un trío de servicios por caja sin bien (Remodelación, Varios)
+│   ├── CajasConfig.java             # un trío de servicios por caja sin bien (Remodelación, Varios) + avisos de Aportes
 │   └── OpenAiConfig.java            # bean OpenAiService (OPENAI_API_KEY)
 ├── security/AccessKeyInterceptor.java, Rol.java
 ├── controller/
@@ -521,6 +533,7 @@ src/main/java/com/maxidigital/comprobantes/
 │   ├── PreguntaController.java      # POST /api/preguntas (chat IA, solo lectura)
 │   ├── Remodelacion*Controller.java, Varios*Controller.java  # heredan los de arriba, bajo /api/remodelacion y /api/varios
 │   ├── AportesPersonalesController.java    # /api/aportes (caja de ADMIN, USD)
+│   ├── AportesAvisoController.java  # /api/aportes/avisos (hereda AvisoController)
 │   └── ApiExceptionHandler.java
 ├── dto/MovimientoResponse.java, ComprobanteResponse.java, AvisoResponse.java, PreguntaRequest.java, PreguntaResponse.java,
 │       AporteResponse.java
@@ -555,6 +568,7 @@ frontend/src/
 ├── cajas.ts                         # las 4 cajas del desplegable, tieneBien(), config de Aportes + APORTANTES
 ├── CajaView.tsx, CajaForm.tsx, CajaDetail.tsx  # pantalla completa de una caja simple (Aportes): lista, alta/edición, detalle
 ├── useSwipeRows.ts                  # swipe para Editar/Eliminar, compartido por MovimientosList y CajaView
+├── AvisoCard.tsx                    # tarjeta de un aviso (glow amarillo), compartida por MovimientosList y CajaView
 ├── monto.ts                         # sanitizado del campo monto, compartido por MovimientoForm y CajaForm
 ├── cache.ts                         # caché por caja (memoria + localStorage), se borra al salir
 └── index.css                        # tokens de estética/PALETTE (ver ../estetica-react/ESTETICA-REACT.md)

@@ -3,11 +3,11 @@ import { ApiError, crearAviso } from './api';
 import { BIENES } from './bienes';
 import { tieneBien } from './cajas';
 import { fechaToIso, formatFechaInput, todayDisplay } from './fecha';
-import type { Aviso, CajaMovimientos } from './types';
+import type { Aviso, CajaId, CajaMovimientos } from './types';
 import { useEscapeKey } from './useEscapeKey';
 
 interface Props {
-  caja: CajaMovimientos;
+  caja: CajaMovimientos | CajaId;
   onClose: () => void;
   onSaved: (aviso: Aviso) => void;
   onUnauthorized: () => void;

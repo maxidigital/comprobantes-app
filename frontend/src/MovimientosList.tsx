@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import AvisoCard from './AvisoCard';
 import { bienColor } from './bienes';
 import { formatFecha, formatMontoPartes } from './format';
 import { notasPlano } from './Notas';
@@ -92,41 +93,16 @@ export default function MovimientosList({
             if (item.kind === 'aviso') {
               const a = item.aviso;
               return (
-                <div key={item.id} className="swipe-row">
-                  {puedeEditar && (
-                    <div className="swipe-actions">
-                      <button
-                        type="button"
-                        className="swipe-action swipe-action--delete"
-                        onClick={() => {
-                          closeSwipe();
-                          onDeleteAviso(a);
-                        }}
-                      >
-                        Eliminar
-                      </button>
-                    </div>
-                  )}
-
-                  <div className="card movement-card movement-card--aviso" {...cardProps(item.id, () => {})}>
-                    <div className="row-top">
-                      <span className="concepto">
-                        {a.texto}
-                      </span>
-                    </div>
-                    <div className="row-bottom">
-                      <span className="meta">
-                        {formatFecha(a.fecha)}
-                        {a.autor ? ` · ${a.autor}` : ''}
-                      </span>
-                      {a.bien && (
-                        <span className="bien-label" style={{ color: bienColor(a.bien) }}>
-                          {a.bien}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
+                <AvisoCard
+                  key={item.id}
+                  aviso={a}
+                  puedeEditar={puedeEditar}
+                  swipeProps={cardProps(item.id, () => {})}
+                  onDelete={() => {
+                    closeSwipe();
+                    onDeleteAviso(a);
+                  }}
+                />
               );
             }
 

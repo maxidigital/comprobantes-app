@@ -14,7 +14,7 @@ import type { CajaId, CajaMovimientos, Rol } from './types';
  *   bolsillo para la obra, en dólares para que la inflación no licúe la
  *   deuda. INGRESO = aporta, GASTO = se le devuelve; el saldo es lo que se
  *   le debe. Con cotización opcional (y su equivalente en pesos). Sin
- *   comprobantes ni avisos (CajaView). Nada se vincula solo entre cajas:
+ *   comprobantes, pero con avisos (CajaView). Nada se vincula solo entre cajas:
  *   un aporte se carga a mano acá y, en pesos, en Remodelación.
  */
 export type Vista = CajaMovimientos | CajaId;
@@ -32,7 +32,7 @@ export function esCajaMovimientos(vista: Vista): vista is CajaMovimientos {
 }
 
 /** Solo Alquileres distingue bienes; la remodelación es toda de Iriondo y los trámites no son de ningún bien. */
-export function tieneBien(caja: CajaMovimientos): boolean {
+export function tieneBien(caja: CajaMovimientos | CajaId): boolean {
   return caja === 'sucesion';
 }
 
@@ -41,6 +41,8 @@ export interface CajaConfig {
   titulo: string;
   moneda: Moneda;
   conAportante: boolean;
+  /** Avisos intercalados en la lista (pestaña "Avisos <caja>"), igual que en las otras cajas. */
+  conAvisos: boolean;
   etiquetasTipo: { ingreso: string; gasto: string };
   etiquetasTotales: { ingresos: string; gastos: string; balance: string };
 }
@@ -51,6 +53,7 @@ export const CAJAS: Record<CajaId, CajaConfig> = {
     titulo: 'Aportes personales',
     moneda: 'USD',
     conAportante: true,
+    conAvisos: true,
     etiquetasTipo: { ingreso: 'Aporte', gasto: 'Devolución' },
     etiquetasTotales: { ingresos: 'Aportado', gastos: 'Devuelto', balance: 'Deuda' },
   },

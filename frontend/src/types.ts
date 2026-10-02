@@ -71,7 +71,7 @@ export interface MensajeChat {
  */
 export type CajaMovimientos = 'sucesion' | 'remodelacion' | 'varios';
 
-/** Cajas simples (solo ADMIN, sin comprobantes ni avisos) — ver cajas.ts. */
+/** Cajas simples (solo ADMIN/EDITOR, sin comprobantes; con avisos) — ver cajas.ts. */
 export type CajaId = 'aportes';
 
 export interface MovimientoCaja {
