@@ -35,6 +35,12 @@ public class CajaAvisoSheetService implements AvisoStore {
     }
 
     @Override
+    public AvisoResponse update(String id, String fecha, String texto, String bien) throws IOException {
+        String autor = tab.find(id).dato(2);
+        return toResponse(tab.update(id, List.of(toSheetDate(fecha), texto, autor)));
+    }
+
+    @Override
     public void softDelete(String id) throws IOException {
         tab.softDelete(id);
     }

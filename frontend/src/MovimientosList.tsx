@@ -19,6 +19,7 @@ interface Props {
   onOpenDetail: (movimiento: Movimiento) => void;
   onEdit: (movimiento: Movimiento) => void;
   onDelete: (movimiento: Movimiento) => void;
+  onEditAviso: (aviso: Aviso) => void;
   onDeleteAviso: (aviso: Aviso) => void;
 }
 
@@ -42,6 +43,7 @@ export default function MovimientosList({
   onOpenDetail,
   onEdit,
   onDelete,
+  onEditAviso,
   onDeleteAviso,
 }: Props) {
   const { cardProps, closeSwipe } = useSwipeRows(puedeEditar);
@@ -97,7 +99,12 @@ export default function MovimientosList({
                   key={item.id}
                   aviso={a}
                   puedeEditar={puedeEditar}
-                  swipeProps={cardProps(item.id, () => {})}
+                  // Un aviso no tiene detalle: tocarlo lo abre para editar (si se puede).
+                  swipeProps={cardProps(item.id, () => puedeEditar && onEditAviso(a))}
+                  onEdit={() => {
+                    closeSwipe();
+                    onEditAviso(a);
+                  }}
                   onDelete={() => {
                     closeSwipe();
                     onDeleteAviso(a);

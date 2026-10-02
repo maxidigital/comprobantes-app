@@ -38,6 +38,14 @@ public class AvisoController {
         return avisoSheetService.append(fecha, texto, bien, autor);
     }
 
+    @PutMapping(value = "/{id}", consumes = "multipart/form-data")
+    public AvisoResponse actualizar(@PathVariable String id,
+                                    @RequestParam String fecha,
+                                    @RequestParam String texto,
+                                    @RequestParam(required = false) String bien) throws IOException {
+        return avisoSheetService.update(id, fecha, texto, bien == null ? "" : bien);
+    }
+
     @DeleteMapping("/{id}")
     public void eliminar(@PathVariable String id) throws IOException {
         avisoSheetService.softDelete(id);

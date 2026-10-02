@@ -1,25 +1,27 @@
 import { FormEvent, useState } from 'react';
-import { ApiError, crearAviso } from './api';
+import { ApiError, crearAviso, editarAviso } from './api';
 import { BIENES } from './bienes';
 import { tieneBien } from './cajas';
-import { fechaToIso, formatFechaInput, todayDisplay } from './fecha';
+import { fechaToIso, formatFechaInput, isoToDisplay, todayDisplay } from './fecha';
 import type { Aviso, CajaId, CajaMovimientos } from './types';
 import { useEscapeKey } from './useEscapeKey';
 
 interface Props {
   caja: CajaMovimientos | CajaId;
+  /** Si viene, el formulario edita ese aviso (el autor no cambia). */
+  editing?: Aviso;
   onClose: () => void;
   onSaved: (aviso: Aviso) => void;
   onUnauthorized: () => void;
 }
 
-export default function AvisoForm({ caja, onClose, onSaved, onUnauthorized }: Props) {
+export default function AvisoForm({ caja, editing, onClose, onSaved, onUnauthorized }: Props) {
   useEscapeKey(onClose);
 
   const conBien = tieneBien(caja);
-  const [fechaTexto, setFechaTexto] = useState(todayDisplay());
-  const [bien, setBien] = useState('');
-  const [texto, setTexto] = useState('');
+  const [fechaTexto, setFechaTexto] = useState(editing ? isoToDisplay(editing.fecha) : todayDisplay());
+  const [bien, setBien] = useState(editing?.bien ?? '');
+  const [texto, setTexto] = useState(editing?.texto ?? '');
   const [fieldErrors, setFieldErrors] = useState<{ fecha?: string; bien?: string; texto?: string }>({});
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -42,7 +44,8 @@ export default function AvisoForm({ caja, onClose, onSaved, onUnauthorized }: Pr
     setSubmitting(true);
     setError(null);
     try {
-      const guardado = await crearAviso(caja, { fecha: fechaIso, bien: conBien ? bien : '', texto: texto.trim() });
+      const datos = { fecha: fechaIso, bien: conBien ? bien : '', texto: texto.trim() };
+      const guardado = editing ? await editarAviso(caja, editing.id, datos) : await crearAviso(caja, datos);
       onSaved(guardado);
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {
@@ -60,7 +63,7 @@ export default function AvisoForm({ caja, onClose, onSaved, onUnauthorized }: Pr
       <form className="dialog dialog--fullscreen" onClick={(e) => e.stopPropagation()} onSubmit={handleSubmit}>
         <div className="dialog-scroll">
           <div className="dialog-header">
-            <h2>Nuevo aviso</h2>
+            <h2>{editing ? 'Editar aviso' : 'Nuevo aviso'}</h2>
             <button type="button" className="btn-plain menu-icon-btn" onClick={onClose} aria-label="Cerrar">
               ✕
             </button>

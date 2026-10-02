@@ -187,8 +187,9 @@ id | fecha | texto | bien | autor | creadoEn | estado
   (`FiltroAvisos`). En la
   lista se distinguen por un glow amarillo (`.movement-card--aviso`).
 - Mismos permisos que movimientos (VIEWER solo lee, EDITOR/ADMIN
-  crean/eliminan). Se puede crear y eliminar, **no editar** — si hay un
-  error se borra y se vuelve a cargar.
+  crean, editan y eliminan). Editar (desde 2026-10-02: `PUT .../avisos/{id}`,
+  swipe "Editar" o tocar el aviso, que no tiene detalle) cambia fecha,
+  texto y bien; el **autor y creadoEn quedan los originales**.
 - El FAB "+" ahora abre un mini menú ("Nuevo movimiento" / "Nuevo aviso")
   en vez de ir directo al formulario de movimiento.
 

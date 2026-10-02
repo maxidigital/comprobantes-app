@@ -79,6 +79,20 @@ public class AvisoSheetService implements AvisoStore {
         return result;
     }
 
+    @Override
+    public AvisoResponse update(String id, String fecha, String texto, String bien) throws IOException {
+        List<List<Object>> rows = readRawRows();
+        int rowIndex = locateRowIndex(rows, id);
+        List<Object> row = rows.get(rowIndex);
+        // Solo B:D (fecha, texto, bien): el autor, creadoEn y estado no se tocan.
+        ValueRange valueRange = new ValueRange().setValues(List.of(List.of(toSheetDate(fecha), texto, bien)));
+        sheets.spreadsheets().values()
+                .update(spreadsheetId, SHEET_NAME + "!B" + (rowIndex + 1) + ":D" + (rowIndex + 1), valueRange)
+                .setValueInputOption("RAW")
+                .execute();
+        return new AvisoResponse(id, fecha, texto, bien, cell(row, 4), cell(row, 5));
+    }
+
     public void softDelete(String id) throws IOException {
         List<List<Object>> rows = readRawRows();
         int rowIndex = locateRowIndex(rows, id);

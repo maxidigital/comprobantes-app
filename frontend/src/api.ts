@@ -204,6 +204,16 @@ export async function crearAviso(caja: CajaMovimientos | CajaId, data: NuevoAvis
   return response.json();
 }
 
+export async function editarAviso(caja: CajaMovimientos | CajaId, id: string, data: NuevoAviso): Promise<Aviso> {
+  const form = new FormData();
+  form.set('fecha', data.fecha);
+  if (data.bien) form.set('bien', data.bien);
+  form.set('texto', data.texto);
+
+  const response = await request(`${base(caja)}/avisos/${id}`, { method: 'PUT', body: form });
+  return response.json();
+}
+
 export async function eliminarAviso(caja: CajaMovimientos | CajaId, id: string): Promise<void> {
   await request(`${base(caja)}/avisos/${id}`, { method: 'DELETE' });
 }

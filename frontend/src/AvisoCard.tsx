@@ -8,15 +8,19 @@ interface Props {
   puedeEditar: boolean;
   /** Las props de swipe de la tarjeta (useSwipeRows#cardProps), ya aplicadas a este aviso. */
   swipeProps: ReturnType<ReturnType<typeof useSwipeRows>['cardProps']>;
+  onEdit: () => void;
   onDelete: () => void;
 }
 
 /** Un aviso en la lista de una caja (glow amarillo, sin monto). Compartido por MovimientosList y CajaView. */
-export default function AvisoCard({ aviso: a, puedeEditar, swipeProps, onDelete }: Props) {
+export default function AvisoCard({ aviso: a, puedeEditar, swipeProps, onEdit, onDelete }: Props) {
   return (
     <div className="swipe-row">
       {puedeEditar && (
         <div className="swipe-actions">
+          <button type="button" className="swipe-action swipe-action--edit" onClick={onEdit}>
+            Editar
+          </button>
           <button type="button" className="swipe-action swipe-action--delete" onClick={onDelete}>
             Eliminar
           </button>

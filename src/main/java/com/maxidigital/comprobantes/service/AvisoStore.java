@@ -12,5 +12,8 @@ public interface AvisoStore {
 
     List<AvisoResponse> readAllActive() throws IOException;
 
+    /** Cambia fecha, texto y bien; el autor y creadoEn quedan los originales. */
+    AvisoResponse update(String id, String fecha, String texto, String bien) throws IOException;
+
     void softDelete(String id) throws IOException;
 }

@@ -67,6 +67,7 @@ export default function App() {
   const [confirmDeleteTarget, setConfirmDeleteTarget] = useState<Movimiento | null>(null);
   const [showCrearMenu, setShowCrearMenu] = useState(false);
   const [showAvisoForm, setShowAvisoForm] = useState(false);
+  const [editAvisoTarget, setEditAvisoTarget] = useState<Aviso | null>(null);
   const [confirmDeleteAvisoTarget, setConfirmDeleteAvisoTarget] = useState<Aviso | null>(null);
   const fabMenuRef = useRef<HTMLDivElement>(null);
   // En estado (y no leído directo de localStorage) para poder completarlo
@@ -187,6 +188,7 @@ export default function App() {
     setConfirmDeleteTarget(null);
     setShowCrearMenu(false);
     setShowAvisoForm(false);
+    setEditAvisoTarget(null);
     setConfirmDeleteAvisoTarget(null);
     setShowPreguntaIA(false);
     setUnlocked(false);
@@ -326,6 +328,7 @@ export default function App() {
                 onOpenDetail={(m) => setDetailTarget(m)}
                 onEdit={(m) => setEditTarget(m)}
                 onDelete={(m) => setConfirmDeleteTarget(m)}
+                onEditAviso={(a) => setEditAvisoTarget(a)}
                 onDeleteAviso={(a) => setConfirmDeleteAvisoTarget(a)}
               />
             )}
@@ -388,13 +391,18 @@ export default function App() {
         />
       )}
 
-      {showAvisoForm && (
+      {(showAvisoForm || editAvisoTarget) && (
         <AvisoForm
           caja={caja}
-          onClose={() => setShowAvisoForm(false)}
-          onSaved={(a) => {
-            setAvisos((prev) => [a, ...prev]);
+          editing={editAvisoTarget ?? undefined}
+          onClose={() => {
             setShowAvisoForm(false);
+            setEditAvisoTarget(null);
+          }}
+          onSaved={(a) => {
+            setAvisos((prev) => (editAvisoTarget ? prev.map((x) => (x.id === a.id ? a : x)) : [a, ...prev]));
+            setShowAvisoForm(false);
+            setEditAvisoTarget(null);
           }}
           onUnauthorized={handleUnauthorized}
         />

@@ -47,6 +47,7 @@ export default function CajaView({ caja, puedeEditar, filtroTipo, filterSlot, on
   const [showCrearMenu, setShowCrearMenu] = useState(false);
   const [showAvisoForm, setShowAvisoForm] = useState(false);
   const [deleteAvisoTarget, setDeleteAvisoTarget] = useState<Aviso | null>(null);
+  const [editAvisoTarget, setEditAvisoTarget] = useState<Aviso | null>(null);
   const fabMenuRef = useRef<HTMLDivElement>(null);
   const { cardProps, closeSwipe } = useSwipeRows(puedeEditar);
 
@@ -217,7 +218,11 @@ export default function CajaView({ caja, puedeEditar, filtroTipo, filterSlot, on
                       key={entrada.id}
                       aviso={a}
                       puedeEditar={puedeEditar}
-                      swipeProps={cardProps(entrada.id, () => {})}
+                      swipeProps={cardProps(entrada.id, () => puedeEditar && setEditAvisoTarget(a))}
+                      onEdit={() => {
+                        closeSwipe();
+                        setEditAvisoTarget(a);
+                      }}
                       onDelete={() => {
                         closeSwipe();
                         setDeleteAvisoTarget(a);
@@ -316,13 +321,18 @@ export default function CajaView({ caja, puedeEditar, filtroTipo, filterSlot, on
           </button>
         ))}
 
-      {showAvisoForm && (
+      {(showAvisoForm || editAvisoTarget) && (
         <AvisoForm
           caja={caja.id}
-          onClose={() => setShowAvisoForm(false)}
-          onSaved={(a) => {
-            setAvisos((prev) => [a, ...prev]);
+          editing={editAvisoTarget ?? undefined}
+          onClose={() => {
             setShowAvisoForm(false);
+            setEditAvisoTarget(null);
+          }}
+          onSaved={(a) => {
+            setAvisos((prev) => (editAvisoTarget ? prev.map((x) => (x.id === a.id ? a : x)) : [a, ...prev]));
+            setShowAvisoForm(false);
+            setEditAvisoTarget(null);
           }}
           onUnauthorized={onUnauthorized}
         />
