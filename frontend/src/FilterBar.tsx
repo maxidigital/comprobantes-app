@@ -11,9 +11,16 @@ import {
   rangoMesPasado,
   todayDisplay,
 } from './fecha';
+import type { FiltroAvisos } from './types';
 import { ChartIcon, SparkleIcon } from './icons';
 
 const MESES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+
+const OPCIONES_AVISOS: [FiltroAvisos, string][] = [
+  ['TODOS', 'Movimientos y avisos'],
+  ['SIN_AVISOS', 'Sin avisos'],
+  ['SOLO_AVISOS', 'Solo avisos'],
+];
 
 /** Las opciones del panel "Filtros" con un checkbox cada una: los bienes en la sucesión, los aportantes en Aportes. */
 export interface FiltroCategorias {
@@ -34,7 +41,7 @@ interface Props {
   onFechaRangeChange?: (desde: string | null, hasta: string | null) => void;
   aniosConDatos?: number[];
   /** Solo en las cajas con avisos: un checkbox más en el panel "Filtros". */
-  avisos?: { mostrar: boolean; onToggle: () => void };
+  avisos?: { filtro: FiltroAvisos; onChange: (filtro: FiltroAvisos) => void };
   /** Informes y la IA van acá (y no en el menú) porque son de la caja que se está viendo. */
   onInformes: () => void;
   /** La IA lee Alquileres, Remodelación y Varios (Aportes todavía no). */
@@ -161,7 +168,7 @@ export default function FilterBar({
         <div className="dropdown-wrapper" ref={filtrosRef}>
           <button
             type="button"
-            className={`chip chip-toggle ${pendientes?.solo || (categorias?.seleccionadas.size ?? 0) > 0 || avisos?.mostrar === false ? 'active' : ''}`}
+            className={`chip chip-toggle ${pendientes?.solo || (categorias?.seleccionadas.size ?? 0) > 0 || (avisos && avisos.filtro !== 'TODOS') ? 'active' : ''}`}
             onClick={() => setShowFiltros((v) => !v)}
             aria-expanded={showFiltros}
           >
@@ -169,12 +176,18 @@ export default function FilterBar({
           </button>
           {showFiltros && (
             <div className="dropdown-panel dropdown-panel--centered">
-              {avisos && (
-                <label className="checkbox-row">
-                  <input type="checkbox" checked={avisos.mostrar} onChange={avisos.onToggle} />
-                  Mostrar avisos
-                </label>
-              )}
+              {avisos &&
+                OPCIONES_AVISOS.map(([valor, texto]) => (
+                  <label className="checkbox-row" key={valor}>
+                    <input
+                      type="radio"
+                      name="filtro-avisos"
+                      checked={avisos.filtro === valor}
+                      onChange={() => avisos.onChange(valor)}
+                    />
+                    {texto}
+                  </label>
+                ))}
 
               {avisos && (pendientes || categorias) && <div className="dropdown-panel-separator" />}
 

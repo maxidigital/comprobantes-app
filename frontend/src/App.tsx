@@ -27,7 +27,7 @@ import {
   login,
   setUserRole,
 } from './api';
-import type { Aviso, CajaMovimientos, FiltroTipo, Movimiento, Rol } from './types';
+import type { Aviso, CajaMovimientos, FiltroAvisos, FiltroTipo, Movimiento, Rol } from './types';
 import { useEscapeKey } from './useEscapeKey';
 import { useVersionCheck } from './useVersionCheck';
 
@@ -53,7 +53,7 @@ export default function App() {
   const [bienesSeleccionados, setBienesSeleccionados] = useState<Set<string>>(new Set());
   const [fechaDesde, setFechaDesde] = useState<string | null>(null);
   const [fechaHasta, setFechaHasta] = useState<string | null>(null);
-  const [mostrarAvisos, setMostrarAvisos] = useState(true);
+  const [filtroAvisos, setFiltroAvisos] = useState<FiltroAvisos>('TODOS');
 
   const [showForm, setShowForm] = useState(false);
   const [editTarget, setEditTarget] = useState<Movimiento | null>(null);
@@ -290,7 +290,7 @@ export default function App() {
               setFechaHasta(hasta);
             }}
             aniosConDatos={aniosConDatos}
-            avisos={{ mostrar: mostrarAvisos, onToggle: () => setMostrarAvisos((v) => !v) }}
+            avisos={{ filtro: filtroAvisos, onChange: setFiltroAvisos }}
             onInformes={() => setShowInformes(true)}
             onPreguntarIA={() => setShowPreguntaIA(true)}
           />
@@ -321,7 +321,7 @@ export default function App() {
                 bienesSeleccionados={bienesSeleccionados}
                 fechaDesde={fechaDesde}
                 fechaHasta={fechaHasta}
-                mostrarAvisos={mostrarAvisos}
+                filtroAvisos={filtroAvisos}
                 puedeEditar={puedeEditar}
                 onOpenDetail={(m) => setDetailTarget(m)}
                 onEdit={(m) => setEditTarget(m)}

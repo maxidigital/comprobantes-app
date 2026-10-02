@@ -36,6 +36,9 @@ export interface NuevoMovimiento {
 
 export type FiltroTipo = 'TODOS' | TipoMovimiento;
 
+/** Avisos en la lista: intercalados con los movimientos, ocultos, o solo ellos. */
+export type FiltroAvisos = 'TODOS' | 'SIN_AVISOS' | 'SOLO_AVISOS';
+
 export interface Aviso {
   id: string;
   fecha: string;

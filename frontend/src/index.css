@@ -271,7 +271,8 @@ input[type='file'] {
   background: var(--bg);
 }
 
-.checkbox-row input[type='checkbox'] {
+.checkbox-row input[type='checkbox'],
+.checkbox-row input[type='radio'] {
   width: 1.05rem;
   height: 1.05rem;
   accent-color: var(--brand-primary);

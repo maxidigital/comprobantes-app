@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { bienColor } from './bienes';
 import { formatFecha, formatMontoPartes } from './format';
 import { notasPlano } from './Notas';
-import type { Aviso, FiltroTipo, Movimiento } from './types';
+import type { Aviso, FiltroAvisos, FiltroTipo, Movimiento } from './types';
 import { useSwipeRows } from './useSwipeRows';
 
 interface Props {
@@ -13,7 +13,7 @@ interface Props {
   bienesSeleccionados: Set<string>;
   fechaDesde: string | null;
   fechaHasta: string | null;
-  mostrarAvisos: boolean;
+  filtroAvisos: FiltroAvisos;
   puedeEditar: boolean;
   onOpenDetail: (movimiento: Movimiento) => void;
   onEdit: (movimiento: Movimiento) => void;
@@ -36,7 +36,7 @@ export default function MovimientosList({
   bienesSeleccionados,
   fechaDesde,
   fechaHasta,
-  mostrarAvisos,
+  filtroAvisos,
   puedeEditar,
   onOpenDetail,
   onEdit,
@@ -47,10 +47,12 @@ export default function MovimientosList({
 
   const itemsCombinados = useMemo(() => {
     const items: Item[] = [
-      ...movimientos.map(
-        (m): Item => ({ kind: 'movimiento', id: `mov-${m.id}`, fecha: m.fecha, bien: m.bien, movimiento: m }),
-      ),
-      ...(mostrarAvisos
+      ...(filtroAvisos !== 'SOLO_AVISOS'
+        ? movimientos.map(
+            (m): Item => ({ kind: 'movimiento', id: `mov-${m.id}`, fecha: m.fecha, bien: m.bien, movimiento: m }),
+          )
+        : []),
+      ...(filtroAvisos !== 'SIN_AVISOS'
         ? avisos.map((a): Item => ({ kind: 'aviso', id: `aviso-${a.id}`, fecha: a.fecha, bien: a.bien, aviso: a }))
         : []),
     ];
@@ -63,7 +65,7 @@ export default function MovimientosList({
     });
 
     return items;
-  }, [movimientos, avisos, mostrarAvisos]);
+  }, [movimientos, avisos, filtroAvisos]);
 
   const visibles = useMemo(() => {
     return itemsCombinados.filter((item) => {
@@ -81,7 +83,9 @@ export default function MovimientosList({
   return (
     <>
       {visibles.length === 0 ? (
-        <p className="empty-state">No hay movimientos que coincidan con el filtro.</p>
+        <p className="empty-state">
+          No hay {filtroAvisos === 'SOLO_AVISOS' ? 'avisos' : 'movimientos'} que coincidan con el filtro.
+        </p>
       ) : (
         <div className="movement-list">
           {visibles.map((item) => {
