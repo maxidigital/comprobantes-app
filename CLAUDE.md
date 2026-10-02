@@ -43,7 +43,7 @@ No hay OAuth por usuario. Sigue habiendo una única contraseña compartida
 uso familiar y no hace falta tanta seguridad — pero desde que se agregaron
 roles, el **nombre** que se tipea en el gate ya no es texto libre: tiene
 que matchear uno de los usuarios hardcodeados en `config/UsuariosConfig`
-(`Maxi:ADMIN`, `Gustavo:EDITOR`, `Nico:VIEWER`). Es una lista fija de 3-4
+(`Maxi:ADMIN`, `Gustavo:EDITOR`, `Nico:VIEWER`, `Alvaro:VIEWER`). Es una lista fija de 3-4
 nombres de la familia — se prefirió hardcodearla en vez de una env var o
 una pestaña en el Sheet: agregar/sacar un heredero es un evento raro que
 igual requiere tocar código o redeploy, no vale la pena la indirección.

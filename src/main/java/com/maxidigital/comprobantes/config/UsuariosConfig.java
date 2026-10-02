@@ -23,7 +23,8 @@ public class UsuariosConfig {
     private static final Map<String, Usuario> USUARIOS = Map.of(
             "maxi", new Usuario("Maxi", Rol.ADMIN),
             "gustavo", new Usuario("Gustavo", Rol.EDITOR),
-            "nico", new Usuario("Nico", Rol.VIEWER)
+            "nico", new Usuario("Nico", Rol.VIEWER),
+            "alvaro", new Usuario("Alvaro", Rol.VIEWER)
     );
 
     /** Devuelve el usuario (con el nombre "canónico", tal como está en USUARIOS) o null si no matchea ninguno. */
