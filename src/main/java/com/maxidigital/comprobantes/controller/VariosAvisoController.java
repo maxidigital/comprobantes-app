@@ -1,6 +1,8 @@
 package com.maxidigital.comprobantes.controller;
 
 import com.maxidigital.comprobantes.service.CajaAvisoSheetService;
+import com.maxidigital.comprobantes.service.CajaComprobanteSheetService;
+import com.maxidigital.comprobantes.service.ReceiptDriveService;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -10,7 +12,9 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/varios/avisos")
 public class VariosAvisoController extends AvisoController {
 
-    public VariosAvisoController(@Qualifier("variosAvisos") CajaAvisoSheetService avisos) {
-        super(avisos);
+    public VariosAvisoController(@Qualifier("variosAvisos") CajaAvisoSheetService avisos,
+                                  @Qualifier("variosAvisosComprobantes") CajaComprobanteSheetService comprobantes,
+                                  ReceiptDriveService receiptDriveService) {
+        super(avisos, comprobantes, receiptDriveService);
     }
 }

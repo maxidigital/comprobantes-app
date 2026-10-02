@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import AccessGate from './AccessGate';
+import AvisoDetail from './AvisoDetail';
 import AvisoForm from './AvisoForm';
 import { BIENES, bienColor } from './bienes';
 import { borrarCaches, guardarCache, leerCache } from './cache';
@@ -59,9 +60,12 @@ export default function App() {
   const [editTarget, setEditTarget] = useState<Movimiento | null>(null);
   const [detailTarget, setDetailTarget] = useState<Movimiento | null>(null);
   const [viewingReceipt, setViewingReceipt] = useState<{
+    /** El movimiento o el aviso dueño del comprobante. */
     movimientoId: string;
     comprobanteId: string;
+    entidad?: 'movimientos' | 'avisos';
   } | null>(null);
+  const [avisoDetailTarget, setAvisoDetailTarget] = useState<Aviso | null>(null);
   const [showInformes, setShowInformes] = useState(false);
   const [showPreguntaIA, setShowPreguntaIA] = useState(false);
   const [confirmDeleteTarget, setConfirmDeleteTarget] = useState<Movimiento | null>(null);
@@ -132,7 +136,8 @@ export default function App() {
       // reemplaza cuando llega lo fresco de la planilla.
       const cacheada = leerCache<{ movimientos: Movimiento[]; avisos: Aviso[] }>(vista);
       setMovimientos(cacheada?.movimientos ?? null);
-      setAvisos(cacheada?.avisos ?? []);
+      // Un caché de antes de que los avisos tuvieran comprobantes no trae esa lista.
+      setAvisos((cacheada?.avisos ?? []).map((a) => ({ ...a, comprobantes: a.comprobantes ?? [] })));
       setBienesSeleccionados(new Set());
       refreshList(vista);
     }
@@ -189,6 +194,7 @@ export default function App() {
     setShowCrearMenu(false);
     setShowAvisoForm(false);
     setEditAvisoTarget(null);
+    setAvisoDetailTarget(null);
     setConfirmDeleteAvisoTarget(null);
     setShowPreguntaIA(false);
     setUnlocked(false);
@@ -328,6 +334,7 @@ export default function App() {
                 onOpenDetail={(m) => setDetailTarget(m)}
                 onEdit={(m) => setEditTarget(m)}
                 onDelete={(m) => setConfirmDeleteTarget(m)}
+                onOpenAviso={(a) => setAvisoDetailTarget(a)}
                 onEditAviso={(a) => setEditAvisoTarget(a)}
                 onDeleteAviso={(a) => setConfirmDeleteAvisoTarget(a)}
               />
@@ -426,10 +433,31 @@ export default function App() {
         />
       )}
 
+      {avisoDetailTarget && (
+        <AvisoDetail
+          aviso={avisoDetailTarget}
+          conBien={tieneBien(caja)}
+          puedeEditar={puedeEditar}
+          onClose={() => setAvisoDetailTarget(null)}
+          onVerComprobante={(comprobanteId) =>
+            setViewingReceipt({ movimientoId: avisoDetailTarget.id, comprobanteId, entidad: 'avisos' })
+          }
+          onEdit={(a) => {
+            setAvisoDetailTarget(null);
+            setEditAvisoTarget(a);
+          }}
+          onDelete={(a) => {
+            setAvisoDetailTarget(null);
+            setConfirmDeleteAvisoTarget(a);
+          }}
+        />
+      )}
+
       {viewingReceipt && (
         <ReceiptViewerDialog
           caja={caja}
           movimientoId={viewingReceipt.movimientoId}
+          entidad={viewingReceipt.entidad}
           comprobanteId={viewingReceipt.comprobanteId}
           onClose={() => setViewingReceipt(null)}
           onUnauthorized={handleUnauthorized}

@@ -545,6 +545,11 @@ input[type='file'] {
   overflow-wrap: anywhere;
 }
 
+.detail-value--texto {
+  display: block;
+  white-space: pre-line;
+}
+
 .detail-value.monto {
   font-weight: 700;
 }

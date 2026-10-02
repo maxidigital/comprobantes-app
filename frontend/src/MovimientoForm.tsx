@@ -1,6 +1,7 @@
-import { ChangeEvent, FormEvent, useRef, useState } from 'react';
+import { FormEvent, useState } from 'react';
 import { agregarComprobantes, ApiError, borrarComprobante, crearMovimiento, editarMovimiento } from './api';
 import { BIENES } from './bienes';
+import ComprobantesField from './ComprobantesField';
 import { tieneBien } from './cajas';
 import { dateToDisplay, fechaToIso, formatFechaInput, isoToDisplay, todayDisplay } from './fecha';
 import { formatMontoInput, parseMonto } from './monto';
@@ -34,21 +35,6 @@ export default function MovimientoForm({ caja, onClose, onSaved, onUnauthorized,
   );
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  /** Acumula lo elegido (no lo reemplaza) y limpia el input, para poder abrir
-   * el selector varias veces y sumar comprobantes de a poco en la misma ventana. */
-  function handleAgregarArchivos(e: ChangeEvent<HTMLInputElement>) {
-    const elegidos = Array.from(e.target.files ?? []);
-    if (elegidos.length > 0) {
-      setComprobantesNuevos((prev) => [...prev, ...elegidos]);
-    }
-    e.target.value = '';
-  }
-
-  function handleQuitarArchivoNuevo(index: number) {
-    setComprobantesNuevos((prev) => prev.filter((_, i) => i !== index));
-  }
 
   async function handleBorrarComprobante(comprobanteId: string) {
     if (!editing) return;
@@ -226,62 +212,15 @@ export default function MovimientoForm({ caja, onClose, onSaved, onUnauthorized,
           <NotasEditor id="notas" value={notas} onChange={setNotas} />
         </div>
 
-        <div className="field">
-          <label htmlFor="comprobante">
-            {editing ? 'Agregar comprobantes (opcional)' : 'Comprobantes (foto o PDF, opcional)'}
-          </label>
-
-          {comprobantesActuales.length > 0 && (
-            <ul className="receipt-list">
-              {comprobantesActuales.map((c) => (
-                <li key={c.id} className="receipt-list-item">
-                  <span className="receipt-list-name">{c.nombre}</span>
-                  <button
-                    type="button"
-                    className="btn-plain"
-                    onClick={() => handleBorrarComprobante(c.id)}
-                    disabled={borrandoId === c.id}
-                    style={{ color: 'var(--danger)' }}
-                  >
-                    {borrandoId === c.id ? 'Borrando…' : 'Borrar'}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-
-          {comprobantesNuevos.length > 0 && (
-            <ul className="receipt-list">
-              {comprobantesNuevos.map((file, i) => (
-                <li key={`${file.name}-${i}`} className="receipt-list-item">
-                  <span className="receipt-list-name">{file.name}</span>
-                  <button
-                    type="button"
-                    className="btn-plain"
-                    onClick={() => handleQuitarArchivoNuevo(i)}
-                    style={{ color: 'var(--danger)' }}
-                  >
-                    Quitar
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-
-          <input
-            ref={fileInputRef}
-            id="comprobante"
-            className="input"
-            type="file"
-            accept="image/*,.pdf"
-            multiple
-            style={{ display: 'none' }}
-            onChange={handleAgregarArchivos}
-          />
-          <button type="button" className="btn-plain" onClick={() => fileInputRef.current?.click()}>
-            + Agregar comprobante
-          </button>
-        </div>
+        <ComprobantesField
+          id="comprobante"
+          actuales={comprobantesActuales}
+          nuevos={comprobantesNuevos}
+          onNuevosChange={setComprobantesNuevos}
+          onBorrar={handleBorrarComprobante}
+          borrandoId={borrandoId}
+          editando={!!editing}
+        />
 
         {error && <p className="error-text">{error}</p>}
         </div>

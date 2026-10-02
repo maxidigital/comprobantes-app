@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { ApiError, eliminarAviso, eliminarEnCaja, listAvisos, listCaja } from './api';
 import AvisoCard from './AvisoCard';
+import AvisoDetail from './AvisoDetail';
 import AvisoForm from './AvisoForm';
 import CajaDetail from './CajaDetail';
 import CajaForm from './CajaForm';
@@ -11,6 +12,7 @@ import ConfirmDialog from './ConfirmDialog';
 import FilterBar from './FilterBar';
 import { notasPlano } from './Notas';
 import { formatFecha, formatMontoPartes } from './format';
+import ReceiptViewerDialog from './ReceiptViewerDialog';
 import Totals from './Totals';
 import type { Aviso, FiltroAvisos, FiltroTipo, MovimientoCaja } from './types';
 import { useEscapeKey } from './useEscapeKey';
@@ -48,6 +50,8 @@ export default function CajaView({ caja, puedeEditar, filtroTipo, filterSlot, on
   const [showAvisoForm, setShowAvisoForm] = useState(false);
   const [deleteAvisoTarget, setDeleteAvisoTarget] = useState<Aviso | null>(null);
   const [editAvisoTarget, setEditAvisoTarget] = useState<Aviso | null>(null);
+  const [avisoDetailTarget, setAvisoDetailTarget] = useState<Aviso | null>(null);
+  const [viewingReceipt, setViewingReceipt] = useState<{ avisoId: string; comprobanteId: string } | null>(null);
   const fabMenuRef = useRef<HTMLDivElement>(null);
   const { cardProps, closeSwipe } = useSwipeRows(puedeEditar);
 
@@ -58,7 +62,12 @@ export default function CajaView({ caja, puedeEditar, filtroTipo, filterSlot, on
     // Lo último que se vio aparece al instante; lo fresco lo reemplaza al llegar.
     setItems(leerCache<MovimientoCaja[]>(caja.id));
     setLoadError(null);
-    setAvisos(caja.conAvisos ? leerCache<Aviso[]>(`${caja.id}.avisos`) ?? [] : []);
+    // Un caché de antes de que los avisos tuvieran comprobantes no trae esa lista.
+    setAvisos(
+      caja.conAvisos
+        ? (leerCache<Aviso[]>(`${caja.id}.avisos`) ?? []).map((a) => ({ ...a, comprobantes: a.comprobantes ?? [] }))
+        : [],
+    );
     Promise.all([listCaja(caja.id), caja.conAvisos ? listAvisos(caja.id) : Promise.resolve([])])
       .then(([data, avisosData]) => {
         if (cancelado) return;
@@ -218,7 +227,7 @@ export default function CajaView({ caja, puedeEditar, filtroTipo, filterSlot, on
                       key={entrada.id}
                       aviso={a}
                       puedeEditar={puedeEditar}
-                      swipeProps={cardProps(entrada.id, () => puedeEditar && setEditAvisoTarget(a))}
+                      swipeProps={cardProps(entrada.id, () => setAvisoDetailTarget(a))}
                       onEdit={() => {
                         closeSwipe();
                         setEditAvisoTarget(a);
@@ -334,6 +343,35 @@ export default function CajaView({ caja, puedeEditar, filtroTipo, filterSlot, on
             setShowAvisoForm(false);
             setEditAvisoTarget(null);
           }}
+          onUnauthorized={onUnauthorized}
+        />
+      )}
+
+      {avisoDetailTarget && (
+        <AvisoDetail
+          aviso={avisoDetailTarget}
+          conBien={false}
+          puedeEditar={puedeEditar}
+          onClose={() => setAvisoDetailTarget(null)}
+          onVerComprobante={(comprobanteId) => setViewingReceipt({ avisoId: avisoDetailTarget.id, comprobanteId })}
+          onEdit={(a) => {
+            setAvisoDetailTarget(null);
+            setEditAvisoTarget(a);
+          }}
+          onDelete={(a) => {
+            setAvisoDetailTarget(null);
+            setDeleteAvisoTarget(a);
+          }}
+        />
+      )}
+
+      {viewingReceipt && (
+        <ReceiptViewerDialog
+          caja={caja.id}
+          movimientoId={viewingReceipt.avisoId}
+          entidad="avisos"
+          comprobanteId={viewingReceipt.comprobanteId}
+          onClose={() => setViewingReceipt(null)}
           onUnauthorized={onUnauthorized}
         />
       )}

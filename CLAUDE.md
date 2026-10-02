@@ -188,8 +188,21 @@ id | fecha | texto | bien | autor | creadoEn | estado
   lista se distinguen por un glow amarillo (`.movement-card--aviso`).
 - Mismos permisos que movimientos (VIEWER solo lee, EDITOR/ADMIN
   crean, editan y eliminan). Editar (desde 2026-10-02: `PUT .../avisos/{id}`,
-  swipe "Editar" o tocar el aviso, que no tiene detalle) cambia fecha,
-  texto y bien; el **autor y creadoEn quedan los originales**.
+  swipe "Editar" o desde el detalle) cambia fecha, texto y bien; el
+  **autor y creadoEn quedan los originales**.
+- **Comprobantes de avisos** (2026-10-02): igual que los de movimientos
+  (fotos/PDF a la misma carpeta de Drive, visor propio, borrar uno borra
+  el archivo, eliminar el aviso los da de baja en cascada sin borrar los
+  archivos), en su propia pestaña por caja — `Comprobantes Avisos`,
+  `Comprobantes Avisos Remodelación` / `Varios` / `Aportes` —
+  (`id | avisoId | url | nombre | creadoEn | estado`; los ids de aviso
+  chocarían con los de movimiento). Endpoints `.../avisos/{id}/comprobantes`
+  como los de movimientos; en la respuesta el id del aviso viaja en
+  `ComprobanteResponse#movimientoId`. **Sin "comprobante pendiente"**: un
+  aviso no tiene por qué llevar uno. Tocar un aviso abre su detalle
+  (`AvisoDetail`) con un chip "Ver" por comprobante; en la lista muestra
+  📎 y la cantidad. El campo de archivos de los formularios es
+  `ComprobantesField`, compartido con `MovimientoForm`.
 - El FAB "+" ahora abre un mini menú ("Nuevo movimiento" / "Nuevo aviso")
   en vez de ir directo al formulario de movimiento.
 
@@ -523,7 +536,7 @@ src/main/java/com/maxidigital/comprobantes/
 │   ├── WebConfig.java               # CORS + registro del interceptor de acceso
 │   ├── GoogleClientsConfig.java     # Bean Sheets (cuenta de servicio) + Bean Drive (OAuth refresh token)
 │   ├── UsuariosConfig.java          # lista fija hardcodeada de usuarios -> rol
-│   ├── CajasConfig.java             # un trío de servicios por caja sin bien (Remodelación, Varios) + avisos de Aportes
+│   ├── CajasConfig.java             # un trío de servicios por caja sin bien (Remodelación, Varios) + avisos de Aportes + comprobantes de avisos de cada caja
 │   └── OpenAiConfig.java            # bean OpenAiService (OPENAI_API_KEY)
 ├── security/AccessKeyInterceptor.java, Rol.java
 ├── controller/
@@ -569,7 +582,9 @@ frontend/src/
 ├── cajas.ts                         # las 4 cajas del desplegable, tieneBien(), config de Aportes + APORTANTES
 ├── CajaView.tsx, CajaForm.tsx, CajaDetail.tsx  # pantalla completa de una caja simple (Aportes): lista, alta/edición, detalle
 ├── useSwipeRows.ts                  # swipe para Editar/Eliminar, compartido por MovimientosList y CajaView
-├── AvisoCard.tsx                    # tarjeta de un aviso (glow amarillo), compartida por MovimientosList y CajaView
+├── AvisoCard.tsx                    # tarjeta de un aviso (glow amarillo, 📎), compartida por MovimientosList y CajaView
+├── AvisoDetail.tsx                  # detalle de un aviso: texto, bien, chips "Ver" de sus comprobantes
+├── ComprobantesField.tsx            # campo de comprobantes de MovimientoForm y AvisoForm
 ├── monto.ts                         # sanitizado del campo monto, compartido por MovimientoForm y CajaForm
 ├── cache.ts                         # caché por caja (memoria + localStorage), se borra al salir
 └── index.css                        # tokens de estética/PALETTE (ver ../estetica-react/ESTETICA-REACT.md)

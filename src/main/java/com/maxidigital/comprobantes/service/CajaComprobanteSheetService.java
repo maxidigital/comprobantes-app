@@ -19,8 +19,17 @@ public class CajaComprobanteSheetService implements ComprobanteStore {
     private final SheetTab tab;
 
     public CajaComprobanteSheetService(Sheets sheets, String spreadsheetId, String sheetName) {
+        this(sheets, spreadsheetId, sheetName, "movimientoId");
+    }
+
+    /**
+     * Con otra columna de referencia: los comprobantes de avisos usan
+     * "avisoId" (pestañas "Comprobantes Avisos ..."). En la respuesta el id
+     * referenciado sigue viajando como ComprobanteResponse#movimientoId.
+     */
+    public CajaComprobanteSheetService(Sheets sheets, String spreadsheetId, String sheetName, String columnaReferencia) {
         this.tab = new SheetTab(sheets, spreadsheetId, sheetName, List.of(
-                "id", "movimientoId", "url", "nombre", "creadoEn", "estado"));
+                "id", columnaReferencia, "url", "nombre", "creadoEn", "estado"));
     }
 
     @Override

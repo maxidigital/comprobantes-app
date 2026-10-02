@@ -35,6 +35,9 @@ export default function AvisoCard({ aviso: a, puedeEditar, swipeProps, onEdit, o
           <span className="meta">
             {formatFecha(a.fecha)}
             {a.autor ? ` · ${a.autor}` : ''}
+            {a.comprobantes.length > 0 && (
+              <span aria-label={`${a.comprobantes.length} comprobantes`}> · 📎 {a.comprobantes.length}</span>
+            )}
           </span>
           {a.bien && (
             <span className="bien-label" style={{ color: bienColor(a.bien) }}>

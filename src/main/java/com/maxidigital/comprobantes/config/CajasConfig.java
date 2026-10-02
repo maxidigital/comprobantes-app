@@ -56,6 +56,28 @@ public class CajasConfig {
         return new CajaAvisoSheetService(sheets, spreadsheetId, "Avisos Varios");
     }
 
+    // Comprobantes de avisos: una pestaña por caja (los ids de aviso de cada caja arrancan de 1).
+
+    @Bean
+    public CajaComprobanteSheetService alquileresAvisosComprobantes() {
+        return new CajaComprobanteSheetService(sheets, spreadsheetId, "Comprobantes Avisos", "avisoId");
+    }
+
+    @Bean
+    public CajaComprobanteSheetService remodelacionAvisosComprobantes() {
+        return new CajaComprobanteSheetService(sheets, spreadsheetId, "Comprobantes Avisos Remodelación", "avisoId");
+    }
+
+    @Bean
+    public CajaComprobanteSheetService variosAvisosComprobantes() {
+        return new CajaComprobanteSheetService(sheets, spreadsheetId, "Comprobantes Avisos Varios", "avisoId");
+    }
+
+    @Bean
+    public CajaComprobanteSheetService aportesAvisosComprobantes() {
+        return new CajaComprobanteSheetService(sheets, spreadsheetId, "Comprobantes Avisos Aportes", "avisoId");
+    }
+
     /** Aportes personales no tiene movimientos con comprobantes (eso es AportesPersonalesSheetService), pero sí avisos. */
     @Bean
     public CajaAvisoSheetService aportesAvisos() {

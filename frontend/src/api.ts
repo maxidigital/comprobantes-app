@@ -173,11 +173,13 @@ export async function borrarComprobante(caja: CajaMovimientos, movimientoId: str
  * query param) para mostrarlo dentro de un visor propio de la app — así no
  * hace falta navegar afuera (una PWA instalada no tiene botón "atrás"). */
 export async function fetchComprobanteArchivo(
-  caja: CajaMovimientos,
-  movimientoId: string,
+  caja: CajaMovimientos | CajaId,
+  /** El movimiento o el aviso dueño del comprobante (según `entidad`). */
+  refId: string,
   comprobanteId: string,
+  entidad: 'movimientos' | 'avisos' = 'movimientos',
 ): Promise<{ blob: Blob; contentType: string }> {
-  const response = await request(`${base(caja)}/movimientos/${movimientoId}/comprobantes/${comprobanteId}/archivo`);
+  const response = await request(`${base(caja)}/${entidad}/${refId}/comprobantes/${comprobanteId}/archivo`);
   const contentType = response.headers.get('Content-Type') ?? 'application/octet-stream';
   const blob = await response.blob();
   return { blob, contentType };
@@ -199,6 +201,7 @@ export async function crearAviso(caja: CajaMovimientos | CajaId, data: NuevoAvis
   form.set('texto', data.texto);
   const userName = getUserName();
   if (userName) form.set('autor', userName);
+  (data.comprobantes ?? []).forEach((file) => form.append('comprobantes', file));
 
   const response = await request(`${base(caja)}/avisos`, { method: 'POST', body: form });
   return response.json();
@@ -211,6 +214,19 @@ export async function editarAviso(caja: CajaMovimientos | CajaId, id: string, da
   form.set('texto', data.texto);
 
   const response = await request(`${base(caja)}/avisos/${id}`, { method: 'PUT', body: form });
+  return response.json();
+}
+
+/** Agrega uno o más comprobantes a un aviso que ya existe — no reemplaza los que tenía. */
+export async function agregarComprobantesAviso(caja: CajaMovimientos | CajaId, avisoId: string, files: File[]): Promise<Aviso> {
+  const form = new FormData();
+  files.forEach((file) => form.append('comprobantes', file));
+  const response = await request(`${base(caja)}/avisos/${avisoId}/comprobantes`, { method: 'POST', body: form });
+  return response.json();
+}
+
+export async function borrarComprobanteAviso(caja: CajaMovimientos | CajaId, avisoId: string, comprobanteId: string): Promise<Aviso> {
+  const response = await request(`${base(caja)}/avisos/${avisoId}/comprobantes/${comprobanteId}`, { method: 'DELETE' });
   return response.json();
 }
 

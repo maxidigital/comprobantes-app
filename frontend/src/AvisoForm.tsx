@@ -1,9 +1,10 @@
 import { FormEvent, useState } from 'react';
-import { ApiError, crearAviso, editarAviso } from './api';
+import { agregarComprobantesAviso, ApiError, borrarComprobanteAviso, crearAviso, editarAviso } from './api';
 import { BIENES } from './bienes';
 import { tieneBien } from './cajas';
+import ComprobantesField from './ComprobantesField';
 import { fechaToIso, formatFechaInput, isoToDisplay, todayDisplay } from './fecha';
-import type { Aviso, CajaId, CajaMovimientos } from './types';
+import type { Aviso, CajaId, CajaMovimientos, Comprobante } from './types';
 import { useEscapeKey } from './useEscapeKey';
 
 interface Props {
@@ -22,9 +23,32 @@ export default function AvisoForm({ caja, editing, onClose, onSaved, onUnauthori
   const [fechaTexto, setFechaTexto] = useState(editing ? isoToDisplay(editing.fecha) : todayDisplay());
   const [bien, setBien] = useState(editing?.bien ?? '');
   const [texto, setTexto] = useState(editing?.texto ?? '');
+  const [comprobantesActuales, setComprobantesActuales] = useState<Comprobante[]>(editing?.comprobantes ?? []);
+  const [comprobantesNuevos, setComprobantesNuevos] = useState<File[]>([]);
+  const [borrandoId, setBorrandoId] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<{ fecha?: string; bien?: string; texto?: string }>({});
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  async function handleBorrarComprobante(comprobanteId: string) {
+    if (!editing) return;
+    if (!window.confirm('¿Borrar este comprobante?')) return;
+
+    setBorrandoId(comprobanteId);
+    setError(null);
+    try {
+      const actualizado = await borrarComprobanteAviso(caja, editing.id, comprobanteId);
+      setComprobantesActuales(actualizado.comprobantes);
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 401) {
+        onUnauthorized();
+        return;
+      }
+      setError(err instanceof Error ? err.message : 'No se pudo borrar el comprobante');
+    } finally {
+      setBorrandoId(null);
+    }
+  }
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -44,8 +68,11 @@ export default function AvisoForm({ caja, editing, onClose, onSaved, onUnauthori
     setSubmitting(true);
     setError(null);
     try {
-      const datos = { fecha: fechaIso, bien: conBien ? bien : '', texto: texto.trim() };
-      const guardado = editing ? await editarAviso(caja, editing.id, datos) : await crearAviso(caja, datos);
+      const datos = { fecha: fechaIso, bien: conBien ? bien : '', texto: texto.trim(), comprobantes: comprobantesNuevos };
+      let guardado = editing ? await editarAviso(caja, editing.id, datos) : await crearAviso(caja, datos);
+      if (editing && comprobantesNuevos.length > 0) {
+        guardado = await agregarComprobantesAviso(caja, editing.id, comprobantesNuevos);
+      }
       onSaved(guardado);
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {
@@ -106,6 +133,16 @@ export default function AvisoForm({ caja, editing, onClose, onSaved, onUnauthori
             <textarea id="aviso-texto" className="input" value={texto} onChange={(e) => setTexto(e.target.value)} />
             {fieldErrors.texto && <p className="error-text">{fieldErrors.texto}</p>}
           </div>
+
+          <ComprobantesField
+            id="aviso-comprobante"
+            actuales={comprobantesActuales}
+            nuevos={comprobantesNuevos}
+            onNuevosChange={setComprobantesNuevos}
+            onBorrar={handleBorrarComprobante}
+            borrandoId={borrandoId}
+            editando={!!editing}
+          />
 
           {error && <p className="error-text">{error}</p>}
         </div>

@@ -46,12 +46,14 @@ export interface Aviso {
   bien: string;
   autor: string;
   creadoEn: string;
+  comprobantes: Comprobante[];
 }
 
 export interface NuevoAviso {
   fecha: string;
   texto: string;
   bien: string;
+  comprobantes?: File[];
 }
 
 export type AutorMensaje = 'USUARIO' | 'IA';

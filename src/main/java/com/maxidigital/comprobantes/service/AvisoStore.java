@@ -12,6 +12,9 @@ public interface AvisoStore {
 
     List<AvisoResponse> readAllActive() throws IOException;
 
+    /** Un aviso puntual (activo o no); NotFoundException si no existe. */
+    AvisoResponse findById(String id) throws IOException;
+
     /** Cambia fecha, texto y bien; el autor y creadoEn quedan los originales. */
     AvisoResponse update(String id, String fecha, String texto, String bien) throws IOException;
 

@@ -80,6 +80,12 @@ public class AvisoSheetService implements AvisoStore {
     }
 
     @Override
+    public AvisoResponse findById(String id) throws IOException {
+        List<List<Object>> rows = readRawRows();
+        return toResponse(rows.get(locateRowIndex(rows, id)));
+    }
+
+    @Override
     public AvisoResponse update(String id, String fecha, String texto, String bien) throws IOException {
         List<List<Object>> rows = readRawRows();
         int rowIndex = locateRowIndex(rows, id);
